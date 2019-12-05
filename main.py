@@ -9,11 +9,18 @@ import asyncio
 import logging
 
 from aiohttp import web, log
+from db.redis import RedisDB
 from db.tortoise_config import DBConfig
 from config import Config
 from logging.handlers import TimedRotatingFileHandler, WatchedFileHandler
 from rpc.client import RPCClient
 from server import PippinServer
+from util.env import Env
+
+# Set and patch nanopy
+import nanopy
+nanopy.account_prefix = 'ban_' if Env.banano() else 'nano_'
+nanopy.standard_exponent = 29 if Env.banano() else 30
 
 # Configuration
 config = Config.instance()
@@ -38,19 +45,19 @@ if __name__ == "__main__":
         loop.run_until_complete(DBConfig().init_db())
         # Setup server
         server = PippinServer(config.host, config.port)
-        tasks = [
-            server.start()
-        ]
-        log.server_logger.info.info(f"Pippin server started at {config.host}:{config.port}")
-        loop.run_until_complete(asyncio.wait(tasks))
+        log.server_logger.info(f"Pippin server started at {config.host}:{config.port}")
+        loop.run_until_complete(server.start())
+        loop.run_forever()
     except Exception:
-        log.server_logger.exception.exception("Pippin exited with exception")
+        log.server_logger.exception("Pippin exited with exception")
     except BaseException:
         pass
     finally:
         log.server_logger.info("Pipping is exiting")
         tasks = [
-            RPCClient.close()
+            RPCClient.close(),
+            server.stop(),
+            RedisDB.close()
         ]
         loop.run_until_complete(asyncio.wait(tasks))
         loop.close()

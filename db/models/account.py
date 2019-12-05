@@ -2,9 +2,10 @@ from tortoise.models import Model
 from tortoise import fields
 
 class Account(Model):
-    wallets  = fields.ForeignKeyField('db.User', related_name='accounts', index=True)
+    wallet  = fields.ForeignKeyField('db.Wallet', related_name='accounts', index=True)
     address = fields.CharField(max_length=65)
-    index = fields.IntField()
+    account_index = fields.IntField()
 
     class Meta:
         table = 'accounts'
+        unique_together = ('address', 'account_index')

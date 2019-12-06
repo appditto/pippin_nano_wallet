@@ -257,6 +257,10 @@ class PippinServer(object):
             return self.json_response(
                 data={'error': 'RPC Process failed'}
             )
+        except InsufficientBalance:
+            return self.json_response(
+                data={'error': 'insufficient balance'}
+            )
 
         if resp is None:
             return self.json_response(

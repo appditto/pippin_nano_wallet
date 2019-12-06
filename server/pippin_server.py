@@ -235,7 +235,7 @@ class PippinServer(object):
             )
 
         # Retrieve account on wallet
-        account = await wallet.get_account(request_json['account'])
+        account = await wallet.get_account(request_json['source'])
         if account is None:
             return self.json_response(
                 data={'error': 'Account not found'}

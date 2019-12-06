@@ -13,14 +13,17 @@ from db.redis import RedisDB
 from db.tortoise_config import DBConfig
 from config import Config
 from logging.handlers import TimedRotatingFileHandler, WatchedFileHandler
-from rpc.client import RPCClient
-from server import PippinServer
+from network.rpc_client import RPCClient
+from network.work_client import WorkClient
+from server.pippin_server import PippinServer
 from util.env import Env
 
 # Set and patch nanopy
 import nanopy
 nanopy.account_prefix = 'ban_' if Env.banano() else 'nano_'
-nanopy.standard_exponent = 29 if Env.banano() else 30
+if Env.banano():
+    nanopy.standard_exponent = 29
+    nanopy.work_difficulty = 'fffffe0000000000'
 
 # Configuration
 config = Config.instance()
@@ -45,6 +48,17 @@ if __name__ == "__main__":
         loop.run_until_complete(DBConfig().init_db())
         # Setup server
         server = PippinServer(config.host, config.port)
+        # Check is remote node is alive
+        try:
+            is_alive = loop.run_until_complete(RPCClient.instance().is_alive())
+        except Exception:
+            log.server_logger.exception("Couldn't do is_alive RPC call")
+            is_alive = False
+        finally:
+            if not is_alive:
+                log.server_logger.error(f"Error: Could not connect to remote node at {Config.instance().node_url}")
+                exit(1)
+        # Start server
         log.server_logger.info(f"Pippin server started at {config.host}:{config.port}")
         loop.run_until_complete(server.start())
         loop.run_forever()
@@ -57,7 +71,8 @@ if __name__ == "__main__":
         tasks = [
             RPCClient.close(),
             server.stop(),
-            RedisDB.close()
+            RedisDB.close(),
+            WorkClient.close()
         ]
         loop.run_until_complete(asyncio.wait(tasks))
         loop.close()

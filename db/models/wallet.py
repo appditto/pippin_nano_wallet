@@ -12,6 +12,8 @@ import db.models.account as acct
 class Wallet(Model):
     id = fields.UUIDField(pk=True)
     seed = fields.CharField(max_length=64, unique=True)
+    representative = fields.CharField(max_length=65, null=True)
+    created_at = fields.DatetimeField(auto_now_add=True)
 
     class Meta:
         table = 'wallets'
@@ -65,3 +67,7 @@ class Wallet(Model):
             )
 
             return [a.address for a in accounts]
+
+    async def get_account(self, address: str) -> acct.Account:
+        """Get an an account that begins to this wallet"""
+        return await self.accounts.filter(address=address).first()

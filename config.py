@@ -1,9 +1,28 @@
 from dotenv import load_dotenv
 load_dotenv()
-
-import argparse
+from aiohttp import log
 from util.env import Env
 from version import __version__
+from util.utils import Utils
+from util.validators import Validators
+
+import pathlib
+import secrets
+import yaml
+
+DEFAULT_BANANO_REPS = [
+    'ban_1raizenpg6r7nyh1z8kgdw3by63hhidu89ogtpspugx4fo6jhgqxat5brph8',
+    'ban_1ka1ium4pfue3uxtntqsrib8mumxgazsjf58gidh1xeo5te3whsq8z476goo',
+    'ban_1cake36ua5aqcq1c5i3dg7k8xtosw7r9r7qbbf5j15sk75csp9okesz87nfn',
+    'ban_1fomoz167m7o38gw4rzt7hz67oq6itejpt4yocrfywujbpatd711cjew8gjj'
+]
+
+DEFAULT_NANO_REPS = [
+    'nano_1x7biz69cem95oo7gxkrw6kzhfywq4x5dupw4z1bdzkb74dk9kpxwzjbdhhs',
+    'nano_1thingspmippfngcrtk1ofd3uwftffnu4qu9xkauo9zkiuep6iknzci3jxa6',
+    'nano_1natrium1o3z5519ifou7xii8crpxpk8y65qmkih8e8bpsjri651oza8imdd',
+    'nano_3o7uzba8b9e1wqu5ziwpruteyrs3scyqr761x7ke6w1xctohxfh5du75qgaj'
+]
 
 class Config(object):
     _instance = None
@@ -15,20 +34,47 @@ class Config(object):
     def instance(cls) -> 'Config':
         if cls._instance is None:
             cls._instance = cls.__new__(cls)
-            parser = argparse.ArgumentParser(description=f"Pippin {'BANANO' if Env.banano() else 'Nano'} Wallet API v{__version__}")
-            parser.add_argument('-l', '--log-file', type=str, help='Log file location', default='/tmp/pippin_wallet.log')
-            parser.add_argument('-p', '--port', type=int, help='Port to listen on', default=11338)
-            parser.add_argument('-u', '--node-url', type=str, help='URL of the node', default='[::1]')
-            parser.add_argument('-np', '--node-port', type=int, help='Port of the node', default=7072 if Env.banano() else 7076)
-            parser.add_argument('--debug', action='store_true', help='Runs in debug mode if specified', default=False)
-
-            options, unknown = parser.parse_known_args()
-
+            try:
+                with open(f"{Utils.get_project_root().joinpath(pathlib.PurePath('config.yaml'))}", "r") as in_yaml:
+                    cls.yaml = yaml.load(in_yaml, Loader=yaml.FullLoader)
+            except FileNotFoundError:
+                cls.yaml = None
             # Parse options
-            cls.log_file = options.log_file
-            cls.debug = options.debug
-            cls.node_url = options.node_url
-            cls.node_port = options.node_port
-            cls.port = options.port
-            cls.host = '127.0.0.1'
+            cls.log_file = cls.get_yaml_property('server', 'log_file', default='/tmp/pippin_wallet.log')
+            cls.debug = cls.get_yaml_property('server', 'debug', default=False)
+            cls.node_url = cls.get_yaml_property('server', 'node_rpc_url', default='http://[::1]:7072' if Env.banano() else 'http://[::1]:7076')
+            cls.port = cls.get_yaml_property('server', 'port', default=11338)
+            cls.host = cls.get_yaml_property('server', 'host', default='127.0.0.1')
+            cls.work_peers = cls.get_yaml_property('wallet', 'work_peer', [])
+            cls.node_work_generate = cls.get_yaml_property('wallet', 'node_work_generate', False)
+            if not Env.banano():
+                cls.preconfigured_reps = cls.get_yaml_property('wallet', 'preconfigured_representatives_nano', default=None)
+            else:
+                cls.preconfigured_reps = cls.get_yaml_property('wallet', 'preconfigured_representatives_banano', default=None)
+            # Enforce that all reps are valid
+            if cls.preconfigured_reps is not None:
+                cls.preconfigured_reps = set(cls.preconfigured_reps)
+                for r in cls.preconfigured_reps:
+                    if not Validators.is_valid_address(r):
+                        log.server_logger.warn(f"{r} is not a valid representative!")
+                        cls.preconfigured_reps.remove(r)
+                if len(cls.preconfigured_reps) == 0:
+                    cls.preconfigured_reps = None
+            # Go to default if None
+            if cls.preconfigured_reps is None:
+                cls.preconfigured_reps = DEFAULT_BANANO_REPS if Env.banano() else DEFAULT_NANO_REPS
+
         return cls._instance
+
+    @classmethod
+    def get_yaml_property(cls, category: str, subcategory: str, default):
+        """Get a property from yaml config"""
+        if cls.yaml is None:
+            return default
+        elif category in cls.yaml and cls.yaml[category] is not None and subcategory in cls.yaml[category]:
+            return cls.yaml[category][subcategory]
+        return default
+
+    def get_random_rep(self) -> str:
+        """Returns a random representative"""
+        return secrets.choice(self.preconfigured_reps)

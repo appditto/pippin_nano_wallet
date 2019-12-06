@@ -87,10 +87,7 @@ class RPCClient(object):
             'json_block': False,
             'block': json.dumps(block)
         }
-        respjson = await self.make_request(process_action)
-        if 'hash' in respjson:
-            return respjson['hash']
-        return None
+        return await self.make_request(process_action)
 
     async def is_alive(self) -> bool:
         """Returns whether or not the remote node is alive"""

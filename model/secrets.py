@@ -22,3 +22,7 @@ class SeedStorage(object):
 
     def contains_encrypted(self, encrypted: str) -> bool:
         return encrypted in self.seeds
+
+    def remove(self, encrypted: str):
+        if encrypted in self.seeds:
+            del self.seeds[encrypted]

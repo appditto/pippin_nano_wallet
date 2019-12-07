@@ -408,6 +408,13 @@ class PippinServer(object):
         if 'wallet' not in request_json or 'password' not in request_json:
             return self.generic_error()
 
+        if len(request_json['password'].strip()) == 0:
+            return self.json_response(
+                data={
+                    'error': 'bad password'
+                }
+            )
+
         # Retrieve wallet
         wallet = await Wallet.filter(id=request_json['wallet']).first()
         if wallet is None:
@@ -422,17 +429,14 @@ class PippinServer(object):
                         'error': 'wallet locked'
                     }
                 )
+            # Remove old one from storage
+            SeedStorage.instance().remove(wallet.seed)
             wallet.seed = decrypted
 
-        if len(request_json['password'].strip()) == 0:
-            return self.json_response(
-                data={
-                    'error': 'bad password'
-                }
-            )
-
         crypt = AESCrypt(request_json['password'])
-        wallet.seed = crypt.encrypt(wallet.seed)
+        encrypted = crypt.encrypt(wallet.seed)
+        SeedStorage.instance().set_decrypted_seed(encrypted, wallet.seed)
+        wallet.seed = encrypted
 
         await wallet.save(update_fields=['seed'])
 

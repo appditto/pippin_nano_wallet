@@ -31,7 +31,7 @@ class AESCrypt():
             raise DecryptionError()
         elif decrypted[:len(self.salt)] != self.salt:
             raise DecryptionError()
-        return decrypted[8:]
+        return decrypted[len(self.salt):]
 
 class DecryptionError(Exception):
     pass

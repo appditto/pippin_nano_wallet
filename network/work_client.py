@@ -39,7 +39,10 @@ class WorkClient(object):
         async with self.session.post(url ,json=req_json, timeout=300) as resp:
             return await resp.json()
 
-    async def work_generate(self, hash: str, difficulty: str = nanopy.work_difficulty) -> str:
+    async def work_generate(self, hash: str, difficulty: str = None) -> str:
+        if difficulty is None:
+            difficulty =  nanopy.work_difficulty
+
         # If no peers, do it locally
         if len(self.work_urls) == 0:
             return nanopy.work_generate(hash, difficulty=difficulty)

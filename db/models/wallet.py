@@ -11,8 +11,9 @@ import db.models.account as acct
 
 class Wallet(Model):
     id = fields.UUIDField(pk=True)
-    seed = fields.CharField(max_length=64, unique=True)
+    seed = fields.CharField(max_length=128, unique=True)
     representative = fields.CharField(max_length=65, null=True)
+    encrypted = fields.BooleanField(default=False)
     created_at = fields.DatetimeField(auto_now_add=True)
 
     class Meta:

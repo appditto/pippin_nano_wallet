@@ -46,7 +46,8 @@ class RPCClient(object):
         info_action = {
             'action': 'account_info',
             'account': account,
-            'representative': True
+            'representative': True,
+            'pending': True
         }
         respjson = await self.make_request(info_action)
         if 'error' not in respjson:

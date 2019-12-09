@@ -98,16 +98,23 @@ class WalletUtil(object):
         async with self.lock as lock:
             return await self._receive(hash, work)
 
-    async def receive_all(self) -> int:
-        """Receive all pending blocks for this account and return # received"""
+    async def _receive_all(self) -> int:
+        """Receive all pending blocks for this account and return # received (no lock)"""
         received_count = 0
         p = await RPCClient.instance().pending(self.account.address, threshold=config.Config.instance().receive_minimum)
         if p is None:
             return received_count
+        for block in p:
+            await self._receive(block)
+            received_count += 1
+        return received_count
+
+
+    async def receive_all(self) -> int:
+        """Receive all pending blocks for this account and return # received"""
+        received_count = 0
         async with self.lock as lock:
-            for block in p:
-                await self._receive(block)
-                received_count += 1
+            received_count = await self._receive_all()
         return received_count
 
     async def send(self, amount: int, destination: str, id: str = None, work: str = None) -> dict:
@@ -133,7 +140,16 @@ class WalletUtil(object):
 
             # Check balance
             if amount > int(account_info['balance']):
-                raise InsufficientBalance(account_info['balance'])
+                # Auto-receive blocks if they have it pending
+                if config.Config.instance().auto_receive_on_send and int(account_info['balance']) + int(account_info['pending']) >= amount:
+                    await self._receive_all()
+                    account_info = await RPCClient.instance().account_info(self.account.address)
+                    if account_info is None:
+                        return None
+                    if amount > int(account_info['balance']):
+                        raise InsufficientBalance(account_info['balance'])
+                else:
+                    raise InsufficientBalance(account_info['balance'])
 
             workbase = account_info['frontier']
 

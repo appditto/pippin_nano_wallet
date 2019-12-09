@@ -45,8 +45,13 @@ wallet:
   #  - http://myotherworkpeer.com
 
   # Get work from node, this will send work_generate directly to the node if selected
-  # Default:
+  # Default: False
   #node_work_generate: False
 
   # Automatically receive transactions greater or equal to this amount
   #receive_minimum=1000000000000000000000000000
+
+  # Automatically receive pending balances when doing RPC send, if balance < amount, but pending+balance >= amount
+  # Respects receive_minimum
+  # Default: True
+  #auto_receive_on_send=true

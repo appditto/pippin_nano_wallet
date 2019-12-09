@@ -1,36 +1,40 @@
-# Pippin API/CLI Wallet for NANO and BANANO
+# Pippin
 
-Pippin is a high performance API-based wallet for NANO and BANANO.
+Pippin is a production-ready, high-performance developer wallet for [Nano](https://nano.org) and [BANANO](https://banano.cc). Pippin's API is a drop-in replacement for the Nano developer wallet that is built in to the node software.
 
-Pippin uses the fast, C-based [nanopy](https://github.com/npy0/nanopy/tree/master/nanopy) libary to sign blocks and generate work. It is also completely written using asyncio and utilizes the ultra-fast [uvloop](https://github.com/MagicStack/uvloop)
+## About Pippin
 
-## Why you want Pippin
+Pippin is written in Python. It achieves high performance across the board using libraries such as [asyncio](https://docs.python.org/3/library/asyncio.html), [uvloop](https://github.com/MagicStack/uvloop), [aiohttp](https://aiohttp.readthedocs.io/en/stable/), [asyncpg](https://github.com/MagicStack/asyncpg)/[aiosqlite](https://github.com/jreese/aiosqlite)/[aiomysql](https://github.com/aio-libs/aiomysql), and [rapidjson](https://rapidjson.org/).
 
-Pippin is a production-ready NANO/BANANO wallet that you can use for your apps and business. It is a drop-in replacement for the wallet that's built in to the Nano node software, which is not considered production-ready.
+For block signing and work generation, Pippin uses [nanopy](https://github.com/npy0/nanopy), which is a high-performance library that utilizes C-bindings for blake2b and ed25519.
 
-Pippin can be used by exchanges, games, payment processors, tip bots, faucets, casinos, and a lot more. It's advantageous in scenarios where you are constrained by disk speed, bandwidth, etc. and do not want to run a full-node.
+## Benefits of Pippin
 
-Also:
+Pippin is the first drop-in replacement for the Nano developer wallet. It's incredibly easy to transition to Pippin if your application is already written to use the wallet that's bundled with the node software.
 
-- Pippin can be used with *any public node* - **you don't need to run your own node** to have an API wallet.
+- Pippin is production-ready, the Nano developer wallet is not.
+- Pippin is independent of the node. You can use Pippin with any public RPC, so you don't have to run your own node
 - Pippin is extremely fast and lightweight
-- Pippin supports multiple database backends (SQLite, PostgreSQL)
+- Pippin supports encrypted secret keys
+- Pippin supports multiple database backends (SQLite, PostgreSQL, and MySQL)
 
-## How does it work?
+Pippin can be used by exchanges, games, payment processors, tip bots, faucets, casinos, and a lot more.
 
-Pippin intercepts every wallet-related RPC and handles them internally. It builds its own blocks, has its own storage, etc. Every non-wallet RPC gets proxied to a remote or local node.
+## How Pippin Works
 
-Once pippin is configured, all you need to do is point your existing NANO/BANANO application to it.
+Pippin provides an API that mimics the [Nano Wallet RPC Protocol](https://docs.nano.org/commands/rpc-protocol/#wallet-rpcs)
+
+Every wallet-related RPC gets intercepted by Pippin and handled internally. It builds the blocks and signs them using locally-stored keys, it uses a node to publish the blocks.
+
+Every non-wallet related RPC gets proxied to the publishing node. Which means you can make all of your RPC requests directly to Pippin whether they are wallet-related or not.
 
 ## API Documentation
 
-Pippin is designed to be a drop-in replacement for the standard node wallet, with some exceptions (see the next section)
-
-You should reference the [NANO RPC documentation](https://docs.nano.org/commands/rpc-protocol/#wallet-rpcs) to view a list of all of the available APIs pippin supports.
-
-**Pippin supports send indempotency with the `id` send parameter, just like the Nano node**
+Recommended reference is the [NANO RPC documentation](https://docs.nano.org/commands/rpc-protocol/#wallet-rpcs), Pippin's APIs are mostly identical.
 
 ## Known Differences: Pippin vs NANO Node Wallet
+
+**Pippin supports send indempotency with the `id` send parameter, just like the Nano node it is not required but highly recommended**
 
 **Enhanced Behavior**
 
@@ -73,6 +77,34 @@ You can see all available options with the CLI using `./pippin --help`
 ### Requirements
 
 - Python 3.7 or newer
+- GCC, for MacOS and Linux
+- libb2 (blake2b)
+
+On MacOS, with homebrew:
+
+```
+brew install gcc@9 python libb2
+```
+
+On Linux, debian-based systems:
+
+```
+sudo apt install build-essential python3.7 python3.7-dev libb2-dev
+```
+
+### Installing python dependencies
+
+MacOS:
+
+```
+CC=/usr/local/bin/gcc-9 python3 -m pip install -U -r requirements.txt
+```
+
+Linux:
+
+```
+python3.7 -m pip install -r requirements.txt
+```
 
 ## Feature requests
 

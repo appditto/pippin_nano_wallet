@@ -157,7 +157,7 @@ class WalletUtil(object):
                 raise ProcessFailed(rapidjson.dumps(state_block))
             return process_hash
 
-    async def representative_set(self, representative: str, work: str = None) -> dict:
+    async def representative_set(self, representative: str, work: str = None, only_if_different: bool = False) -> dict:
         """Create a change block and return hash of published block"""
         async with RedisLock(
             await RedisDB.instance().get_redis(),
@@ -168,6 +168,8 @@ class WalletUtil(object):
             # Get account info
             account_info = await RPCClient.instance().account_info(self.account.address)
             if account_info is None:
+                return None
+            elif only_if_different and account_info['representative'] == representative:
                 return None
 
             workbase = account_info['frontier']

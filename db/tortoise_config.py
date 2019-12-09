@@ -5,7 +5,7 @@ from tortoise import Tortoise
 class DBConfig(object):
     def __init__(self):
         self.logger = logging.getLogger()
-        self.modules = {'db': ['db.models.wallet', 'db.models.account', 'db.models.block']}
+        self.modules = {'db': ['db.models.wallet', 'db.models.account', 'db.models.adhoc_account', 'db.models.block']}
         self.use_postgres = False
         self.postgres_db = os.getenv('POSTGRES_DB')
         self.postgres_user = os.getenv('POSTGRES_USER')

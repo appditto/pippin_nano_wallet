@@ -12,17 +12,21 @@ class SeedStorage(object):
             cls.seeds = {}
         return cls._instance
 
-    def get_decrypted_seed(self, encrypted: str) -> str:
-        if encrypted in self.seeds:
-            return self.seeds[encrypted]
+    def get_decrypted_seed(self, key) -> str:
+        key = str(key)
+        if key in self.seeds:
+            return self.seeds[key]
         return None
 
-    def set_decrypted_seed(self, encrypted: str, decrypted: str) -> str:
-        self.seeds[encrypted] = decrypted
+    def set_decrypted_seed(self, key, decrypted: str) -> str:
+        key = str(key)
+        self.seeds[key] = decrypted
 
-    def contains_encrypted(self, encrypted: str) -> bool:
-        return encrypted in self.seeds
+    def contains_encrypted(self, key) -> bool:
+        key = str(key)
+        return key in self.seeds
 
-    def remove(self, encrypted: str):
-        if encrypted in self.seeds:
-            del self.seeds[encrypted]
+    def remove(self, key):
+        key = str(key)
+        if key in self.seeds:
+            del self.seeds[key]

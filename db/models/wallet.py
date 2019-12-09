@@ -1,23 +1,122 @@
-from aiohttp import log
-from aioredis_lock import RedisLock, LockTimeoutError
-from db.redis import RedisDB
-from tortoise.functions import Max
-from tortoise.models import Model
-from tortoise import fields
 from typing import List
 
 import nanopy
+from aiohttp import log
+from aioredis_lock import LockTimeoutError, RedisLock
+from tortoise import fields
+from tortoise.functions import Max
+from tortoise.models import Model
+from tortoise.transactions import in_transaction
+
 import db.models.account as acct
+import db.models.adhoc_account as adhoc_acct
+from db.redis import RedisDB
+from model.secrets import SeedStorage
+from util.crypt import AESCrypt
+from util.wallet import WalletUtil
+
+
+class WalletNotFound(Exception):
+    pass
+
+class WalletLocked(Exception):
+    def __init__(self, wallet):
+        self.wallet = wallet
+    pass
+
+class AccountAlreadyExists(Exception):
+    pass
 
 class Wallet(Model):
     id = fields.UUIDField(pk=True)
     seed = fields.CharField(max_length=128, unique=True)
     representative = fields.CharField(max_length=65, null=True)
     encrypted = fields.BooleanField(default=False)
+    work = fields.BooleanField(default=True)
     created_at = fields.DatetimeField(auto_now_add=True)
 
     class Meta:
         table = 'wallets'
+
+    @staticmethod
+    async def get_wallet(id: str) -> 'Wallet':
+        """Get wallet with ID, raise WalletNotFound if not found, WalletLocked if encrypted"""
+        wallet = await Wallet.filter(id=id).first()
+        if wallet is None:
+            raise WalletNotFound()
+        elif wallet.encrypted:
+            decrypted = SeedStorage.instance().get_decrypted_seed(wallet.id)
+            if decrypted is None:
+                raise WalletLocked(wallet)
+            wallet.seed = decrypted
+        return wallet
+
+
+    async def encrypt_wallet(self, password: str):
+        """Encrypt wallet seed with password"""
+        async with in_transaction() as conn:
+            # If password is empty string then decrypted wallet
+            if len(password.strip()) == 0:
+                self.encrypted = False
+                for a in await self.adhoc_accounts.all():
+                    decrypted = SeedStorage.instnace().get_decrypted_seed(f"{self.id}:{a.address}")
+                    if decrypted is not None:
+                        a.private_key = decrypted
+                    await a.save(using_db=conn, update_fields=['private_key'])
+            else:
+                crypt = AESCrypt(password)
+                encrypted = crypt.encrypt(self.seed)
+                self.seed = encrypted
+                self.encrypted = True
+                for a in await self.adhoc_accounts.all():
+                    a.private_key = crypt.encrypt(a.private_key)
+                    await a.save(using_db=conn, update_fields=['private_key'])            
+            await self.save(using_db=conn, update_fields=['seed', 'encrypted'])
+
+    async def unlock_wallet(self, password: str):
+        """Unlock wallet with given password, raise DecryptionError if invalid password"""
+        crypt = AESCrypt(password)
+        decrypted = crypt.decrypt(self.seed)
+        # Store decrypted wallet in memory
+        SeedStorage.instance().set_decrypted_seed(self.id, decrypted)
+        # Decrypt any ad-hoc accounts
+        for a in await self.adhoc_accounts.all():
+            SeedStorage.instance().set_decrypted_seed(f"{self.id}:{a.address}", crypt.decrypt(a.private_key))
+
+    async def lock_wallet(self):
+        """Lock wallet and remove all decrypted seeds from memory"""
+        SeedStorage.instance().remove(self.id)
+        for a in await self.adhoc_accounts.all():
+            await SeedStorage.instance().remove(f"{self.id}:{a.address}")
+
+    async def is_locked(self) -> bool:
+        """Determine whether this wallet is locked or not"""
+        return SeedStorage.instance().contains_encrypted(self.id) 
+
+    async def bulk_representative_update(self, rep: str):
+        """Set all account representatives to rep"""
+        for a in await self.accounts.all():
+            w = WalletUtil(a, self)
+            await w.representative_set(rep, only_if_different=True)
+
+    async def adhoc_account_create(self, key: str) -> str:
+        """Add an adhoc private key to the wallet, raise AccountAlreadyExists if it already exists"""
+        pubkey = nanopy.ed25519_blake2b.publickey(bytes.fromhex(key)).hex()
+        address = nanopy.account_get(pubkey)
+        # See if address already exists
+        a = await self.accounts.filter(address=address).first()
+        if a is None:
+            a = await self.adhoc_accounts.filter(address=address).first()
+        if a is not None:
+            raise AccountAlreadyExists(a)
+        # Create it
+        a = adhoc_acct.AdHocAccount(
+            wallet=self,
+            private_key=key,
+            address=address
+        )
+        await a.save()
+        return address
 
     async def account_create(self, using_db=None) -> str:
         """Create an account on this seed and return the created account"""
@@ -71,4 +170,8 @@ class Wallet(Model):
 
     async def get_account(self, address: str) -> acct.Account:
         """Get an an account that begins to this wallet"""
-        return await self.accounts.filter(address=address).first()
+        a = await self.accounts.filter(address=address).first()
+        if a is None:
+            # Check adhoc
+            a = await self.adhoc_accounts.filter(address=address).first()
+        return a

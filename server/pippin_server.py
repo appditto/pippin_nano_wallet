@@ -6,10 +6,9 @@ from aiohttp import log, web
 from tortoise.transactions import in_transaction
 
 import config
-from db.models.wallet import Wallet
-from model.secrets import SeedStorage
+from db.models.wallet import Wallet, WalletLocked, WalletNotFound, AccountAlreadyExists
 from network.rpc_client import AccountNotFound, BlockNotFound, RPCClient
-from util.crypt import AESCrypt, DecryptionError
+from util.crypt import DecryptionError
 from util.random import RandomUtil
 from util.validators import Validators
 from util.wallet import (InsufficientBalance, ProcessFailed, WalletUtil,
@@ -19,9 +18,9 @@ from util.wallet import (InsufficientBalance, ProcessFailed, WalletUtil,
 class PippinServer(object):
     """API for wallet requests"""
     def __init__(self, host: str, port: int):
-        self.app = web.Application()
+        self.app = web.Application(middlewares=[web.normalize_path_middleware()])
         self.app.add_routes([
-            web.post('/api', self.gateway)
+            web.post('/', self.gateway)
         ])
         self.host = host
         self.port = port
@@ -72,7 +71,15 @@ class PippinServer(object):
                 return await self.password_enter(request, request_json)
             elif request_json['action'] == 'password_valid':
                 return await self.password_valid(request, request_json)
-            elif request_json['action'] in ['account_move', 'account_remove', 'receive_minimum', 'receive_minimum_set', 'search_pending', 'search_pending_all', 'wallet_add', 'wallet_add_watch', 'wallet_balances', 'wallet_change_seed', 'wallet_contains', 'wallet_create', 'wallet_destroy', 'wallet_export', 'wallet_frontiers', 'wallet_history', 'wallet_info', 'wallet_ledger', 'wallet_lock', 'wallet_locked', 'wallet_pending', 'wallet_representative', 'wallet_representative_set', 'wallet_republish', 'wallet_work_get', 'work_get', 'work_set']:
+            elif request_json['action'] == 'wallet_representative_set':
+                return await self.wallet_representative_set(request, request_json)
+            elif request_json['action'] == 'wallet_add':
+                return await self.wallet_add(request, request_json)
+            elif request_json['action'] == 'wallet_lock':
+                return await self.wallet_lock(request, request_json)
+            elif request_json['action'] == 'wallet_locked':
+                return await self.wallet_locked(request, request_json)
+            elif request_json['action'] in ['account_move', 'account_remove', 'receive_minimum', 'receive_minimum_set', 'search_pending', 'search_pending_all', 'wallet_add_watch', 'wallet_balances', 'wallet_change_seed', 'wallet_contains', 'wallet_destroy', 'wallet_export', 'wallet_frontiers', 'wallet_history', 'wallet_info', 'wallet_ledger', 'wallet_pending', 'wallet_representative', 'wallet_republish', 'wallet_work_get', 'work_get', 'work_set']:
                 # Prevent unimplemented wallet RPCs from going to the node directly
                 return self.json_response(
                     data = {
@@ -115,22 +122,20 @@ class PippinServer(object):
         if 'wallet' not in request_json:
             return self.generic_error()
 
-        wallet = await Wallet.filter(id=request_json['wallet']).first()
-        if wallet is None:
+        try:
+            wallet = await Wallet.get_wallet(request_json['wallet'])
+        except WalletNotFound:
             return self.json_response(
                 data={
                     'error': 'wallet not found'
                 }
             )
-        elif wallet.encrypted:
-            decrypted = SeedStorage.instance().get_decrypted_seed(wallet.seed)
-            if decrypted is None:
-                return self.json_response(
-                    data={
-                        'error': 'wallet locked'
-                    }
-                )
-            wallet.seed = decrypted
+        except WalletLocked:
+            return self.json_response(
+                data={
+                    'error': 'wallet locked'
+                }
+            )
 
         # Create account
         async with in_transaction() as conn:
@@ -146,22 +151,20 @@ class PippinServer(object):
         if 'wallet' not in request_json or 'count' not in request_json or not isinstance(request_json['count'], int):
             return self.generic_error()
 
-        wallet = await Wallet.filter(id=request_json['wallet']).first()
-        if wallet is None:
+        try:
+            wallet = await Wallet.get_wallet(request_json['wallet'])
+        except WalletNotFound:
             return self.json_response(
                 data={
                     'error': 'wallet not found'
                 }
             )
-        elif wallet.encrypted:
-            decrypted = SeedStorage.instance().get_decrypted_seed(wallet.seed)
-            if decrypted is None:
-                return self.json_response(
-                    data={
-                        'error': 'wallet locked'
-                    }
-                )
-            wallet.seed = decrypted
+        except WalletLocked:
+            return self.json_response(
+                data={
+                    'error': 'wallet locked'
+                }
+            )
 
         # Create account
         async with in_transaction() as conn:
@@ -181,22 +184,20 @@ class PippinServer(object):
         else:
             count = 1000
 
-        wallet = await Wallet.filter(id=request_json['wallet']).first()
-        if wallet is None:
+        try:
+            wallet = await Wallet.get_wallet(request_json['wallet'])
+        except WalletNotFound:
             return self.json_response(
                 data={
                     'error': 'wallet not found'
                 }
             )
-        elif wallet.encrypted:
-            decrypted = SeedStorage.instance().get_decrypted_seed(wallet.seed)
-            if decrypted is None:
-                return self.json_response(
-                    data={
-                        'error': 'wallet locked'
-                    }
-                )
-            wallet.seed = decrypted
+        except WalletLocked:
+            return self.json_response(
+                data={
+                    'error': 'wallet locked'
+                }
+            )
 
         return self.json_response(
             data = {'accounts': [a.address for a in await wallet.accounts.all().limit(count)]}
@@ -218,20 +219,20 @@ class PippinServer(object):
         work = request_json['work'] if 'work' in request_json else None
 
         # Retrieve wallet
-        wallet = await Wallet.filter(id=request_json['wallet']).first()
-        if wallet is None:
+        try:
+            wallet = await Wallet.get_wallet(request_json['wallet'])
+        except WalletNotFound:
             return self.json_response(
-                data={'error': 'Wallet not found'}
+                data={
+                    'error': 'wallet not found'
+                }
             )
-        elif wallet.encrypted:
-            decrypted = SeedStorage.instance().get_decrypted_seed(wallet.seed)
-            if decrypted is None:
-                return self.json_response(
-                    data={
-                        'error': 'wallet locked'
-                    }
-                )
-            wallet.seed = decrypted
+        except WalletLocked:
+            return self.json_response(
+                data={
+                    'error': 'wallet locked'
+                }
+            )
 
         # Retrieve account on wallet
         account = await wallet.get_account(request_json['account'])
@@ -283,20 +284,20 @@ class PippinServer(object):
         work = request_json['work'] if 'work' in request_json else None
 
         # Retrieve wallet
-        wallet = await Wallet.filter(id=request_json['wallet']).first()
-        if wallet is None:
+        try:
+            wallet = await Wallet.get_wallet(request_json['wallet'])
+        except WalletNotFound:
             return self.json_response(
-                data={'error': 'Wallet not found'}
+                data={
+                    'error': 'wallet not found'
+                }
             )
-        elif wallet.encrypted:
-            decrypted = SeedStorage.instance().get_decrypted_seed(wallet.seed)
-            if decrypted is None:
-                return self.json_response(
-                    data={
-                        'error': 'wallet locked'
-                    }
-                )
-            wallet.seed = decrypted
+        except WalletLocked:
+            return self.json_response(
+                data={
+                    'error': 'wallet locked'
+                }
+            )
 
         # Retrieve account on wallet
         account = await wallet.get_account(request_json['source'])
@@ -355,20 +356,20 @@ class PippinServer(object):
         work = request_json['work'] if 'work' in request_json else None
 
         # Retrieve wallet
-        wallet = await Wallet.filter(id=request_json['wallet']).first()
-        if wallet is None:
+        try:
+            wallet = await Wallet.get_wallet(request_json['wallet'])
+        except WalletNotFound:
             return self.json_response(
-                data={'error': 'Wallet not found'}
+                data={
+                    'error': 'wallet not found'
+                }
             )
-        elif wallet.encrypted:
-            decrypted = SeedStorage.instance().get_decrypted_seed(wallet.seed)
-            if decrypted is None:
-                return self.json_response(
-                    data={
-                        'error': 'wallet locked'
-                    }
-                )
-            wallet.seed = decrypted
+        except WalletLocked:
+            return self.json_response(
+                data={
+                    'error': 'wallet locked'
+                }
+            )
 
         # Retrieve account on wallet
         account = await wallet.get_account(request_json['account'])
@@ -408,37 +409,25 @@ class PippinServer(object):
         if 'wallet' not in request_json or 'password' not in request_json:
             return self.generic_error()
 
-        if len(request_json['password'].strip()) == 0:
+        # Retrieve wallet
+        wallet = await Wallet.filter(id=request_json['wallet']).first()
+        try:
+            wallet = await Wallet.get_wallet(request_json['wallet'])
+        except WalletNotFound:
             return self.json_response(
                 data={
-                    'error': 'bad password'
+                    'error': 'wallet not found'
+                }
+            )
+        except WalletLocked:
+            return self.json_response(
+                data={
+                    'error': 'wallet locked'
                 }
             )
 
-        # Retrieve wallet
-        wallet = await Wallet.filter(id=request_json['wallet']).first()
-        if wallet is None:
-            return self.json_response(
-                data={'error': 'Wallet not found'}
-            )
-        elif wallet.encrypted:
-            decrypted = SeedStorage.instance().get_decrypted_seed(wallet.seed)
-            if decrypted is None:
-                return self.json_response(
-                    data={
-                        'error': 'wallet locked'
-                    }
-                )
-            # Remove old one from storage
-            SeedStorage.instance().remove(wallet.seed)
-            wallet.seed = decrypted
-
-        crypt = AESCrypt(request_json['password'])
-        encrypted = crypt.encrypt(wallet.seed)
-        SeedStorage.instance().set_decrypted_seed(encrypted, wallet.seed)
-        wallet.seed = encrypted
-
-        await wallet.save(update_fields=['seed'])
+        # Encrypt
+        await wallet.encrypt_wallet(request_json['password'])
 
         return self.json_response(
             data={'changed': '1'}
@@ -451,25 +440,28 @@ class PippinServer(object):
 
         # Retrieve wallet
         wallet = await Wallet.filter(id=request_json['wallet']).first()
-        if wallet is None:
-            return self.json_response(
-                data={'error': 'Wallet not found'}
-            )
-        elif not wallet.encrypted:
+        try:
+            wallet = await Wallet.get_wallet(request_json['wallet'])
             return self.json_response(
                 data={
-                    'error': 'wallet not encrypted'
+                    'error': 'wallet not locked'
                 }
             )
+        except WalletNotFound:
+            return self.json_response(
+                data={
+                    'error': 'wallet not found'
+                }
+            )
+        except WalletLocked as w:
+            wallet = w.wallet
 
-        crypt = AESCrypt(request_json['password'])
         try:
-            decrypted = crypt.decrypt(wallet.seed)
+            await wallet.unlock_wallet(request_json['password'])
         except DecryptionError:
             return self.json_response(
                 data={'valid': '0'}
             )
-        SeedStorage.instance().set_decrypted_seed(wallet.seed, decrypted)
 
         return self.json_response(
             data={'valid': '1'}
@@ -482,21 +474,151 @@ class PippinServer(object):
 
         # Retrieve wallet
         wallet = await Wallet.filter(id=request_json['wallet']).first()
-        if wallet is None:
-            return self.json_response(
-                data={'error': 'Wallet not found'}
-            )
-        elif not wallet.encrypted:
+        try:
+            wallet = await Wallet.get_wallet(request_json['wallet'])
+            if not wallet.encrypted:
+                return self.json_response(
+                    data={
+                        'error': 'wallet not locked'
+                    }
+                )
+        except WalletNotFound:
             return self.json_response(
                 data={
-                    'error': 'wallet not encrypted'
+                    'error': 'wallet not found'
+                }
+            )
+        except WalletLocked:
+            return self.json_response(
+                data={'valid': '0'}
+            )
+
+        return self.json_response(
+            data={'valid': '1'}
+        )
+
+    async def wallet_representative_set(self, request: web.Request, request_json: dict):
+        """RPC wallet_representative_set for account"""
+        if 'wallet' not in request_json or 'representative' not in request_json or ('update_existing_accounts' in request_json and not isinstance(request_json['update_existing_accounts'], bool)):
+            return self.generic_error()
+        elif not Validators.is_valid_address(request_json['representative']):
+            return self.json_response(
+                data={'error': 'Invalid address'}
+            )
+
+        update_existing = False
+        if 'update_existing_accounts' in request_json:
+            update_existing = request_json['update_existing_accounts']
+
+        # Retrieve wallet
+        try:
+            wallet = await Wallet.get_wallet(request_json['wallet'])
+        except WalletNotFound:
+            return self.json_response(
+                data={
+                    'error': 'wallet not found'
+                }
+            )
+        except WalletLocked:
+            return self.json_response(
+                data={
+                    'error': 'wallet locked'
                 }
             )
 
-        valid = SeedStorage.instance().contains_encrypted(wallet.seed)
+        wallet.representative = request_json['representative']
+        await wallet.save(update_fields=['representative'])
+
+        if update_existing:
+            await wallet.bulk_representative_update(request_json['representative'])
 
         return self.json_response(
-            data={'valid': '1' if valid else '0'}
+            data={'set': '1'}
+        )
+
+    async def wallet_add(self, request: web.Request, request_json: dict):
+        """RPC wallet_add for account"""
+        if 'wallet' not in request_json or 'key' not in request_json:
+            return self.generic_error()
+        elif not Validators.is_valid_block_hash(request_json['key']):
+            return self.json_response(
+                data={'error': 'Invalid key'}
+            )
+
+        # Retrieve wallet
+        try:
+            wallet = await Wallet.get_wallet(request_json['wallet'])
+        except WalletNotFound:
+            return self.json_response(
+                data={
+                    'error': 'wallet not found'
+                }
+            )
+        except WalletLocked:
+            return self.json_response(
+                data={
+                    'error': 'wallet locked'
+                }
+            )
+
+        # Add account
+        try:
+            address = await wallet.adhoc_account_create(request_json['key'])
+        except AccountAlreadyExists:
+            return self.json_response(
+                data={
+                    'error': 'account already exists'
+                }
+            )
+
+        return self.json_response(
+            data={'account':address}
+        )
+
+    async def wallet_lock(self, request: web.Request, request_json: dict):
+        """RPC wallet_lock for account"""
+        if 'wallet' not in request_json:
+            return self.generic_error()
+
+        # Retrieve wallet
+        try:
+            wallet = await Wallet.get_wallet(request_json['wallet'])
+        except WalletNotFound:
+            return self.json_response(
+                data={
+                    'error': 'wallet not found'
+                }
+            )
+        except WalletLocked as we:
+            wallet = we.wallet
+
+        await wallet.lock_wallet()
+
+        return self.json_response(
+            data={'locked':'1'}
+        )
+
+    async def wallet_locked(self, request: web.Request, request_json: dict):
+        """RPC wallet_locked for account"""
+        if 'wallet' not in request_json:
+            return self.generic_error()
+
+        # Retrieve wallet
+        try:
+            wallet = await Wallet.get_wallet(request_json['wallet'])
+        except WalletNotFound:
+            return self.json_response(
+                data={
+                    'error': 'wallet not found'
+                }
+            )
+        except WalletLocked:
+            return self.json_response(
+                data={'locked': '1'}
+            )
+
+        return self.json_response(
+            data={'locked':'0'}
         )
 
     async def start(self):

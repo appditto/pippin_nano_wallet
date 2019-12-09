@@ -7,6 +7,7 @@ class Account(Model):
     wallet  = fields.ForeignKeyField('db.Wallet', related_name='accounts', index=True)
     address = fields.CharField(max_length=65)
     account_index = fields.IntField()
+    work = fields.BooleanField(default=True)
     created_at = fields.DatetimeField(auto_now_add=True)
 
     class Meta:

@@ -28,16 +28,39 @@ Pippin intercepts every wallet-related RPC and handles them internally. It build
 
 Once pippin is configured, all you need to do is point your existing NANO/BANANO application to it.
 
-## Documentation
+## API Documentation
 
-Pippin is designed to be a drop-in replacement for the standard node wallet, with some exceptions:
-
-- `account_list` accepts a `count` parameter to limit results that defaults to 1000
-- `account_create` does not accept an index
-- `account_move` is missing
-- `account_remove` is missing
+Pippin is designed to be a drop-in replacement for the standard node wallet, with some exceptions (see the next section)
 
 You should reference the [NANO RPC documentation](https://docs.nano.org/commands/rpc-protocol/#wallet-rpcs) to view a list of all of the available APIs pippin supports.
+
+## Known Differences: Pippin vs NANO Node Wallet
+
+**Enhanced Behavior**
+
+- `account_list` accepts a `count` parameter that defaults to 1000
+
+**Degraded Behavior**
+
+- `account_create` does not accept an index
+
+**Fuzzy**
+
+- `wallet_change_seed` decrypts the wallet, if it's encrypted
+
+**Missing/Not Implemented**
+
+- `account_move`
+- `account_remove`
+- `receive_minimum`
+- `receive_minimum_set`
+- `wallet_add_watch`
+
+## CLI Documentation
+
+Unlike the API, the CLI is entirely different from the nano node CLI.
+
+You can see all available options with the CLI using `./pippin --help`
 
 ### Something missing?
 

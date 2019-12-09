@@ -51,6 +51,13 @@ class Wallet(Model):
             wallet.seed = decrypted
         return wallet
 
+    async def change_seed(self, seed: str):
+        async with in_transaction() as conn:
+            self.seed = seed
+            for a in await self.accounts.all():
+                a.address = nanopy.deterministic_key(self.seed, index=a.account_index)[2]
+                await a.save(using_db=conn, update_fields=['address'])
+            await self.save(using_db=conn, update_fields=['seed'])
 
     async def encrypt_wallet(self, password: str):
         """Encrypt wallet seed with password"""
@@ -69,7 +76,7 @@ class Wallet(Model):
                 self.seed = encrypted
                 self.encrypted = True
                 for a in await self.adhoc_accounts.all():
-                    a.private_key = crypt.encrypt(a.private_key)
+                    a.private_key = crypt.encrypt(a.private_key_get())
                     await a.save(using_db=conn, update_fields=['private_key'])            
             await self.save(using_db=conn, update_fields=['seed', 'encrypted'])
 
@@ -118,6 +125,10 @@ class Wallet(Model):
         await a.save()
         return address
 
+    async def get_newest_account(self) -> acct.Account:
+        """Get account with highest index beloning to this wallet"""
+        return await acct.Account.filter(wallet=self).annotate(max_index=Max("account_index")).order_by('-account_index').first()
+
     async def account_create(self, using_db=None) -> str:
         """Create an account on this seed and return the created account"""
         async with RedisLock(
@@ -126,7 +137,7 @@ class Wallet(Model):
             timeout=30,
             wait_timeout=30
         ):
-            account = await acct.Account.filter(wallet=self).annotate(max_index=Max("account_index")).order_by('-account_index').first()
+            account = self.get_newest_account()
             log.server_logger.debug(f"Creating account for {self.id}")
             index = account.max_index + 1 if account is not None and account.max_index is not None and account.max_index >= 0 else 0
             private_key, public_key, address = nanopy.deterministic_key(self.seed, index=index)
@@ -175,3 +186,13 @@ class Wallet(Model):
             # Check adhoc
             a = await self.adhoc_accounts.filter(address=address).first()
         return a
+
+    async def get_all_accounts(self) -> List[acct.Account]:
+        """Get all accounts belong to this wallet"""
+        accounts = await self.accounts.all()
+        if accounts is None:
+            accounts = []
+        adhoc_accounts = await self.adhoc_accounts.all()
+        if adhoc_accounts is not None:
+            accounts += adhoc_accounts
+        return accounts

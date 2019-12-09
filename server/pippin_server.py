@@ -1,12 +1,14 @@
 import datetime
 import logging
+from json import JSONDecodeError
 
 import rapidjson as json
 from aiohttp import log, web
 from tortoise.transactions import in_transaction
 
 import config
-from db.models.wallet import Wallet, WalletLocked, WalletNotFound, AccountAlreadyExists
+from db.models.wallet import (AccountAlreadyExists, Wallet, WalletLocked,
+                              WalletNotFound)
 from network.rpc_client import AccountNotFound, BlockNotFound, RPCClient
 from util.crypt import DecryptionError
 from util.random import RandomUtil
@@ -45,7 +47,10 @@ class PippinServer(object):
 
     async def gateway(self, request: web.Request):
         """Gateway route to mimic nano's API of specifying action in a string"""
-        request_json = await request.json(loads=json.loads)      
+        try:
+            request_json = await request.json(loads=json.loads)    
+        except JSONDecodeError:
+            return self.generic_error()
         if 'action' in request_json:
             # Sanitize action
             request_json['action'] = request_json['action'].lower().strip()
@@ -79,7 +84,13 @@ class PippinServer(object):
                 return await self.wallet_lock(request, request_json)
             elif request_json['action'] == 'wallet_locked':
                 return await self.wallet_locked(request, request_json)
-            elif request_json['action'] in ['account_move', 'account_remove', 'receive_minimum', 'receive_minimum_set', 'search_pending', 'search_pending_all', 'wallet_add_watch', 'wallet_balances', 'wallet_change_seed', 'wallet_contains', 'wallet_destroy', 'wallet_export', 'wallet_frontiers', 'wallet_history', 'wallet_info', 'wallet_ledger', 'wallet_pending', 'wallet_representative', 'wallet_republish', 'wallet_work_get', 'work_get', 'work_set']:
+            elif request_json['action'] == 'wallet_balances':
+                return await self.wallet_balances(request, request_json)
+            elif request_json['action'] == 'wallet_destroy':
+                return await self.wallet_destroy(request, request_json)
+            elif request_json['action'] == 'wallet_change_seed':
+                return await self.wallet_change_seed(request, request_json)
+            elif request_json['action'] in ['account_move', 'account_remove', 'receive_minimum', 'receive_minimum_set', 'search_pending', 'search_pending_all', 'wallet_add_watch', 'wallet_change_seed', 'wallet_contains', 'wallet_export', 'wallet_frontiers', 'wallet_history', 'wallet_info', 'wallet_ledger', 'wallet_pending', 'wallet_representative', 'wallet_republish', 'wallet_work_get', 'work_get', 'work_set']:
                 # Prevent unimplemented wallet RPCs from going to the node directly
                 return self.json_response(
                     data = {
@@ -204,7 +215,7 @@ class PippinServer(object):
         )
 
     async def receive(self, request: web.Request, request_json: dict):
-        """RPC receive for account"""
+        """RPC receive"""
         if 'wallet' not in request_json or 'account' not in request_json or 'block' not in request_json:
             return self.generic_error()
         elif not Validators.is_valid_address(request_json['account']):
@@ -268,7 +279,7 @@ class PippinServer(object):
         )
 
     async def send(self, request: web.Request, request_json: dict):
-        """RPC send for account"""
+        """RPC send"""
         if 'wallet' not in request_json or 'source' not in request_json or 'destination' not in request_json or 'amount' not in request_json:
             return self.generic_error()
         elif not Validators.is_valid_address(request_json['source']):
@@ -341,7 +352,7 @@ class PippinServer(object):
         )
 
     async def account_representative_set(self, request: web.Request, request_json: dict):
-        """RPC account_representative_set for account"""
+        """RPC account_representative_set"""
         if 'wallet' not in request_json or 'account' not in request_json or 'representative' not in request_json:
             return self.generic_error()
         elif not Validators.is_valid_address(request_json['account']):
@@ -405,7 +416,7 @@ class PippinServer(object):
         )
 
     async def password_change(self, request: web.Request, request_json: dict):
-        """RPC password_change for account"""
+        """RPC password_change"""
         if 'wallet' not in request_json or 'password' not in request_json:
             return self.generic_error()
 
@@ -434,7 +445,7 @@ class PippinServer(object):
         )
 
     async def password_enter(self, request: web.Request, request_json: dict):
-        """RPC password_enter for account"""
+        """RPC password_enter"""
         if 'wallet' not in request_json or 'password' not in request_json:
             return self.generic_error()
 
@@ -468,7 +479,7 @@ class PippinServer(object):
         )
 
     async def password_valid(self, request: web.Request, request_json: dict):
-        """RPC password_valid for account"""
+        """RPC password_valid"""
         if 'wallet' not in request_json:
             return self.generic_error()
 
@@ -498,7 +509,7 @@ class PippinServer(object):
         )
 
     async def wallet_representative_set(self, request: web.Request, request_json: dict):
-        """RPC wallet_representative_set for account"""
+        """RPC wallet_representative_set"""
         if 'wallet' not in request_json or 'representative' not in request_json or ('update_existing_accounts' in request_json and not isinstance(request_json['update_existing_accounts'], bool)):
             return self.generic_error()
         elif not Validators.is_valid_address(request_json['representative']):
@@ -537,7 +548,7 @@ class PippinServer(object):
         )
 
     async def wallet_add(self, request: web.Request, request_json: dict):
-        """RPC wallet_add for account"""
+        """RPC wallet_add"""
         if 'wallet' not in request_json or 'key' not in request_json:
             return self.generic_error()
         elif not Validators.is_valid_block_hash(request_json['key']):
@@ -576,7 +587,7 @@ class PippinServer(object):
         )
 
     async def wallet_lock(self, request: web.Request, request_json: dict):
-        """RPC wallet_lock for account"""
+        """RPC wallet_lock"""
         if 'wallet' not in request_json:
             return self.generic_error()
 
@@ -599,7 +610,7 @@ class PippinServer(object):
         )
 
     async def wallet_locked(self, request: web.Request, request_json: dict):
-        """RPC wallet_locked for account"""
+        """RPC wallet_locked"""
         if 'wallet' not in request_json:
             return self.generic_error()
 
@@ -619,6 +630,99 @@ class PippinServer(object):
 
         return self.json_response(
             data={'locked':'0'}
+        )
+
+    async def wallet_balances(self, request: web.Request, request_json: dict):
+        """RPC wallet_balances"""
+        if 'wallet' not in request_json:
+            return self.generic_error()
+
+        # Retrieve wallet
+        try:
+            wallet = await Wallet.get_wallet(request_json['wallet'])
+        except WalletNotFound:
+            return self.json_response(
+                data={
+                    'error': 'wallet not found'
+                }
+            )
+        except WalletLocked:
+            return self.json_response(
+                data={
+                    'error': 'wallet locked'
+                }
+            )
+
+        return self.json_response(
+            data=await RPCClient.instance().accounts_balances([a.address for a in await wallet.get_all_accounts()])
+        )
+
+    async def wallet_destroy(self, request: web.Request, request_json: dict):
+        """RPC wallet_destroy"""
+        if 'wallet' not in request_json:
+            return self.generic_error()
+
+        # Retrieve wallet
+        try:
+            wallet = await Wallet.get_wallet(request_json['wallet'])
+        except WalletNotFound:
+            return self.json_response(
+                data={
+                    'error': 'wallet not found'
+                }
+            )
+        except WalletLocked:
+            return self.json_response(
+                data={
+                    'error': 'wallet locked'
+                }
+            )
+        await wallet.delete()
+        return self.json_response(
+            data={'destroyed': '1'}
+        )
+
+    async def wallet_change_seed(self, request: web.Request, request_json: dict):
+        """RPC wallet_change_seed"""
+        if 'wallet' not in request_json or 'seed' not in request_json:
+            return self.generic_error()
+        elif not Validators.is_valid_block_hash(request_json['seed']):
+            return self.json_response(
+                data={'error': 'Invalid seed'}
+            )
+
+        # Retrieve wallet
+        try:
+            wallet = await Wallet.get_wallet(request_json['wallet'])
+        except WalletNotFound:
+            return self.json_response(
+                data={
+                    'error': 'wallet not found'
+                }
+            )
+        except WalletLocked:
+            return self.json_response(
+                data={
+                    'error': 'wallet locked'
+                }
+            )
+
+        # Reset password
+        if wallet.encrypted:
+            await wallet.encrypt_wallet('')
+
+        # Change key
+        await wallet.change_seed(request_json['seed'])
+
+        # Get newest account
+        newest = await wallet.get_newest_account()
+
+        return self.json_response(
+            data={
+                "success": "",
+                "last_restored_account": newest.address,
+                "restored_count": newest.account_index + 1
+            }
         )
 
     async def start(self):

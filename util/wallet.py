@@ -2,8 +2,8 @@ from aioredis_lock import RedisLock
 from aiohttp import log
 
 from db.models.account import Account
+from db.models.adhoc_account import AdHocAccount
 from db.models.block import Block
-from db.models.wallet import Wallet
 from db.redis import RedisDB
 from network.rpc_client import RPCClient, AccountNotFound
 from network.work_client import WorkClient
@@ -15,7 +15,7 @@ import rapidjson
 class WalletUtil(object):
     """Wallet utilities, like signing, creating blocks, etc."""
 
-    def __init__(self, acct: Account, wallet: Wallet):
+    def __init__(self, acct: Account, wallet):
         self.account = acct
         self.wallet = wallet
 
@@ -23,6 +23,14 @@ class WalletUtil(object):
         if self.wallet.representative is None:
             return config.Config.instance().get_random_rep()
         return self.wallet.representative
+
+    def adhoc(self) -> bool:
+        return not isinstance(self.account, Account)
+
+    def private_key(self) -> str:
+        if self.adhoc():
+            return self.account.private_key_get()
+        return self.account.private_key(self.wallet.seed)
 
     async def receive(self, hash: str, work: str = None) -> dict:
         """Receive a block and return hash of published block"""
@@ -75,7 +83,7 @@ class WalletUtil(object):
             state_block['work'] = work
 
             # Sign block
-            pk = self.account.private_key(self.wallet.seed)
+            pk = self.private_key()
             state_block['signature'] = nanopy.sign(pk, block=state_block)
 
             # Publish block
@@ -90,10 +98,13 @@ class WalletUtil(object):
         # See if block exists, if ID specified
         # If so just rebroadcast it and return the hash
         if id is not None:
-            block = await Block.filter(send_id=id).first()
+            if not self.adhoc():
+                block = await Block.filter(send_id=id, account=self.account).first()
+            else:
+                block = await Block.filter(send_id=id, adhoc_account=self.account).first()
             if block is not None:
                 await RPCClient.instance().process(block.block)
-                return block.block_hash
+                return {"block": block.block_hash.upper()}
 
         async with RedisLock(
             await RedisDB.instance().get_redis(),
@@ -137,13 +148,14 @@ class WalletUtil(object):
             state_block['work'] = work
 
             # Sign block
-            pk = self.account.private_key(self.wallet.seed)
+            pk = self.private_key()
             state_block['signature'] = nanopy.sign(pk, block=state_block)
 
             # Cache block in database if it has id specified
             if id is not None:
                 block = Block(
-                    account=self.account,
+                    account=self.account if not self.adhoc() else None,
+                    adhoc_account=self.account if self.adhoc() else None,
                     block_hash=nanopy.block_hash(state_block),
                     block=state_block,
                     send_id=id,
@@ -198,7 +210,7 @@ class WalletUtil(object):
             state_block['work'] = work
 
             # Sign block
-            pk = self.account.private_key(self.wallet.seed)
+            pk = self.private_key()
             state_block['signature'] = nanopy.sign(pk, block=state_block)
 
             # Publish block

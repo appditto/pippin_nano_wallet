@@ -4,7 +4,7 @@ from tortoise import fields
 import nanopy
 
 class Account(Model):
-    wallet  = fields.ForeignKeyField('db.Wallet', related_name='accounts', index=True)
+    wallet  = fields.ForeignKeyField('db.Wallet', on_delete=fields.CASCADE, related_name='accounts', index=True)
     address = fields.CharField(max_length=65)
     account_index = fields.IntField()
     work = fields.BooleanField(default=True)

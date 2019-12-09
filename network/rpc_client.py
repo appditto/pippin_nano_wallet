@@ -89,6 +89,14 @@ class RPCClient(object):
         }
         return await self.make_request(process_action)
 
+    async def accounts_balances(self, accounts: List[str]) -> dict:
+        """Return accounts_balances for accounts"""
+        balances_action = {
+            'action': 'accounts_balances',
+            'accounts': accounts
+        }
+        return await self.make_request(balances_action)
+
     async def is_alive(self) -> bool:
         """Returns whether or not the remote node is alive"""
         # We could use 'block_count' or something simple

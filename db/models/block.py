@@ -5,7 +5,8 @@ import rapidjson
 
 class Block(Model):
     """A local storage of blocks we create, primarily for send blocks"""
-    account  = fields.ForeignKeyField('db.Account', related_name='blocks', index=True)
+    account  = fields.ForeignKeyField('db.Account', on_delete=fields.CASCADE, related_name='blocks', index=True, null=True)
+    adhoc_account  = fields.ForeignKeyField('db.AdHocAccount', on_delete=fields.CASCADE, related_name='blocks', index=True, null=True)
     block_hash = fields.CharField(max_length=64, unique=True)
     block = fields.JSONField(encoder=rapidjson.dumps, decoder=rapidjson.loads)
     send_id = fields.CharField(max_length=64, null=True, index=True)

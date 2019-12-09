@@ -4,25 +4,19 @@ Pippin is a high performance API-based wallet for NANO and BANANO.
 
 Pippin uses the fast, C-based [nanopy](https://github.com/npy0/nanopy/tree/master/nanopy) libary to sign blocks and generate work. It is also completely written using asyncio and utilizes the ultra-fast [uvloop](https://github.com/MagicStack/uvloop)
 
-## Why?
+## Why you want Pippin
 
-Pippin has several use case, here's an excerpt from the NANO documentation
+Pippin is a production-ready NANO/BANANO wallet that you can use for your apps and business. It is a drop-in replacement for the wallet that's built in to the Nano node software, which is not considered production-ready.
 
-```
-Below are RPC commands that interact with the built-in, QT-based node wallet. This wallet is only recommended for development and testing. For production integrations, setting up custom External Management processes is required.
-```
-
-NANO Foundation advises against using the built-in node wallet for production environments, Pippin is a production-ready wallet that provides many of the same APIs developers and apps are already using.
-
-It may be useful for exchanges, nano-based games, tipbots, payment processors, and any other application that needs to store nano keys and create nano blocks.
+Pippin can be used by exchanges, games, payment processors, tip bots, faucets, casinos, and a lot more. It's advantageous in scenarios where you are constrained by disk speed, bandwidth, etc. and do not want to run a full-node.
 
 Also:
 
-- Pippin can be used with *any public node* - you don't need to run your own node to have an API wallet.
+- Pippin can be used with *any public node* - **you don't need to run your own node** to have an API wallet.
 - Pippin is extremely fast and lightweight
 - Pippin supports multiple database backends (SQLite, PostgreSQL)
 
-## How?
+## How does it work?
 
 Pippin intercepts every wallet-related RPC and handles them internally. It builds its own blocks, has its own storage, etc. Every non-wallet RPC gets proxied to a remote or local node.
 
@@ -34,12 +28,14 @@ Pippin is designed to be a drop-in replacement for the standard node wallet, wit
 
 You should reference the [NANO RPC documentation](https://docs.nano.org/commands/rpc-protocol/#wallet-rpcs) to view a list of all of the available APIs pippin supports.
 
+**Pippin supports send indempotency with the `id` send parameter, just like the Nano node**
+
 ## Known Differences: Pippin vs NANO Node Wallet
 
 **Enhanced Behavior**
 
 - `account_list` accepts a `count` parameter that defaults to 1000
-- `receive_all` RPC, accepts a `wallet` parameter - receives all pendings in the entire wallet. This RPC respects the `receive_minimum` setting
+- `receive_all` **new** RPC action: accepts a `wallet` parameter - receives all pendings in the entire wallet. This RPC respects the `receive_minimum` setting
 
 **Degraded Behavior**
 
@@ -68,11 +64,17 @@ You should reference the [NANO RPC documentation](https://docs.nano.org/commands
 
 ## CLI Documentation
 
-Unlike the API, the CLI is entirely different from the nano node CLI.
+Unlike the API, the CLI is entirely different from the Nano node CLI.
 
 You can see all available options with the CLI using `./pippin --help`
 
-### Something missing?
+## Setting up Pippin
+
+### Requirements
+
+- Python 3.7 or newer
+
+## Feature requests
 
 Notice an API that's missing a feature or not behaving the same as nano's APIs?
 

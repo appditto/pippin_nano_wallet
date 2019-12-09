@@ -103,7 +103,7 @@ class Wallet(Model):
     async def bulk_representative_update(self, rep: str):
         """Set all account representatives to rep"""
         for a in await self.accounts.all():
-            w = WalletUtil(a, self)
+            w = WalletUtil(a, self, await RedisDB.instance().get_redis())
             await w.representative_set(rep, only_if_different=True)
 
     async def adhoc_account_create(self, key: str) -> str:

@@ -39,6 +39,7 @@ You should reference the [NANO RPC documentation](https://docs.nano.org/commands
 **Enhanced Behavior**
 
 - `account_list` accepts a `count` parameter that defaults to 1000
+- `receive_all` RPC, accepts a `wallet` parameter - receives all pendings in the entire wallet. This RPC respects the `receive_minimum` setting
 
 **Degraded Behavior**
 
@@ -52,9 +53,18 @@ You should reference the [NANO RPC documentation](https://docs.nano.org/commands
 
 - `account_move`
 - `account_remove`
-- `receive_minimum`
+- `receive_minimum` - Receive minimum can be set in `config.yaml`
 - `receive_minimum_set`
-- `wallet_add_watch`
+- `wallet_add_watch` - Not certain what this even does
+- `wallet_history` - Would be more efficient if NANO supported `accounts_history`
+- `search_pending` - Pippin has `receive_all` which should be used to receive all pendings
+- `search_pending_all`
+- `wallet_export`
+- `wallet_ledger` - Pippin doesn't store the ledger
+- `wallet_republish` - Same as above, pippin only rebroadcasts `send` RPCs when a duplicate ID is used
+- `wallet_work_get` - I'm not really sure what these work RPCs do, pippin doesn't store any information about work
+- `work_get`
+- `work_set`
 
 ## CLI Documentation
 

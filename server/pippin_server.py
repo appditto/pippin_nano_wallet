@@ -7,6 +7,7 @@ from aiohttp import log, web
 from tortoise.transactions import in_transaction
 
 import config
+from db.redis import RedisDB
 from db.models.wallet import (AccountAlreadyExists, Wallet, WalletLocked,
                               WalletNotFound)
 from network.rpc_client import AccountNotFound, BlockNotFound, RPCClient
@@ -15,7 +16,6 @@ from util.random import RandomUtil
 from util.validators import Validators
 from util.wallet import (InsufficientBalance, ProcessFailed, WalletUtil,
                          WorkFailed)
-
 
 class PippinServer(object):
     """API for wallet requests"""
@@ -49,7 +49,7 @@ class PippinServer(object):
         """Gateway route to mimic nano's API of specifying action in a string"""
         try:
             request_json = await request.json(loads=json.loads)    
-        except JSONDecodeError:
+        except json.JSONDecodeError:
             return self.generic_error()
         if 'action' in request_json:
             # Sanitize action
@@ -86,11 +86,23 @@ class PippinServer(object):
                 return await self.wallet_locked(request, request_json)
             elif request_json['action'] == 'wallet_balances':
                 return await self.wallet_balances(request, request_json)
+            elif request_json['action'] == 'wallet_frontiers':
+                return await self.wallet_frontiers(request, request_json)
+            elif request_json['action'] == 'wallet_pending':
+                return await self.wallet_pending(request, request_json)
             elif request_json['action'] == 'wallet_destroy':
                 return await self.wallet_destroy(request, request_json)
             elif request_json['action'] == 'wallet_change_seed':
                 return await self.wallet_change_seed(request, request_json)
-            elif request_json['action'] in ['account_move', 'account_remove', 'receive_minimum', 'receive_minimum_set', 'search_pending', 'search_pending_all', 'wallet_add_watch', 'wallet_change_seed', 'wallet_contains', 'wallet_export', 'wallet_frontiers', 'wallet_history', 'wallet_info', 'wallet_ledger', 'wallet_pending', 'wallet_representative', 'wallet_republish', 'wallet_work_get', 'work_get', 'work_set']:
+            elif request_json['action'] == 'wallet_contains':
+                return await self.wallet_contains(request, request_json)
+            elif request_json['action'] == 'wallet_representative':
+                return await self.wallet_representative(request, request_json)
+            elif request_json['action'] == 'wallet_info':
+                return await self.wallet_info(request, request_json)
+            elif request_json['action'] == 'receive_all':
+                return await self.receive_all(request, request_json)
+            elif request_json['action'] in ['account_move', 'account_remove', 'receive_minimum', 'receive_minimum_set', 'search_pending', 'search_pending_all', 'wallet_add_watch', 'wallet_export', 'wallet_history', 'wallet_ledger', 'wallet_republish', 'wallet_work_get', 'work_get', 'work_set']:
                 # Prevent unimplemented wallet RPCs from going to the node directly
                 return self.json_response(
                     data = {
@@ -253,7 +265,7 @@ class PippinServer(object):
             )
 
         # Try to receive block
-        wallet = WalletUtil(account, wallet)
+        wallet = WalletUtil(account, wallet, await RedisDB.instance().get_redis())
         try:
             response = await wallet.receive(request_json['block'], work=work)
         except BlockNotFound:
@@ -318,7 +330,7 @@ class PippinServer(object):
             )
 
         # Try to create and publish send block
-        wallet = WalletUtil(account, wallet)
+        wallet = WalletUtil(account, wallet, await RedisDB.instance().get_redis())
         try:
             resp = await wallet.send(int(request_json['amount']), request_json['destination'], id=id, work=work)
         except AccountNotFound:
@@ -390,7 +402,7 @@ class PippinServer(object):
             )
 
         # Try to create and publish CHANGE block
-        wallet = WalletUtil(account, wallet)
+        wallet = WalletUtil(account, wallet, RedisDB.instance().get_redis())
         try:
             resp = await wallet.representative_set(request_json['representative'], work=work)
         except AccountNotFound:
@@ -657,6 +669,56 @@ class PippinServer(object):
             data=await RPCClient.instance().accounts_balances([a.address for a in await wallet.get_all_accounts()])
         )
 
+    async def wallet_pending(self, request: web.Request, request_json: dict):
+        """RPC wallet_pending"""
+        if 'wallet' not in request_json:
+            return self.generic_error()
+
+        # Retrieve wallet
+        try:
+            wallet = await Wallet.get_wallet(request_json['wallet'])
+        except WalletNotFound:
+            return self.json_response(
+                data={
+                    'error': 'wallet not found'
+                }
+            )
+        except WalletLocked:
+            return self.json_response(
+                data={
+                    'error': 'wallet locked'
+                }
+            )
+
+        return self.json_response(
+            data=await RPCClient.instance().accounts_pending([a.address for a in await wallet.get_all_accounts()])
+        )
+
+    async def wallet_frontiers(self, request: web.Request, request_json: dict):
+        """RPC wallet_frontiers"""
+        if 'wallet' not in request_json:
+            return self.generic_error()
+
+        # Retrieve wallet
+        try:
+            wallet = await Wallet.get_wallet(request_json['wallet'])
+        except WalletNotFound:
+            return self.json_response(
+                data={
+                    'error': 'wallet not found'
+                }
+            )
+        except WalletLocked:
+            return self.json_response(
+                data={
+                    'error': 'wallet locked'
+                }
+            )
+
+        return self.json_response(
+            data=await RPCClient.instance().accounts_frontiers([a.address for a in await wallet.get_all_accounts()])
+        )
+
     async def wallet_destroy(self, request: web.Request, request_json: dict):
         """RPC wallet_destroy"""
         if 'wallet' not in request_json:
@@ -722,6 +784,155 @@ class PippinServer(object):
                 "success": "",
                 "last_restored_account": newest.address,
                 "restored_count": newest.account_index + 1
+            }
+        )
+
+    async def wallet_contains(self, request: web.Request, request_json: dict):
+        """RPC wallet_contains"""
+        if 'wallet' not in request_json or 'account' not in request_json:
+            return self.generic_error()
+        elif not Validators.is_valid_address(request_json['account']):
+            return self.json_response(
+                data={'error': 'Invalid account'}
+            )
+
+        # Retrieve wallet
+        try:
+            wallet = await Wallet.get_wallet(request_json['wallet'])
+        except WalletNotFound:
+            return self.json_response(
+                data={
+                    'error': 'wallet not found'
+                }
+            )
+        except WalletLocked:
+            return self.json_response(
+                data={
+                    'error': 'wallet locked'
+                }
+            )
+
+        exists = (await wallet.get_account(request_json['account'])) is not None
+
+        return self.json_response(
+            data={'exists': '1' if exists else '0'}
+        )
+
+    async def wallet_representative(self, request: web.Request, request_json: dict):
+        """RPC wallet_representative"""
+        if 'wallet' not in request_json:
+            return self.generic_error()
+
+        # Retrieve wallet
+        try:
+            wallet = await Wallet.get_wallet(request_json['wallet'])
+        except WalletNotFound:
+            return self.json_response(
+                data={
+                    'error': 'wallet not found'
+                }
+            )
+        except WalletLocked:
+            return self.json_response(
+                data={
+                    'error': 'wallet locked'
+                }
+            )
+
+        if wallet.representative is None:
+            wallet.representative = config.Config.instance().get_random_rep()
+
+        return self.json_response(
+            data={'representative': wallet.representative}
+        )
+
+    async def wallet_info(self, request: web.Request, request_json: dict):
+        """RPC wallet_info"""
+        if 'wallet' not in request_json:
+            return self.generic_error()
+
+        # Retrieve wallet
+        try:
+            wallet = await Wallet.get_wallet(request_json['wallet'])
+        except WalletNotFound:
+            return self.json_response(
+                data={
+                    'error': 'wallet not found'
+                }
+            )
+        except WalletLocked:
+            return self.json_response(
+                data={
+                    'error': 'wallet locked'
+                }
+            )
+
+        # Get balances
+        balance = 0
+        pending_bal = 0
+        balance_json = await RPCClient.instance().accounts_balances([a.address for a in await wallet.get_all_accounts()])
+
+        if 'balances' not in balance_json:
+            return self.json_response(
+                data={'error': 'failed to retrieve balances'}
+            )
+    
+        for k, v in balance_json['balances'].items():
+            balance += int(v['balance'])
+            pending_bal += int(v['pending'])
+
+        det_count = await wallet.accounts.all().count()
+        adhoc_count = await wallet.accounts.all().count()
+        det_index = (await wallet.get_newest_account()).account_index
+
+        return self.json_response(
+            data={
+                'balance': balance,
+                'pending': pending_bal,
+                'accounts_count': det_count + adhoc_count,
+                'adhoc_count': adhoc_count,
+                'deterministic_count': det_count,
+                'deterministic_index': det_index
+            }
+        )
+
+    async def receive_all(self, request: web.Request, request_json: dict):
+        """receive every pending block in wallet"""
+        if 'wallet' not in request_json:
+            return self.generic_error()
+
+        # Retrieve wallet
+        try:
+            wallet = await Wallet.get_wallet(request_json['wallet'])
+        except WalletNotFound:
+            return self.json_response(
+                data={
+                    'error': 'wallet not found'
+                }
+            )
+        except WalletLocked:
+            return self.json_response(
+                data={
+                    'error': 'wallet locked'
+                }
+            )
+
+        balance_json = await RPCClient.instance().accounts_balances([a.address for a in await wallet.get_all_accounts()])
+
+        if 'balances' not in balance_json:
+            return self.json_response(
+                data={'error': 'failed to retrieve balances'}
+            )
+    
+        received_count = 0
+        for k, v in balance_json['balances'].items():
+            if int(v['pending']) > 0:
+                wallet_util = WalletUtil(await wallet.get_account(k), wallet, await RedisDB.instance().get_redis())
+                received_count += await wallet_util.receive_all()
+
+        return self.json_response(
+            data={
+                'received': received_count
             }
         )
 

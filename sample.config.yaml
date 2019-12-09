@@ -47,3 +47,6 @@ wallet:
   # Get work from node, this will send work_generate directly to the node if selected
   # Default:
   #node_work_generate: False
+
+  # Automatically receive transactions greater or equal to this amount
+  #receive_minimum=1000000000000000000000000000

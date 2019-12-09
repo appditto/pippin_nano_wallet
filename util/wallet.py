@@ -1,23 +1,29 @@
-from aioredis_lock import RedisLock
+import aioredis
+import nanopy
+import rapidjson
 from aiohttp import log
+from aioredis_lock import RedisLock
 
+import config
 from db.models.account import Account
 from db.models.adhoc_account import AdHocAccount
 from db.models.block import Block
-from db.redis import RedisDB
-from network.rpc_client import RPCClient, AccountNotFound
+from network.rpc_client import AccountNotFound, RPCClient
 from network.work_client import WorkClient
 
-import config
-import nanopy
-import rapidjson
 
 class WalletUtil(object):
     """Wallet utilities, like signing, creating blocks, etc."""
 
-    def __init__(self, acct: Account, wallet):
+    def __init__(self, acct: Account, wallet, redis: aioredis.Redis):
         self.account = acct
         self.wallet = wallet
+        self.lock = RedisLock(
+            redis,
+            key=f"pippin:{self.account.address}",
+            timeout=300,
+            wait_timeout=300
+        )
 
     def get_representative(self):
         if self.wallet.representative is None:
@@ -32,65 +38,77 @@ class WalletUtil(object):
             return self.account.private_key_get()
         return self.account.private_key(self.wallet.seed)
 
+    async def _receive(self, hash: str, work: str = None) -> dict:
+        """receive but don't do any locking, private method"""
+        # Get block info
+        block_info = await RPCClient.instance().block_info(hash)
+        if block_info is None or block_info['contents']['link_as_account'] != self.account.address:
+            return None
+        # Get account info
+        is_open = True
+        try:
+            account_info = await RPCClient.instance().account_info(self.account.address)
+            if account_info is None:
+                return None
+        except AccountNotFound:
+            is_open = False
+
+        # Different workbase for open/receive
+        if is_open:
+            workbase = account_info['frontier']
+        else:
+            workbase = nanopy.account_key(self.account.address)
+
+        # Build other fields
+        previous = '0000000000000000000000000000000000000000000000000000000000000000' if not is_open else account_info['frontier']
+        representative = self.get_representative() if not is_open else account_info['representative']
+        balance = block_info['amount'] if not is_open else str(int(account_info['balance']) + int(block_info['amount']))
+
+        # Generate work
+        if work is None:
+            try:
+                work = await WorkClient.instance().work_generate(workbase)
+                if work is None:
+                    raise WorkFailed(workbase)
+            except Exception:
+                raise WorkFailed(workbase)
+
+        # Build final state block
+        state_block = nanopy.state_block()
+        state_block['account'] = self.account.address
+        state_block['previous'] = previous
+        state_block['representative'] = representative
+        state_block['balance'] = balance
+        state_block['link'] = hash
+        state_block['work'] = work
+
+        # Sign block
+        pk = self.private_key()
+        state_block['signature'] = nanopy.sign(pk, block=state_block)
+
+        # Publish block
+        try:
+            return await RPCClient.instance().process(state_block)
+        except Exception:
+            from db.models.wallet import ProcessFailed
+            raise ProcessFailed()
+
     async def receive(self, hash: str, work: str = None) -> dict:
         """Receive a block and return hash of published block"""
-        async with RedisLock(
-            await RedisDB.instance().get_redis(),
-            key=f"pippin:{self.account.address}",
-            timeout=300,
-            wait_timeout=300
-        ) as lock:
-            # Get block info
-            block_info = await RPCClient.instance().block_info(hash)
-            if block_info is None or block_info['contents']['link_as_account'] != self.account.address:
-                return None
-            # Get account info
-            is_open = True
-            try:
-                account_info = await RPCClient.instance().account_info(self.account.address)
-                if account_info is None:
-                    return None
-            except AccountNotFound:
-                is_open = False
+        async with self.lock as lock:
+            return await self._receive(hash, work)
 
-            # Different workbase for open/receive
-            if is_open:
-                workbase = account_info['frontier']
-            else:
-                workbase = nanopy.account_key(self.account.address)
-
-            # Build other fields
-            previous = '0000000000000000000000000000000000000000000000000000000000000000' if not is_open else account_info['frontier']
-            representative = self.get_representative() if not is_open else account_info['representative']
-            balance = block_info['amount'] if not is_open else str(int(account_info['balance']) + int(block_info['amount']))
-
-            # Generate work
-            if work is None:
-                try:
-                    work = await WorkClient.instance().work_generate(workbase)
-                    if work is None:
-                        raise WorkFailed(workbase)
-                except Exception:
-                    raise WorkFailed(workbase)
-
-            # Build final state block
-            state_block = nanopy.state_block()
-            state_block['account'] = self.account.address
-            state_block['previous'] = previous
-            state_block['representative'] = representative
-            state_block['balance'] = balance
-            state_block['link'] = hash
-            state_block['work'] = work
-
-            # Sign block
-            pk = self.private_key()
-            state_block['signature'] = nanopy.sign(pk, block=state_block)
-
-            # Publish block
-            try:
-                return await RPCClient.instance().process(state_block)
-            except Exception:
-                raise ProcessFailed()
+    async def receive_all(self) -> int:
+        """Receive all pending blocks for this account and return # received"""
+        received_count = 0
+        p = await RPCClient.instance().pending(self.account.address, threshold=config.Config.instance().receive_minimum)
+        if p is None:
+            return received_count
+        async with self.lock as lock:
+            for block in p:
+                await self._receive(block)
+                received_count += 1
+        return received_count
 
     async def send(self, amount: int, destination: str, id: str = None, work: str = None) -> dict:
         """Create a send block and return hash of published block
@@ -106,12 +124,7 @@ class WalletUtil(object):
                 await RPCClient.instance().process(block.block)
                 return {"block": block.block_hash.upper()}
 
-        async with RedisLock(
-            await RedisDB.instance().get_redis(),
-            key=f"pippin:{self.account.address}",
-            timeout=300,
-            wait_timeout=300
-        ) as lock:
+        async with self.lock as lock:
             # Get account info
             is_open = True
             account_info = await RPCClient.instance().account_info(self.account.address)
@@ -171,12 +184,7 @@ class WalletUtil(object):
 
     async def representative_set(self, representative: str, work: str = None, only_if_different: bool = False) -> dict:
         """Create a change block and return hash of published block"""
-        async with RedisLock(
-            await RedisDB.instance().get_redis(),
-            key=f"pippin:{self.account.address}",
-            timeout=300,
-            wait_timeout=300
-        ) as lock:
+        async with self.lock as lock:
             # Get account info
             account_info = await RPCClient.instance().account_info(self.account.address)
             if account_info is None:

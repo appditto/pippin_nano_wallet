@@ -42,18 +42,6 @@ class RPCClient(object):
             return respjson
         return None
 
-    async def pending(self, account: str, count: int = 5) -> List[str]:
-        """Return a list of pending blocks"""
-        pending_action = {
-            'action': 'pending',
-            'account': account,
-            'count': count
-        }
-        respjson = await self.make_request(pending_action)
-        if 'blocks' in respjson:
-            return respjson['blocks']
-        return None
-
     async def account_info(self, account: str) -> dict:
         info_action = {
             'action': 'account_info',
@@ -96,6 +84,40 @@ class RPCClient(object):
             'accounts': accounts
         }
         return await self.make_request(balances_action)
+
+    async def accounts_frontiers(self, accounts: List[str]) -> dict:
+        """Return accounts_frontiers for accounts"""
+        frontiers_action = {
+            'action': 'accounts_frontiers',
+            'accounts': accounts
+        }
+        return await self.make_request(frontiers_action)
+
+    async def accounts_pending(self, accounts: List[str]) -> dict:
+        """Return accounts_pending for accounts"""
+        pending_action = {
+            'action': 'accounts_pending',
+            'accounts': accounts
+        }
+        return await self.make_request(pending_action)
+
+    async def pending(self, account: str, threshold: int) -> List[str]:
+        """RPC Pending"""
+        pending_action = {
+            'action': 'pending',
+            'account': account,
+            'threshold': str(threshold)
+        }
+        resp = await self.make_request(pending_action)
+        ret = []
+        if 'blocks' in resp:
+            if resp['blocks'] == '':
+                return []
+            for k,v in resp['blocks'].items():
+                ret.append(k)
+            return ret
+        return None
+            
 
     async def is_alive(self) -> bool:
         """Returns whether or not the remote node is alive"""

@@ -47,6 +47,7 @@ class Config(object):
             cls.host = cls.get_yaml_property('server', 'host', default='127.0.0.1')
             cls.work_peers = cls.get_yaml_property('wallet', 'work_peer', [])
             cls.node_work_generate = cls.get_yaml_property('wallet', 'node_work_generate', False)
+            cls.receive_minimum = cls.get_yaml_property('wallet', 'receive_minimum', 1000000000000000000000000000 if Env.banano() else 1000000000000000000000000)
             if not Env.banano():
                 cls.preconfigured_reps = cls.get_yaml_property('wallet', 'preconfigured_representatives_nano', default=None)
             else:

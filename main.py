@@ -17,6 +17,7 @@ from network.rpc_client import RPCClient
 from network.work_client import WorkClient
 from server.pippin_server import PippinServer
 from util.env import Env
+from util.nano_util import NanoUtil
 
 # Set and patch nanopy
 import nanopy
@@ -27,6 +28,12 @@ if Env.banano():
 
 # Configuration
 config = Config.instance()
+
+# Create first instance of NanoUtil
+NanoUtil.instance(
+    max_work_processes=config.max_work_processes,
+    max_sign_threads=config.max_sign_threads
+)
 
 # Setup logger
 if config.debug:

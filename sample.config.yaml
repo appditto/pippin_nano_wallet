@@ -55,3 +55,12 @@ wallet:
   # Respects receive_minimum
   # Default: True
   #auto_receive_on_send=true
+
+  # Maximum number of processes to compute work on. This is only a factor if the work_peers aren't used or working.
+  # Should not be set to more CPUs than you have
+  # Default: 1
+  #max_work_processes=1
+
+  # Maximum number of threads to sign blocks on.
+  # Default: 1
+  #max_sign_threads=1

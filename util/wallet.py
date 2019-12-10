@@ -3,6 +3,7 @@ import nanopy
 import rapidjson
 from aiohttp import log
 from aioredis_lock import RedisLock
+from typing import Union, TYPE_CHECKING
 
 import config
 from db.models.account import Account
@@ -11,11 +12,13 @@ from db.models.block import Block
 from network.rpc_client import AccountNotFound, RPCClient
 from network.work_client import WorkClient
 
+if TYPE_CHECKING:
+    from db.models.wallet import Wallet
 
 class WalletUtil(object):
     """Wallet utilities, like signing, creating blocks, etc."""
 
-    def __init__(self, acct: Account, wallet, redis: aioredis.Redis):
+    def __init__(self, acct: Union[Account, AdHocAccount], wallet: 'Wallet', redis: aioredis.Redis):
         self.account = acct
         self.wallet = wallet
         self.lock = RedisLock(

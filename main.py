@@ -29,12 +29,6 @@ if Env.banano():
 # Configuration
 config = Config.instance()
 
-# Create first instance of NanoUtil
-NanoUtil.instance(
-    max_work_processes=config.max_work_processes,
-    max_sign_threads=config.max_sign_threads
-)
-
 # Setup logger
 if config.debug:
     logging.basicConfig(level=logging.DEBUG)
@@ -79,7 +73,8 @@ if __name__ == "__main__":
             RPCClient.close(),
             server.stop(),
             RedisDB.close(),
-            WorkClient.close()
+            WorkClient.close(),
+            NanoUtil.close()
         ]
         loop.run_until_complete(asyncio.wait(tasks))
         loop.close()

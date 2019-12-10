@@ -1,6 +1,6 @@
 # Pippin
 
-Pippin is a production-ready, high-performance developer wallet for [Nano](https://nano.org) and [BANANO](https://banano.cc). Pippin's API is a drop-in replacement for the Nano developer wallet that is built in to the node software.
+Pippin is a production-ready, high-performance developer wallet for [Nano](https://nano.org) and [BANANO](https://banano.cc). Pippin's API is a drop-in replacement for the Nano developer wallet that is built in to the Nano node software.
 
 ## About Pippin
 
@@ -10,9 +10,10 @@ For block signing and work generation, Pippin uses [nanopy](https://github.com/n
 
 ## Benefits of Pippin
 
-Pippin is the first drop-in replacement for the Nano developer wallet. It's incredibly easy to transition to Pippin if your application is already written to use the wallet that's bundled with the node software.
+The Nano developer wallet (aka "node wallet") is not recommended for production use. One of the goals of Pippin is to provide a production-ready external key management that can be used by developers who are using Nano.
 
-- Pippin is production-ready, the Nano developer wallet is not.
+Pippin is the first drop-in replacement for the Nano developer wallet. It's incredibly easy to transition to Pippin if you are already using the Nano developer wallet.
+
 - Pippin is independent of the node. You can use Pippin with any public RPC, so you don't have to run your own node
 - Pippin is extremely fast and lightweight
 - Pippin supports encrypted secret keys

@@ -3,9 +3,10 @@ import nanopy
 import rapidjson
 from aiohttp import log
 from aioredis_lock import RedisLock
-from typing import Union, TYPE_CHECKING
+from typing import List, Union, TYPE_CHECKING
 
 import config
+import util.nano_util as nano_util
 from db.models.account import Account
 from db.models.adhoc_account import AdHocAccount
 from db.models.block import Block
@@ -41,8 +42,17 @@ class WalletUtil(object):
             return self.account.private_key_get()
         return self.account.private_key(self.wallet.seed)
 
-    async def _receive(self, hash: str, work: str = None) -> dict:
-        """receive but don't do any locking, private method"""
+
+    async def publish(self, state_block: dict) -> dict:
+        """Publish a state block"""
+        try:
+            return await RPCClient.instance().process(state_block)
+        except Exception:
+            from db.models.wallet import ProcessFailed
+            raise ProcessFailed()
+
+    async def _receive_block_create(self, hash: str, work: str = None) -> dict:
+        """Build a state block (receive)"""
         # Get block info
         block_info = await RPCClient.instance().block_info(hash)
         if block_info is None or block_info['contents']['link_as_account'] != self.account.address:
@@ -72,8 +82,10 @@ class WalletUtil(object):
             try:
                 work = await WorkClient.instance().work_generate(workbase)
                 if work is None:
+                    log.server_logger.error("WORK FAILED")
                     raise WorkFailed(workbase)
             except Exception:
+                log.server_logger.exception("work failed")
                 raise WorkFailed(workbase)
 
         # Build final state block
@@ -87,31 +99,27 @@ class WalletUtil(object):
 
         # Sign block
         pk = self.private_key()
-        state_block['signature'] = nanopy.sign(pk, block=state_block)
+        state_block['signature'] = await nano_util.NanoUtil.instance().sign_block(pk, block=state_block)
 
-        # Publish block
-        try:
-            return await RPCClient.instance().process(state_block)
-        except Exception:
-            from db.models.wallet import ProcessFailed
-            raise ProcessFailed()
+        return state_block
 
     async def receive(self, hash: str, work: str = None) -> dict:
         """Receive a block and return hash of published block"""
         async with self.lock as lock:
-            return await self._receive(hash, work)
+            block = await self._receive_block_create(hash, work)
+            return await self.publish(block)
 
     async def _receive_all(self) -> int:
-        """Receive all pending blocks for this account and return # received (no lock)"""
+        """Receive and publish multiple blocks"""
         received_count = 0
         p = await RPCClient.instance().pending(self.account.address, threshold=config.Config.instance().receive_minimum)
         if p is None:
             return received_count
         for block in p:
-            await self._receive(block)
+            state_block = await self._receive_block_create(block)
+            await self.publish(state_block)
             received_count += 1
         return received_count
-
 
     async def receive_all(self) -> int:
         """Receive all pending blocks for this account and return # received"""
@@ -119,6 +127,69 @@ class WalletUtil(object):
         async with self.lock as lock:
             received_count = await self._receive_all()
         return received_count
+
+    async def _send_block_create(self, amount: int, destination: str, id: str = None, work: str = None) -> dict:
+        """Create a state block (send)"""
+        # Get account info
+        is_open = True
+        account_info = await RPCClient.instance().account_info(self.account.address)
+        if account_info is None:
+            return None
+
+        # Check balance
+        if amount > int(account_info['balance']):
+            # Auto-receive blocks if they have it pending
+            if config.Config.instance().auto_receive_on_send and int(account_info['balance']) + int(account_info['pending']) >= amount:
+                await self._receive_all()
+                account_info = await RPCClient.instance().account_info(self.account.address)
+                if account_info is None:
+                    return None
+                if amount > int(account_info['balance']):
+                    raise InsufficientBalance(account_info['balance'])
+            else:
+                raise InsufficientBalance(account_info['balance'])
+
+        workbase = account_info['frontier']
+
+        # Build other fields
+        previous = account_info['frontier']
+        representative = account_info['representative']
+        balance = str(int(account_info['balance']) - amount)
+
+        # Generate work
+        if work is None:
+            try:
+                work = await WorkClient.instance().work_generate(workbase)
+                if work is None:
+                    raise WorkFailed(workbase)
+            except Exception:
+                raise WorkFailed(workbase)
+
+        # Build final state block
+        state_block = nanopy.state_block()
+        state_block['account'] = self.account.address
+        state_block['previous'] = previous
+        state_block['representative'] = representative
+        state_block['balance'] = balance
+        state_block['link'] = nanopy.account_key(destination)
+        state_block['work'] = work
+
+        # Sign block
+        pk = self.private_key()
+        state_block['signature'] = await nano_util.NanoUtil.instance().sign_block(pk, block=state_block)
+
+        # Cache block in database if it has id specified
+        if id is not None:
+            block = Block(
+                account=self.account if not self.adhoc() else None,
+                adhoc_account=self.account if self.adhoc() else None,
+                block_hash=nanopy.block_hash(state_block),
+                block=state_block,
+                send_id=id,
+                subtype='send'
+            )
+            await block.save()
+        return state_block
 
     async def send(self, amount: int, destination: str, id: str = None, work: str = None) -> dict:
         """Create a send block and return hash of published block
@@ -135,116 +206,61 @@ class WalletUtil(object):
                 return {"block": block.block_hash.upper()}
 
         async with self.lock as lock:
-            # Get account info
-            is_open = True
-            account_info = await RPCClient.instance().account_info(self.account.address)
-            if account_info is None:
-                return None
-
-            # Check balance
-            if amount > int(account_info['balance']):
-                # Auto-receive blocks if they have it pending
-                if config.Config.instance().auto_receive_on_send and int(account_info['balance']) + int(account_info['pending']) >= amount:
-                    await self._receive_all()
-                    account_info = await RPCClient.instance().account_info(self.account.address)
-                    if account_info is None:
-                        return None
-                    if amount > int(account_info['balance']):
-                        raise InsufficientBalance(account_info['balance'])
-                else:
-                    raise InsufficientBalance(account_info['balance'])
-
-            workbase = account_info['frontier']
-
-            # Build other fields
-            previous = account_info['frontier']
-            representative = account_info['representative']
-            balance = str(int(account_info['balance']) - amount)
-
-            # Generate work
-            if work is None:
-                try:
-                    work = await WorkClient.instance().work_generate(workbase)
-                    if work is None:
-                        raise WorkFailed(workbase)
-                except Exception:
-                    raise WorkFailed(workbase)
-
-            # Build final state block
-            state_block = nanopy.state_block()
-            state_block['account'] = self.account.address
-            state_block['previous'] = previous
-            state_block['representative'] = representative
-            state_block['balance'] = balance
-            state_block['link'] = nanopy.account_key(destination)
-            state_block['work'] = work
-
-            # Sign block
-            pk = self.private_key()
-            state_block['signature'] = nanopy.sign(pk, block=state_block)
-
-            # Cache block in database if it has id specified
-            if id is not None:
-                block = Block(
-                    account=self.account if not self.adhoc() else None,
-                    adhoc_account=self.account if self.adhoc() else None,
-                    block_hash=nanopy.block_hash(state_block),
-                    block=state_block,
-                    send_id=id,
-                    subtype='send'
-                )
-                await block.save()
-
+            # Create block
+            state_block = await self._send_block_create(amount, destination, id=id, work=work)
             # Publish block
-            process_hash = await RPCClient.instance().process(state_block)
-            if process_hash is None:
-                raise ProcessFailed(rapidjson.dumps(state_block))
-            return process_hash
+            return await self.publish(state_block)
+
+    async def _change_block_create(self, representative: str, work: str = None, only_if_different: bool = False) -> dict:
+        """Create a state block (change)"""
+        # Get account info
+        account_info = await RPCClient.instance().account_info(self.account.address)
+        if account_info is None:
+            return None
+        elif only_if_different and account_info['representative'] == representative:
+            return None
+
+        workbase = account_info['frontier']
+
+        # Build other fields
+        previous = account_info['frontier']
+        representative = representative
+        balance = account_info['balance']
+
+        # Generate work
+        if work is None:
+            try:
+                work = await WorkClient.instance().work_generate(workbase)
+                if work is None:
+                    raise WorkFailed(workbase)
+            except Exception:
+                raise WorkFailed(workbase)
+
+        # Build final state block
+        state_block = nanopy.state_block()
+        state_block['account'] = self.account.address
+        state_block['previous'] = previous
+        state_block['representative'] = representative
+        state_block['balance'] = balance
+        state_block['link'] = '0000000000000000000000000000000000000000000000000000000000000000'
+        state_block['work'] = work
+
+        # Sign block
+        pk = self.private_key()
+        state_block['signature'] = await nano_util.NanoUtil.instance().sign_block(pk, block=state_block)
+
+        return state_block
 
     async def representative_set(self, representative: str, work: str = None, only_if_different: bool = False) -> dict:
         """Create a change block and return hash of published block"""
         async with self.lock as lock:
-            # Get account info
-            account_info = await RPCClient.instance().account_info(self.account.address)
-            if account_info is None:
-                return None
-            elif only_if_different and account_info['representative'] == representative:
+            state_block = await self._change_block_create(representative, work=work, only_if_different=only_if_different)
+
+            if state_block is None and only_if_different:
                 return None
 
-            workbase = account_info['frontier']
-
-            # Build other fields
-            previous = account_info['frontier']
-            representative = representative
-            balance = account_info['balance']
-
-            # Generate work
-            if work is None:
-                try:
-                    work = await WorkClient.instance().work_generate(workbase)
-                    if work is None:
-                        raise WorkFailed(workbase)
-                except Exception:
-                    raise WorkFailed(workbase)
-
-            # Build final state block
-            state_block = nanopy.state_block()
-            state_block['account'] = self.account.address
-            state_block['previous'] = previous
-            state_block['representative'] = representative
-            state_block['balance'] = balance
-            state_block['link'] = '0000000000000000000000000000000000000000000000000000000000000000'
-            state_block['work'] = work
-
-            # Sign block
-            pk = self.private_key()
-            state_block['signature'] = nanopy.sign(pk, block=state_block)
-
-            # Publish block
-            process_hash = await RPCClient.instance().process(state_block)
-            if process_hash is None:
-                raise ProcessFailed(rapidjson.dumps(state_block))
-            return process_hash
+            # Publish
+            return await self.publish(state_block)
 
 class WorkFailed(Exception):
     pass

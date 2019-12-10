@@ -8,8 +8,9 @@ import config
 import nanopy
 import rapidjson as json
 
+from db.redis import RedisDB
 from util.env import Env
-
+from util.nano_util import NanoUtil
 
 class WorkClient(object):
     _instance = None
@@ -43,10 +44,6 @@ class WorkClient(object):
         if difficulty is None:
             difficulty =  nanopy.work_difficulty
 
-        # If no peers, do it locally
-        if len(self.work_urls) == 0:
-            return nanopy.work_generate(hash, difficulty=difficulty)
-
         work_generate = {
             'action': 'work_generate',
             'account': hash,
@@ -58,6 +55,12 @@ class WorkClient(object):
         for p in self.work_urls:
             tasks.append(self.make_request(p, work_generate))
 
+        # Do it locally if no peers or if peers have been failing
+        if await RedisDB.instance().exists("work_failure") or len(self.work_urls) == 0:
+            tasks.append(
+                NanoUtil.instance().work_generate(hash, difficulty=difficulty)
+            )
+
         # Post work_generate to all peers simultaneously
         while len(tasks):
             done, tasks = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED, timeout=30)
@@ -67,6 +70,8 @@ class WorkClient(object):
                     if result is None:
                         aiohttp.log.server_logger.info("work_generate task returned None")
                         continue
+                    elif isinstance(result, str):
+                        result = {'work':result}
                     if 'work' in result:
                         cancel_json = {
                             'action': 'work_cancel',
@@ -75,12 +80,13 @@ class WorkClient(object):
                         cancel_tasks = []
                         for p in self.work_urls:
                             asyncio.ensure_future(self.make_request(p, cancel_json))
-                        return result
+                        return result['work']
                     elif 'error' in result:
                         aiohttp.log.server_logger.info(f'work_generate task returned error {result["error"]}')
                 except Exception as exc:
                     aiohttp.log.server_logger.exception("work_generate Task raised an exception")
                     result.cancel()
 
-        # IF we're still here fall back to nanopy
-        return nanopy.work_generate(hash, difficulty)
+        # IF we're still here then all requests failed, set failure flag
+        await RedisDB.instance().set(f"work_failure", "aa", expires=300)
+        return await NanoUtil.instance().work_generate(hash, difficulty=difficulty)

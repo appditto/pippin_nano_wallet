@@ -66,7 +66,7 @@ class TestWalletUtil(unittest.TestCase):
     def tearDownClass(cls):
         cls.loop.run_until_complete(Tortoise.close_connections())
         cls.loop.close()
-        NanoUtil.close() # Shutdown processes
+        await NanoUtil.close() # Shutdown processes
         cls.removeMockDB()
 
     def test_get_representative(self):

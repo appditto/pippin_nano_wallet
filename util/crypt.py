@@ -19,13 +19,13 @@ class AESCrypt():
         value = self.pad(value)
         iv = Random.new().read(AES.block_size)
         cipher = AES.new(self.key, AES.MODE_CBC, iv)
-        return base64.b64encode(iv + cipher.encrypt(value.encode('utf-8'))).decode('utf-8')
+        return base64.b64encode(iv + cipher.encrypt(value.encode('latin-1'))).decode('latin-1')
 
     def decrypt(self, encrypted: str) -> str:
-        encrypted = base64.b64decode(encrypted.encode('utf-8'))
+        encrypted = base64.b64decode(encrypted.encode('latin-1'))
         iv = encrypted[:16]
         cipher = AES.new(self.key, AES.MODE_CBC, iv)
-        decrypted = self.unpad(cipher.decrypt(encrypted[16:])).decode('utf-8')
+        decrypted = self.unpad(cipher.decrypt(encrypted[16:])).decode('latin-1')
         # Test if decrypt was successful
         if len(decrypted) < len(self.salt):
             raise DecryptionError()

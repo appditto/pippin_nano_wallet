@@ -6,16 +6,6 @@ from hashlib import blake2b
 from util.env import Env
 
 class Validators():
-    @staticmethod
-    def too_many_decimals(in_num: float) -> bool:
-        """Return True if input number has two many digits of precision"""
-        str_num = str(in_num)
-        if '.' in str_num:
-            split = str_num.split('.')
-            if len(split[1]) > Env.precision_digits():
-                return True
-        return False
-
     @classmethod
     def is_valid_address(cls, input_text: str) -> bool:
         """Return True if address is valid, false otherwise"""
@@ -25,7 +15,7 @@ class Validators():
 
     @staticmethod
     def is_valid_block_hash(block_hash: str) -> bool:
-        if len(block_hash) != 64:
+        if block_hash is None or len(block_hash) != 64:
             return False
         try:
             int(block_hash, 16)

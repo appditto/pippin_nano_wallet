@@ -3,9 +3,14 @@ import os
 from tortoise import Tortoise
 
 class DBConfig(object):
-    def __init__(self):
+    def __init__(self, mock = False):
         self.logger = logging.getLogger()
         self.modules = {'db': ['db.models.wallet', 'db.models.account', 'db.models.adhoc_account', 'db.models.block']}
+        self.mock = mock
+        if self.mock:
+            self.use_postgres = False
+            self.use_mysql = False
+            return
         # Postgres
         self.use_postgres = False
         self.postgres_db = os.getenv('POSTGRES_DB')
@@ -44,9 +49,9 @@ class DBConfig(object):
                 modules=self.modules
             )
         else:
-            self.logger.info(f"Using SQLite database dev.db")
+            self.logger.info(f"Using SQLite database pippin.db")
             await Tortoise.init(
-                db_url='sqlite://dev.db',
+                db_url='sqlite://pippin.db' if not self.mock else 'sqlite://mock.db',
                 modules=self.modules
             )
         # Create tables

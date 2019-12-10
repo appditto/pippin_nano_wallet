@@ -5,6 +5,7 @@ before_script:
   - python3 -m pip install --user virtualenv
   - python3 -m virtualenv venv
   - source venv/bin/activate
+  - export CC=/usr/local/bin/gcc-9
   - pip install -U -r requirements.txt
 
 stages:

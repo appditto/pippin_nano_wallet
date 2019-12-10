@@ -10,6 +10,7 @@ import logging
 
 from aiohttp import web, log
 from db.redis import RedisDB
+from tortoise import Tortoise
 from db.tortoise_config import DBConfig
 from config import Config
 from logging.handlers import TimedRotatingFileHandler, WatchedFileHandler
@@ -74,7 +75,8 @@ if __name__ == "__main__":
             server.stop(),
             RedisDB.close(),
             WorkClient.close(),
-            NanoUtil.close()
+            NanoUtil.close(),
+            Tortoise.close_connections()
         ]
         loop.run_until_complete(asyncio.wait(tasks))
         loop.close()

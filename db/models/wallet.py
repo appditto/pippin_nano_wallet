@@ -137,7 +137,7 @@ class Wallet(Model):
             timeout=30,
             wait_timeout=30
         ):
-            account = self.get_newest_account()
+            account = await self.get_newest_account()
             log.server_logger.debug(f"Creating account for {self.id}")
             index = account.max_index + 1 if account is not None and account.max_index is not None and account.max_index >= 0 else 0
             private_key, public_key, address = nanopy.deterministic_key(self.seed, index=index)

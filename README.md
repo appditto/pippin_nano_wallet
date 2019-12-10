@@ -80,11 +80,19 @@ You can see all available options with the CLI using `./pippin --help`
 - Python 3.7 or newer
 - GCC, for MacOS and Linux
 - libb2 (blake2b)
+- A Redis server
 
 On MacOS, with homebrew:
 
 ```
-brew install gcc@9 python libb2
+% brew install gcc@9 python libb2 redis
+% launchctl load ~/Library/LaunchAgents/homebrew.mxcl.redis.plist
+```
+
+To start redis at boot on MacOS:
+
+```
+% ln -sfv /usr/local/opt/redis/*.plist ~/Library/LaunchAgents
 ```
 
 MacOS users may find it convenient to priorize homebrew binaries.
@@ -105,7 +113,7 @@ echo "export PATH=/usr/local/bin:$PATH" >> ~/.profile
 On Linux, debian-based systems:
 
 ```
-sudo apt install build-essential python3.7 python3.7-dev libb2-dev
+sudo apt install build-essential python3.7 python3.7-dev libb2-dev redis-server
 ```
 
 ### Installing python dependencies

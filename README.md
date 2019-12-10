@@ -87,6 +87,21 @@ On MacOS, with homebrew:
 brew install gcc@9 python libb2
 ```
 
+MacOS users may find it convenient to priorize homebrew binaries.
+
+```
+export PATH=/usr/local/bin:$PATH
+```
+
+This means you'll be using the homebrew installed python3 by default, to make it permanent:
+
+```
+# Catalina
+echo "export PATH=/usr/local/bin:$PATH" >> ~/.zprofile
+# Others
+echo "export PATH=/usr/local/bin:$PATH" >> ~/.profile
+```
+
 On Linux, debian-based systems:
 
 ```

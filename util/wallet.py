@@ -43,10 +43,10 @@ class WalletUtil(object):
         return self.account.private_key(self.wallet.seed)
 
 
-    async def publish(self, state_block: dict) -> dict:
+    async def publish(self, state_block: dict, subtype: str = None) -> dict:
         """Publish a state block"""
         try:
-            return await RPCClient.instance().process(state_block)
+            return await RPCClient.instance().process(state_block, subtype=subtype)
         except Exception:
             from db.models.wallet import ProcessFailed
             raise ProcessFailed()
@@ -107,7 +107,7 @@ class WalletUtil(object):
         """Receive a block and return hash of published block"""
         async with self.lock as lock:
             block = await self._receive_block_create(hash, work)
-            return await self.publish(block)
+            return await self.publish(block, subtype='receive')
 
     async def _receive_all(self) -> int:
         """Receive and publish multiple blocks"""
@@ -117,7 +117,7 @@ class WalletUtil(object):
             return received_count
         for block in p:
             state_block = await self._receive_block_create(block)
-            await self.publish(state_block)
+            await self.publish(state_block, subtype='receive')
             received_count += 1
         return received_count
 
@@ -178,38 +178,39 @@ class WalletUtil(object):
         pk = self.private_key()
         state_block['signature'] = await nano_util.NanoUtil.instance().sign_block(pk, block=state_block)
 
-        # Cache block in database if it has id specified
-        if id is not None:
-            block = Block(
-                account=self.account if not self.adhoc() else None,
-                adhoc_account=self.account if self.adhoc() else None,
-                block_hash=nanopy.block_hash(state_block),
-                block=state_block,
-                send_id=id,
-                subtype='send'
-            )
-            await block.save()
         return state_block
 
     async def send(self, amount: int, destination: str, id: str = None, work: str = None) -> dict:
         """Create a send block and return hash of published block
             amount is in RAW"""
-        # See if block exists, if ID specified
-        # If so just rebroadcast it and return the hash
-        if id is not None:
-            if not self.adhoc():
-                block = await Block.filter(send_id=id, account=self.account).first()
-            else:
-                block = await Block.filter(send_id=id, adhoc_account=self.account).first()
-            if block is not None:
-                await RPCClient.instance().process(block.block)
-                return {"block": block.block_hash.upper()}
-
         async with self.lock as lock:
+            # See if block exists, if ID specified
+            # If so just rebroadcast it and return the hash
+            if id is not None:
+                if not self.adhoc():
+                    block = await Block.filter(send_id=id, account=self.account).first()
+                else:
+                    block = await Block.filter(send_id=id, adhoc_account=self.account).first()
+                if block is not None:
+                    await RPCClient.instance().process(block.block)
+                    return {"block": block.block_hash.upper()}
             # Create block
             state_block = await self._send_block_create(amount, destination, id=id, work=work)
             # Publish block
-            return await self.publish(state_block)
+            resp = await self.publish(state_block, subtype='send')
+            # Cache if ID specified
+            if resp is not None and 'block' in resp:
+                # Cache block in database if it has id specified
+                if id is not None:
+                    block = Block(
+                        account=self.account if not self.adhoc() else None,
+                        adhoc_account=self.account if self.adhoc() else None,
+                        block_hash=nanopy.block_hash(state_block),
+                        block=state_block,
+                        send_id=id,
+                        subtype='send'
+                    )
+                    await block.save()
 
     async def _change_block_create(self, representative: str, work: str = None, only_if_different: bool = False) -> dict:
         """Create a state block (change)"""
@@ -260,7 +261,7 @@ class WalletUtil(object):
                 return None
 
             # Publish
-            return await self.publish(state_block)
+            return await self.publish(state_block, subtype='change')
 
 class WorkFailed(Exception):
     pass

@@ -945,7 +945,12 @@ class PippinServer(object):
     async def block_arrival_handler(self, data: dict):
         """invoked when we receive a new block"""
         log.server_logger.debug("Received Callback")
+        is_send = False
         if 'block' in data and 'subtype' in data['block'] and data['block']['subtype'] == 'send':
+            is_send = True
+        elif 'is_send' in data and data['is_send'] == 'true' or data['is_send']:
+            is_send = True
+        if is_send:
             # Ignore receive_minimum
             if config.Config.instance().receive_minimum > int(data['amount']):
                 return

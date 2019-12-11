@@ -69,13 +69,15 @@ class RPCClient(object):
             raise BlockNotFound(hash)
         return None
 
-    async def process(self, block: dict) -> str:
+    async def process(self, block: dict, subtype: str = None) -> str:
         """RPC Process, return hash if successful"""
         process_action = {
             'action': 'process',
             'json_block': False,
             'block': json.dumps(block)
         }
+        if subtype is not None:
+            process_action['subtype'] = subtype
         return await self.make_request(process_action)
 
     async def accounts_balances(self, accounts: List[str]) -> dict:

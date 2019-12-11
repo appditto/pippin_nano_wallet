@@ -948,7 +948,7 @@ class PippinServer(object):
         is_send = False
         if 'block' in data and 'subtype' in data['block'] and data['block']['subtype'] == 'send':
             is_send = True
-        elif 'is_send' in data and data['is_send'] == 'true' or data['is_send']:
+        elif 'is_send' in data and (data['is_send'] == 'true' or data['is_send']):
             is_send = True
         if is_send:
             # Ignore receive_minimum

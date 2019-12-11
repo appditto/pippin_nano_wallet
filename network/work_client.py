@@ -137,6 +137,7 @@ class WorkClient(object):
                         aiohttp.log.server_logger.info(f'work_generate task returned error {result["error"]}')
                 except Exception as exc:
                     aiohttp.log.server_logger.exception("work_generate Task raised an exception")
+                    break
             for task in pending:
                 task.cancel()
                 try:

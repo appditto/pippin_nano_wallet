@@ -115,11 +115,11 @@ class WorkClient(object):
             done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED, timeout=30)
             for task in done:
                 try:
-                    tasks.remove(task)
-                except ValueError:
-                    pass
-                try:
                     result = task.result()
+                    try:
+                        tasks.remove(task)
+                    except ValueError:
+                        pass
                     if result is None:
                         aiohttp.log.server_logger.info("work_generate task returned None")
                         continue

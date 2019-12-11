@@ -34,6 +34,7 @@ class WebsocketClient(object):
 
     async def close(self):
         self.stop = True
+        await self.ws.wait_closed()
 
     async def reconnect_forever(self):
         log.server_logger.warn("Attempting websocket reconnection every 30 seconds...")

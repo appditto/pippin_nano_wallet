@@ -3,8 +3,6 @@ import re
 from bitstring import BitArray
 from hashlib import blake2b
 
-from util.env import Env
-
 class Validators():
     @classmethod
     def is_valid_address(cls, input_text: str) -> bool:

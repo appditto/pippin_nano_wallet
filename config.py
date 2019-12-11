@@ -1,7 +1,6 @@
 from dotenv import load_dotenv
 load_dotenv()
 from aiohttp import log
-from util.env import Env
 from version import __version__
 from util.utils import Utils
 from util.validators import Validators
@@ -40,19 +39,20 @@ class Config(object):
             except FileNotFoundError:
                 cls.yaml = None
             # Parse options
+            cls.banano = cls.get_yaml_property('wallet', 'banano', False)
             cls.log_file = cls.get_yaml_property('server', 'log_file', default='/tmp/pippin_wallet.log')
             cls.debug = cls.get_yaml_property('server', 'debug', default=False)
-            cls.node_url = cls.get_yaml_property('server', 'node_rpc_url', default='http://[::1]:7072' if Env.banano() else 'http://[::1]:7076')
+            cls.node_url = cls.get_yaml_property('server', 'node_rpc_url', default='http://[::1]:7072' if cls.banano else 'http://[::1]:7076')
             cls.node_ws_url = cls.get_yaml_property('server', 'node_ws_url', None)
             cls.port = cls.get_yaml_property('server', 'port', default=11338)
             cls.host = cls.get_yaml_property('server', 'host', default='127.0.0.1')
             cls.work_peers = cls.get_yaml_property('wallet', 'work_peers', [])
             cls.node_work_generate = cls.get_yaml_property('wallet', 'node_work_generate', False)
-            cls.receive_minimum = cls.get_yaml_property('wallet', 'receive_minimum', 1000000000000000000000000000 if Env.banano() else 1000000000000000000000000)
+            cls.receive_minimum = cls.get_yaml_property('wallet', 'receive_minimum', 1000000000000000000000000000 if cls.banano else 1000000000000000000000000)
             cls.auto_receive_on_send = cls.get_yaml_property('wallet', 'auto_receive_on_send', True)
             cls.max_work_processes = cls.get_yaml_property('wallet', 'max_work_processes', 1)
             cls.max_sign_threads = cls.get_yaml_property('wallet', 'max_sign_threads', 1)
-            if not Env.banano():
+            if not cls.banano:
                 cls.preconfigured_reps = cls.get_yaml_property('wallet', 'preconfigured_representatives_nano', default=None)
             else:
                 cls.preconfigured_reps = cls.get_yaml_property('wallet', 'preconfigured_representatives_banano', default=None)
@@ -67,7 +67,7 @@ class Config(object):
                     cls.preconfigured_reps = None
             # Go to default if None
             if cls.preconfigured_reps is None:
-                cls.preconfigured_reps = DEFAULT_BANANO_REPS if Env.banano() else DEFAULT_NANO_REPS
+                cls.preconfigured_reps = DEFAULT_BANANO_REPS if cls.banano else DEFAULT_NANO_REPS
 
         return cls._instance
 

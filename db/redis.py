@@ -1,5 +1,6 @@
 import aioredis
 import asyncio
+import os
 
 class RedisDB(object):
     _instance = None
@@ -12,6 +13,9 @@ class RedisDB(object):
         if cls._instance is None:
             cls._instance = cls.__new__(cls)
             cls.redis = None
+            cls.redis_host = os.getenv('REDIS_HOST', '127.0.0.1')
+            cls.redis_port = int(os.getenv('REDIS_PORT', '6379'))
+            cls.redis_db = int(os.getenv('REDIS_DB', 0))
         return cls._instance
 
     @classmethod
@@ -26,8 +30,7 @@ class RedisDB(object):
     async def get_redis(cls) -> aioredis.Redis:
         if cls.redis is not None:
             return cls.redis
-        # TODO - we should let them override redis host/port in configuration
-        cls.redis = await aioredis.create_redis_pool(('localhost', 6379), db=0, encoding='utf-8', minsize=1, maxsize=5)
+        cls.redis = await aioredis.create_redis_pool((cls.redis_host, cls.redis_port), db=cls.redis_db, encoding='utf-8', minsize=1, maxsize=5)
         return cls.redis
 
     async def set(self, key: str, value: str, expires: int = 0):

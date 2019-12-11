@@ -17,18 +17,17 @@ from logging.handlers import TimedRotatingFileHandler, WatchedFileHandler
 from network.rpc_client import RPCClient
 from network.work_client import WorkClient
 from server.pippin_server import PippinServer
-from util.env import Env
 from util.nano_util import NanoUtil
-
-# Set and patch nanopy
-import nanopy
-nanopy.account_prefix = 'ban_' if Env.banano() else 'nano_'
-if Env.banano():
-    nanopy.standard_exponent = 29
-    nanopy.work_difficulty = 'fffffe0000000000'
 
 # Configuration
 config = Config.instance()
+
+# Set and patch nanopy
+import nanopy
+nanopy.account_prefix = 'ban_' if config.banano else 'nano_'
+if config.banano:
+    nanopy.standard_exponent = 29
+    nanopy.work_difficulty = 'fffffe0000000000'
 
 # Setup logger
 if config.debug:

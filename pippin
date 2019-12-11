@@ -22,17 +22,17 @@ from db.tortoise_config import DBConfig
 from tortoise import Tortoise
 from tortoise.transactions import in_transaction
 from util.crypt import AESCrypt, DecryptionError
-from util.env import Env
 from util.random import RandomUtil
 from util.validators import Validators
 from version import __version__
 
+from config import Config
 import os
 
 # Set and patch nanopy
 import nanopy
-nanopy.account_prefix = 'ban_' if Env.banano() else 'nano_'
-if Env.banano():
+nanopy.account_prefix = 'ban_' if Config.instance().banano else 'nano_'
+if Config.instance().banano:
     nanopy.standard_exponent = 29
     nanopy.work_difficulty = 'fffffe0000000000'
 

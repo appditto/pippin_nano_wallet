@@ -35,38 +35,75 @@ Every non-wallet related RPC gets proxied to the publishing node. Which means yo
 
 Recommended reference is the [NANO RPC documentation](https://docs.nano.org/commands/rpc-protocol/#wallet-rpcs), Pippin's APIs are mostly identical.
 
-## Known Differences: Pippin vs NANO Node Wallet
+You send an HTTP Post request to pippin with the desired action and parameters, example:
 
-**Pippin supports send indempotency with the `id` send parameter, just like the Nano node it is not required but highly recommended**
+```
+{
+    "action": "accounts_create",
+    "wallet": "12345",
+    "count": 100
+}
+```
 
-**Enhanced Behavior**
+### Supported
+
+- `wallet_create`
+- `account_create`
+- `accounts_create`
+- `account_list`
+- `receive`
+- `send` - Use the **id** parameter to prevent duplicate sends!
+- `account_representative_set`
+- `password_change` - This will also set a password, if one isn't already set
+- `password_enter`
+- `password_valid`
+- `wallet_representative_set`
+- `wallet_add` - This is for adding ad-hoc private keys to a wallet
+- `wallet_lock`
+- `wallet_locked`
+- `wallet_balances`
+- `wallet_frontiers`
+- `wallet_pending`
+- `wallet_destroy`
+- `wallet_change_seed`
+- `wallet_contains`
+- `wallet_representative`
+- `receive_all` - Not in the nano API, it takes a `wallet` and it will receive every pending block in that wallet (respecting `receive_minimum`).
+
+### Differences: Pippin vs NANO Node Wallet
+
+These are the known differences between Pippin's API and the Nano node wallet API
+
+**Different Behavior**
+
+APIs that are different between Pippin and the Nano node wallet.
 
 - `account_list` accepts a `count` parameter that defaults to 1000
-- `receive_all` **new** RPC action: accepts a `wallet` parameter - receives all pendings in the entire wallet. This RPC respects the `receive_minimum` setting
-- `auto_receive_on_send` configuration option will automatically receive pendings when doing `send`, if balance isn't high enough.
-
-**Degraded Behavior**
-
+- Pippin has an `auto_receive_on_send` option that will automatically receive pending blocks when you do a `send`, it will only do this if balance isnt high enough to make the transaction.
 - `account_create` does not accept an index
 
 **Fuzzy Behavior**
 
-- `wallet_change_seed` via RPC will result in the wallet no longer being encrypted. (But the wallet has to be unlocked before you can do `wallet_change_seed`).
+The Nano documentation isn't perfectly clear on these, but these are how Pippin behaves.
+
+- `wallet_change_seed` will result in the wallet no longer being locked, if it is. The wallet has to already be unlocked before you can use this RPC, though.
 
 **Missing/Not Implemented**
+
+APIs that the Nano node wallet supports but are not implemented in Pippin.
 
 - `account_move`
 - `account_remove`
 - `receive_minimum` - Receive minimum can be set in `config.yaml`
 - `receive_minimum_set`
-- `wallet_add_watch` - Not certain what this even does
-- `wallet_history` - Would be more efficient if NANO supported `accounts_history`
-- `search_pending` - Pippin has `receive_all` which should be used to receive all pendings
+- `wallet_add_watch`
+- `wallet_history`
+- `search_pending`
 - `search_pending_all`
 - `wallet_export`
-- `wallet_ledger` - Pippin doesn't store the ledger
-- `wallet_republish` - Same as above, pippin only rebroadcasts `send` RPCs when a duplicate ID is used
-- `wallet_work_get` - I'm not really sure what these work RPCs do, pippin doesn't store any information about work
+- `wallet_ledger`
+- `wallet_republish`
+- `wallet_work_get`
 - `work_get`
 - `work_set`
 
@@ -81,10 +118,10 @@ The primary goal of the CLI is key management. It's a more secure way to import 
 For example a typical flow of creating a new wallet with a specific seed might look like (add --encrypt to wallet_change_seed if you want to lock the wallet with a password):
 
 ```
-% ./pippin.py wallet_create
+% ./pippin wallet_create
 Wallet created, ID: d897b5ec-1897-4e7e-8a90-4526f454c8de
 First account: nano_31a7wzm4rayik1hthahzkekntsqz86u6dko5adg8jxueehzt5yhmhsqsuzdy
-% ./pippin.py wallet_change_seed --wallet d897b5ec-1897-4e7e-8a90-4526f454c8de
+% ./pippin wallet_change_seed --wallet d897b5ec-1897-4e7e-8a90-4526f454c8de
 Enter new wallet seed: <hidden_input>
 Seed changed for wallet d897b5ec-1897-4e7e-8a90-4526f454c8de
 First account: nano_3ejy6ha1iuqhi5cshhifu57p5othdcymfbzsmxhjucdks53eh41yd4qpjtxf
@@ -121,22 +158,22 @@ To start redis at boot on MacOS:
 MacOS users may find it convenient to priorize homebrew binaries.
 
 ```
-export PATH=/usr/local/bin:$PATH
+% export PATH=/usr/local/bin:$PATH
 ```
 
 This means you'll be using the homebrew installed python3 by default, to make it permanent:
 
 ```
 # Catalina
-echo "export PATH=/usr/local/bin:$PATH" >> ~/.zprofile
+% echo "export PATH=/usr/local/bin:$PATH" >> ~/.zprofile
 # Others
-echo "export PATH=/usr/local/bin:$PATH" >> ~/.profile
+% echo "export PATH=/usr/local/bin:$PATH" >> ~/.profile
 ```
 
 On Linux, debian-based systems:
 
 ```
-sudo apt install build-essential python3.7 python3.7-dev libb2-dev redis-server
+% sudo apt install build-essential python3.7 python3.7-dev libb2-dev redis-server
 ```
 
 ### Installing python dependencies
@@ -144,23 +181,13 @@ sudo apt install build-essential python3.7 python3.7-dev libb2-dev redis-server
 MacOS:
 
 ```
-CC=/usr/local/bin/gcc-9 python3 -m pip install -U -r requirements.txt
+% CC=/usr/local/bin/gcc-9 python3 -m pip install -U -r requirements.txt
 ```
 
 Linux:
 
 ```
-python3.7 -m pip install -r requirements.txt
-```
-
-### Configuring Pippin for BANANO
-
-Pippin uses an environmnet variable to switch between banano and nano mode.
-
-To use with banano:
-
-```
-% echo "BANANO=1" >> .env
+% python3.7 -m pip install -r requirements.txt
 ```
 
 ### Configuring PostgreSQL or MySQL
@@ -173,43 +200,72 @@ To use postgres or mysql, you need to put your database information in some envi
 
 Required (replace `database_name`, `user_name`, and `mypassword` with the actual values):
 ```
-echo "POSTGRES_DB=database_name" >> .env
-echo "POSTGRES_USER=user_name" >> .env
-echo "POSTGRES_PASSWORD=mypassword" >> .env
+% echo "POSTGRES_DB=database_name" >> .env
+% echo "POSTGRES_USER=user_name" >> .env
+% echo "POSTGRES_PASSWORD=mypassword" >> .env
 ```
 
 Optional:
 ```
 # 127.0.0.1 is default
-echo "POSTGRES_HOST=127.0.0.1" >> .env 
+% echo "POSTGRES_HOST=127.0.0.1" >> .env 
 # 5432 is default
-echo "POSTGRES_PORT=5432" >> .env
+% echo "POSTGRES_PORT=5432" >> .env
 ```
 
 **MySQL:**
 
 Required (replace `database_name`, `user_name`, and `mypassword` with the actual values):
 ```
-echo "MYSQL_DB=database_name" >> .env
-echo "MYSQL_USER=user_name" >> .env
-echo "MYSQL_PASSWORD=mypassword" >> .env
+% echo "MYSQL_DB=database_name" >> .env
+% echo "MYSQL_USER=user_name" >> .env
+% echo "MYSQL_PASSWORD=mypassword" >> .env
 ```
 
 Optional:
 ```
 # 127.0.0.1 is default
-echo "MYSQL_HOST=127.0.0.1" >> .env 
+% echo "MYSQL_HOST=127.0.0.1" >> .env 
 # 3306 is default
-echo "MYSQL_PORT=3306" >> .env
+% echo "MYSQL_PORT=3306" >> .env
+```
+
+### Changing Redis Host/Port
+
+Pippin uses Redis for distributed locks, so that every account works on its own chain in a synchronous fashion.
+
+By default, it will look for redis on `127.0.0.1` on port `6379` and use db `0`, you can also change these with environment variables.
+
+```
+echo "REDIS_HOST=127.0.0.1" >> .env
+echo "REDIS_PORT=6379" >> .env
+echo "REDIS_DB=0" >> .env
+```
+
+## Pippin Configuration
+
+Pippin uses a [yaml](https://yaml.org/) based configuration for everything else.
+
+All available options are in a sample file at `sample.config.yaml`
+
+You can override any default by creating a file called `config.yaml` and choosing your own settings.
+
+### Configuring Pippin for BANANO
+
+In `config.yaml` set banano: true
+
+```
+# Settings for the pippin wallet
+wallet:
+  # Run in banano mode
+  # If true, the wallet will operate based on the BANANO protocol
+  # Default: false
+  banano: true
 ```
 
 ### Configuring the node
 
-Create a file called `config.yaml` in the root directory of pippin.
-
-Pippin uses a yaml based configuration for everything else. There's a sample provided at `sample.config.yaml` where you can reference all available options.
-
-At the bare minimum, Pippin requires a node for the RPC api.
+At the bare minimum, Pippin requires a node for the RPC api. It will default to `http://[::1]:7076` for Nano, or `http://[::1]:7072` for BANANO. If you want to change it to `https://coolnanonode.com/rpc` then it would look like this:
 
 ```
 server:

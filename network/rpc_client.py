@@ -3,7 +3,6 @@ import rapidjson as json
 import socket
 from config import Config
 from typing import List
-from util.env import Env
 
 class RPCClient(object):
     _instance = None
@@ -129,7 +128,7 @@ class RPCClient(object):
         # so we test with an essential action like account_balance
         test_action = {
             'action': 'account_balance',
-            'account': 'ban_1tipbotgges3ss8pso6xf76gsyqnb69uwcxcyhouym67z7ofefy1jz7kepoy' if Env.banano() else 'nano_3o7uzba8b9e1wqu5ziwpruteyrs3scyqr761x7ke6w1xctohxfh5du75qgaj'
+            'account': 'ban_1tipbotgges3ss8pso6xf76gsyqnb69uwcxcyhouym67z7ofefy1jz7kepoy' if Config.instance().banano else 'nano_3o7uzba8b9e1wqu5ziwpruteyrs3scyqr761x7ke6w1xctohxfh5du75qgaj'
         }
         respjson = await self.make_request(test_action)
         if 'error' in respjson or 'balance' in respjson:

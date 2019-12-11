@@ -9,7 +9,6 @@ import nanopy
 import rapidjson as json
 
 from db.redis import RedisDB
-from util.env import Env
 from util.nano_util import NanoUtil
 
 class WorkClient(object):

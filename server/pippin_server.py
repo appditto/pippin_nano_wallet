@@ -6,11 +6,15 @@ import rapidjson as json
 from aiohttp import log, web
 from tortoise.transactions import in_transaction
 
+import asyncio
 import config
 from db.redis import RedisDB
+from db.models.account import Account
+from db.models.adhoc_account import AdHocAccount
 from db.models.wallet import (AccountAlreadyExists, Wallet, WalletLocked,
                               WalletNotFound)
 from network.rpc_client import AccountNotFound, BlockNotFound, RPCClient
+from network.nano_websocket import WebsocketClient
 from util.crypt import DecryptionError
 from util.random import RandomUtil
 from util.validators import Validators
@@ -26,9 +30,14 @@ class PippinServer(object):
         ])
         self.host = host
         self.port = port
+        self.websocket = None
+        if config.Config.instance().node_ws_url is not None:
+            self.websocket = WebsocketClient(config.Config.instance().node_ws_url, self.block_arrival_handler)
 
     async def stop(self):
         await self.app.shutdown()
+        if self.websocket:
+            await self.websocket.close()
 
     def json_response(self, data: dict):
         """Wrapper for json responses using custom json parser"""
@@ -936,9 +945,37 @@ class PippinServer(object):
             }
         )
 
+    """
+    INFO:aiohttp.server:{"account":"ban_1zencj9iyoowudifg6dn687ynuyae9pjd486xmss5y88xzygk19ps71saqzb","amount":"100000000000000000000000000000000","hash":"DA49673267AECD1A594E0ACC06E847186EEC8C59EBF5F2024403E56A219D029F","confirmation_type":"active_quorum","block":{"type":"state","account":"ban_1zencj9iyoowudifg6dn687ynuyae9pjd486xmss5y88xzygk19ps71saqzb","previous":"36FD1A7B82B6A7D2FB765A72B949D28CD70F94551C5870B84D6115A99D711ECE","representative":"ban_1ka1ium4pfue3uxtntqsrib8mumxgazsjf58gidh1xeo5te3whsq8z476goo","balance":"1054999999999999985516900630494","link":"268040638AA067D5ECB87B215CD4D967FACA61FABC2810F1B20830FFB6854523","link_as_account":"ban_1bn1a3jroa59tqpdiys3dmcfksztsbizoh3a45ru643izyuacjb5f37gqshs","signature":"82968935EC949B359C6EF5D28832F950EBB4157E824E743B0DF2B92198E68E467E7A90D2007646380D9BEDD85B9392A181EFE5B1BA6D30C45C4D255BCBCC1F09","work":"37512f45f76354c0","subtype":"send"}}"""
+
+    async def block_arrival_handler(self, data: dict):
+        """invoked when we receive a new block"""
+        log.server_logger.debug("Received Callback")
+        if 'block' in data and data['block']['subtype'] == 'send':
+            # Ignore receive_minimum
+            if config.Config.instance().receive_minimum > int(data['amount']):
+                return
+            # Determine if the recipient is one of ours
+            destination = data['block']['link_as_account']
+            acct = await Account.filter(address=destination).prefetch_related('wallet').first()
+            if acct is None:
+                acct = await AdHocAccount.filter(address=destination).prefetch_related('wallet').first()
+                if acct is None:
+                    return
+            log.server_logger.debug(f"Auto receiving {data['hash']} for {destination}")
+            wu = WalletUtil(acct, acct.wallet, await RedisDB.instance().get_redis())
+            try:
+                await wu.receive(data['hash'])
+            except Exception:
+                log.server_logger.debug(f"Failed to receive {data['hash']}")
+
     async def start(self):
         """Start the server"""
         runner = web.AppRunner(self.app, access_log = None if not config.Config.instance().debug else log.server_logger)
         await runner.setup()
         site = web.TCPSite(runner, self.host, self.port)
         await site.start()
+        # Websocket
+        if self.websocket:
+            await self.websocket.setup()
+            await self.websocket.loop()

@@ -22,6 +22,11 @@ server:
   # Default: http://[::1]:7076 for nano, https://[::1]:7072 for banano
   #node_rpc_url: https://coolnanonode.com/rpc
 
+  # The WebSocket URL of the node to connect to
+  # Optional, but required to receive transactions as they arrive to accounts
+  # Default: None
+  #node_ws_url: ws://[::1]:7078
+
 # Settings for the pippin wallet
 wallet:
   # Preconfigured wallet representative list

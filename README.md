@@ -262,6 +262,20 @@ Send HTTP POST requests to Pippin just like you would a normal node.
 % curl -g -d '{"action":"account_balance", "account": "nano_3jb1fp4diu79wggp7e171jdpxp95auji4moste6gmc55pptwerfjqu48okse"}' localhost:11338
 ```
 
+### Auto-receive
+
+To automatically pocket pending transactions as they arrive, callback is required.
+
+Pippin only supports the websocket callback, which can be setup like so in `config.yaml`:
+
+```
+server:
+  # The WebSocket URL of the node to connect to
+  # Optional, but required to receive transactions as they arrive to accounts
+  # Default: None
+  #node_ws_url: ws://[::1]:7078
+```
+
 ## Feature requests
 
 Notice an API that's missing a feature or not behaving the same as nano's APIs?

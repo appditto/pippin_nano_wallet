@@ -46,7 +46,7 @@ class WorkClient(object):
 
         work_generate = {
             'action': 'work_generate',
-            'account': hash,
+            'hash': hash,
             'difficulty': difficulty
         }
 

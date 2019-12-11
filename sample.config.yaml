@@ -49,7 +49,7 @@ wallet:
   #  - nano_3o7uzba8b9e1wqu5ziwpruteyrs3scyqr761x7ke6w1xctohxfh5du75qgaj
 
   # Set work peer(s) to retrieve work from
-  # See betsy to use dPow/bPow: https://github.com/bbedward/betsy-middleware
+  # DPoW/BPoW will be used automatically if environment is present, see README for details
   #work_peers:
   #  - http://localhost:5555
   #  - http://myotherworkpeer.com

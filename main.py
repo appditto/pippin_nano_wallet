@@ -60,8 +60,16 @@ if __name__ == "__main__":
                 log.server_logger.error(f"Error: Could not connect to remote node at {Config.instance().node_url}")
                 exit(1)
         # Start server
-        log.server_logger.info(f"Pippin server started at {config.host}:{config.port}")
-        loop.run_until_complete(server.start())
+        log.server_logger.info(f"Pippin server starting at {config.host}:{config.port}")
+        tasks = [
+            server.start()
+        ]
+        # Check if DPoW should be started
+        dpow_client = WorkClient.instance().dpow_client
+        if dpow_client is not None:
+            loop.run_until_complete(dpow_client.setup())
+            tasks.append(dpow_client.loop())
+        loop.run_until_complete(asyncio.wait(tasks))
         loop.run_forever()
     except Exception:
         log.server_logger.exception("Pippin exited with exception")

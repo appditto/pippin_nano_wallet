@@ -6,9 +6,11 @@ import aiohttp
 import asyncio
 import config
 import nanopy
+import os
 import rapidjson as json
 
 from db.redis import RedisDB
+from network.dpow_websocket import ConnectionClosed, DpowClient
 from util.nano_util import NanoUtil
 
 class WorkClient(object):
@@ -26,6 +28,34 @@ class WorkClient(object):
                 cls.work_urls.append(config.Config.instance().node_url)
             cls.connector = aiohttp.TCPConnector(family=0 ,resolver=aiohttp.AsyncResolver())
             cls.session = aiohttp.ClientSession(connector=cls.connector, json_serialize=json.dumps)
+            cls.dpow_client = None
+            cls.dpow_futures = {}
+            cls.dpow_id = 1
+            # Construct DPoW Client
+            cls.dpow_user = os.getenv('DPOW_USER', None)
+            cls.dpow_key = os.getenv('DPOW_KEY', None)
+            if cls.dpow_user is not None and cls.dpow_key is not None:
+                cls.dpow_client = DpowClient(
+                    cls.dpow_user,
+                    cls.dpow_key,
+                    force_nano_difficulty=True,
+                    work_futures=cls.dpow_futures,
+                    bpow=False
+                )
+                cls.dpow_fallback_url = 'https://dpow.nanocenter.org/service/'
+            else:
+                cls.dpow_user = os.getenv('BPOW_USER', None)
+                cls.dpow_key = os.getenv('BPOW_KEY', None)
+                if cls.dpow_user is not None and cls.dpow_key is not None:
+                    cls.dpow_client = DpowClient(
+                        cls.dpow_user,
+                        cls.dpow_key,
+                        force_nano_difficulty=not config.Config.instance().banano,
+                        work_futures=cls.dpow_futures,
+                        bpow=True
+                    )
+                    cls.dpow_fallback_url = 'https://bpow.banano.cc/service/'
+
         return cls._instance
 
     @classmethod
@@ -54,6 +84,24 @@ class WorkClient(object):
         for p in self.work_urls:
             tasks.append(self.make_request(p, work_generate))
 
+        # Use DPoW if applicable
+        if self.dpow_client is not None:
+            dpow_id = str(self.dpow_id)
+            self.dpow_id += 1
+            self.dpow_futures[dpow_id] = asyncio.get_event_loop().create_future()
+            try:
+                success = await self.dpow_client.request_work(dpow_id, hash, difficulty=difficulty)
+                tasks.append(self.dpow_futures[dpow_id])
+            except ConnectionClosed:
+                # HTTP fallback for this request
+                dp_req = {
+                    "user": self.dpow_user,
+                    "api_key": self.dpow_key,
+                    "hash": hash,
+                    "difficulty": difficulty
+                }
+                tasks.append(self.make_request(self.dpow_fallback_url, dp_req))
+
         # Do it locally if no peers or if peers have been failing
         if await RedisDB.instance().exists("work_failure") or len(self.work_urls) == 0:
             tasks.append(
@@ -69,6 +117,8 @@ class WorkClient(object):
                     if result is None:
                         aiohttp.log.server_logger.info("work_generate task returned None")
                         continue
+                    elif isinstance(result, list):
+                        result = json.loads(result[1])
                     elif isinstance(result, str):
                         result = {'work':result}
                     if 'work' in result:

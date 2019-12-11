@@ -973,8 +973,10 @@ class PippinServer(object):
         runner = web.AppRunner(self.app, access_log = None if not config.Config.instance().debug else log.server_logger)
         await runner.setup()
         site = web.TCPSite(runner, self.host, self.port)
-        await site.start()
+        tasks = []
+        tasks.append(site.start())
         # Websocket
         if self.websocket:
             await self.websocket.setup()
-            await self.websocket.loop()
+            tasks.append(self.websocket.loop())
+        await asyncio.wait(tasks)

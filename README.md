@@ -190,6 +190,26 @@ Linux:
 % python3.7 -m pip install -r requirements.txt
 ```
 
+### Using Distributed PoW or BoomPoW
+
+Want to use [DPoW](https://dpow.nanocenter.org) or [BPoW](https://bpow.banano.cc)?
+
+Pippin will use them automatically for work generation if the key/user is present in the environment.
+
+For DPoW:
+```
+% echo "DPOW_USER=mydpowuser" >> .env
+% echo "DPOW_KEY=mydpowkey" >> .env
+```
+
+For BPoW:
+```
+% echo "BPOW_USER=mybpowuser" >> .env
+% echo "BPOW_KEY=mybpowkey" >> .env
+```
+
+Replace `mybpowuser` and `mybpowkey` with the actual user and keys you have. If you need keys, visit their respected websites for instructions on how to request them.
+
 ### Configuring PostgreSQL or MySQL
 
 Pippin uses SQLite by default, which requires no extra configuration.

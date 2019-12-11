@@ -442,7 +442,6 @@ class PippinServer(object):
             return self.generic_error()
 
         # Retrieve wallet
-        wallet = await Wallet.filter(id=request_json['wallet']).first()
         try:
             wallet = await Wallet.get_wallet(request_json['wallet'])
         except WalletNotFound:
@@ -471,7 +470,6 @@ class PippinServer(object):
             return self.generic_error()
 
         # Retrieve wallet
-        wallet = await Wallet.filter(id=request_json['wallet']).first()
         try:
             wallet = await Wallet.get_wallet(request_json['wallet'])
             return self.json_response(
@@ -505,7 +503,6 @@ class PippinServer(object):
             return self.generic_error()
 
         # Retrieve wallet
-        wallet = await Wallet.filter(id=request_json['wallet']).first()
         try:
             wallet = await Wallet.get_wallet(request_json['wallet'])
             if not wallet.encrypted:

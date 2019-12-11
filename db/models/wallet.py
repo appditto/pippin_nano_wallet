@@ -1,6 +1,7 @@
 from typing import List
 
 import nanopy
+import uuid
 from aiohttp import log
 from aioredis_lock import LockTimeoutError, RedisLock
 from tortoise import fields
@@ -41,7 +42,7 @@ class Wallet(Model):
     @staticmethod
     async def get_wallet(id: str) -> 'Wallet':
         """Get wallet with ID, raise WalletNotFound if not found, WalletLocked if encrypted"""
-        wallet = await Wallet.filter(id=id).first()
+        wallet = await Wallet.filter(id=uuid.UUID(id)).first()
         if wallet is None:
             raise WalletNotFound()
         elif wallet.encrypted:

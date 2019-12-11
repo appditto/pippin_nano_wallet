@@ -54,19 +54,19 @@ wallet:
   #node_work_generate: False
 
   # Automatically receive transactions greater or equal to this amount
-  #receive_minimum=1000000000000000000000000000
+  #receive_minimum: 1000000000000000000000000000
 
   # Automatically receive pending balances when doing RPC send, if balance < amount, but pending+balance >= amount
   # Respects receive_minimum
   # Default: True
-  #auto_receive_on_send=true
+  #auto_receive_on_send: true
 
   # Maximum number of processes to compute work locally on.
   # Local work is only computed if work_peers are not available
   # Should not be more than # of CPUs, set to 0 to disable local work gen
   # Default: 1
-  #max_work_processes=1
+  #max_work_processes: 1
 
   # Maximum number of threads to sign blocks on.
   # Default: 1, minimum: 1
-  #max_sign_threads=1
+  #max_sign_threads: 1

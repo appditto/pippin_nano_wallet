@@ -35,7 +35,8 @@ class DpowClient(object):
                 "user": self.dpow_user,
                 "api_key": self.dpow_key,
                 "hash": hash,
-                "id": id
+                "id": id,
+                "timeout": 15
             }
             if difficulty is not None:
                 req['difficulty'] = difficulty

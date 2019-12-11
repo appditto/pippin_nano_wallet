@@ -103,21 +103,24 @@ class WorkClient(object):
                 tasks.append(self.make_request(self.dpow_fallback_url, dp_req))
 
         # Do it locally if no peers or if peers have been failing
-        if await RedisDB.instance().exists("work_failure") or len(self.work_urls) == 0:
+        if await RedisDB.instance().exists("work_failure") or (len(self.work_urls) == 0 and self.dpow_client is None):
             tasks.append(
                 NanoUtil.instance().work_generate(hash, difficulty=difficulty)
             )
 
+        result = None
+
         # Post work_generate to all peers simultaneously
-        while len(tasks):
-            done, tasks = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED, timeout=30)
+        while tasks:
+            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED, timeout=30)
             for task in done:
+                tasks.remove(task)
                 try:
                     result = task.result()
                     if result is None:
                         aiohttp.log.server_logger.info("work_generate task returned None")
                         continue
-                    elif isinstance(result, list):
+                    if isinstance(result, list):
                         result = json.loads(result[1])
                     elif isinstance(result, str):
                         result = {'work':result}
@@ -129,12 +132,15 @@ class WorkClient(object):
                         cancel_tasks = []
                         for p in self.work_urls:
                             asyncio.ensure_future(self.make_request(p, cancel_json))
-                        return result['work']
+                        result = result['work']
                     elif 'error' in result:
                         aiohttp.log.server_logger.info(f'work_generate task returned error {result["error"]}')
                 except Exception as exc:
                     aiohttp.log.server_logger.exception("work_generate Task raised an exception")
-                    result.cancel()
+            for task in pending:
+                task.cancel()
+                tasks.remove(task)
+        return result
 
         # IF we're still here then all requests failed, set failure flag
         await RedisDB.instance().set(f"work_failure", "aa", expires=300)

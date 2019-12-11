@@ -146,7 +146,6 @@ class WorkClient(object):
                     tasks.remove(task)
                 except ValueError:
                     pass
-        return result
 
         # IF we're still here then all requests failed, set failure flag
         await RedisDB.instance().set(f"work_failure", "aa", expires=300)

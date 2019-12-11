@@ -114,7 +114,10 @@ class WorkClient(object):
         while tasks:
             done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED, timeout=30)
             for task in done:
-                tasks.remove(task)
+                try:
+                    tasks.remove(task)
+                except ValueError:
+                    pass
                 try:
                     result = task.result()
                     if result is None:
@@ -139,7 +142,10 @@ class WorkClient(object):
                     aiohttp.log.server_logger.exception("work_generate Task raised an exception")
             for task in pending:
                 task.cancel()
-                tasks.remove(task)
+                try:
+                    tasks.remove(task)
+                except ValueError:
+                    pass
         return result
 
         # IF we're still here then all requests failed, set failure flag

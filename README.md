@@ -19,6 +19,7 @@ Pippin is the first drop-in replacement for the Nano developer wallet. It's incr
 - Pippin is independent of the node. You can use Pippin with any public RPC, so you don't have to run your own node
 - Pippin is extremely fast and lightweight
 - Pippin supports encrypted secret keys
+- Pippin natively supports [DPoW](https://dpow.nanocenter.org) and [BPoW](https://bpow.banano.cc)
 - Pippin supports multiple database backends (SQLite, PostgreSQL, and MySQL)
 
 Pippin can be used by exchanges, games, payment processors, tip bots, faucets, casinos, and a lot more.

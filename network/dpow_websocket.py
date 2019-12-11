@@ -15,7 +15,8 @@ class DpowClient(object):
 
     def __init__(self, dpow_user: str, dpow_key: str, force_nano_difficulty: bool = False, work_futures: dict = {}, bpow: bool = False):
         """work_futures is a dict of id, futures to keep track of requests and responses"""
-        self.url = self.BPOW_SERVER if bpow else self.DPOW_SERVER
+        self.bpow = bpow
+        self.url = self.BPOW_SERVER if self.bpow else self.DPOW_SERVER
         self.ws: websockets.WebSocketClientProtocol = None
         self.stop = False
         self.dpow_user = dpow_user
@@ -47,6 +48,7 @@ class DpowClient(object):
     async def setup(self):
         try:
             self.ws = await websockets.connect(self.url)
+            log.server_logger.info(f"Connected to {'BoomPoW' if self.bpow else 'Distributed PoW'} Service")
         except Exception as e:
             log.server_logger.critical("Error connecting to websocket server.")
             log.server_logger.error(traceback.format_exc())

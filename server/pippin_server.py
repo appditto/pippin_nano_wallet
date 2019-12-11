@@ -945,9 +945,6 @@ class PippinServer(object):
             }
         )
 
-    """
-    INFO:aiohttp.server:{"account":"ban_1zencj9iyoowudifg6dn687ynuyae9pjd486xmss5y88xzygk19ps71saqzb","amount":"100000000000000000000000000000000","hash":"DA49673267AECD1A594E0ACC06E847186EEC8C59EBF5F2024403E56A219D029F","confirmation_type":"active_quorum","block":{"type":"state","account":"ban_1zencj9iyoowudifg6dn687ynuyae9pjd486xmss5y88xzygk19ps71saqzb","previous":"36FD1A7B82B6A7D2FB765A72B949D28CD70F94551C5870B84D6115A99D711ECE","representative":"ban_1ka1ium4pfue3uxtntqsrib8mumxgazsjf58gidh1xeo5te3whsq8z476goo","balance":"1054999999999999985516900630494","link":"268040638AA067D5ECB87B215CD4D967FACA61FABC2810F1B20830FFB6854523","link_as_account":"ban_1bn1a3jroa59tqpdiys3dmcfksztsbizoh3a45ru643izyuacjb5f37gqshs","signature":"82968935EC949B359C6EF5D28832F950EBB4157E824E743B0DF2B92198E68E467E7A90D2007646380D9BEDD85B9392A181EFE5B1BA6D30C45C4D255BCBCC1F09","work":"37512f45f76354c0","subtype":"send"}}"""
-
     async def block_arrival_handler(self, data: dict):
         """invoked when we receive a new block"""
         log.server_logger.debug("Received Callback")

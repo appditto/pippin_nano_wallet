@@ -46,7 +46,7 @@ class Config(object):
             cls.node_ws_url = cls.get_yaml_property('server', 'node_ws_url', None)
             cls.port = cls.get_yaml_property('server', 'port', default=11338)
             cls.host = cls.get_yaml_property('server', 'host', default='127.0.0.1')
-            cls.work_peers = cls.get_yaml_property('wallet', 'work_peer', [])
+            cls.work_peers = cls.get_yaml_property('wallet', 'work_peers', [])
             cls.node_work_generate = cls.get_yaml_property('wallet', 'node_work_generate', False)
             cls.receive_minimum = cls.get_yaml_property('wallet', 'receive_minimum', 1000000000000000000000000000 if Env.banano() else 1000000000000000000000000)
             cls.auto_receive_on_send = cls.get_yaml_property('wallet', 'auto_receive_on_send', True)

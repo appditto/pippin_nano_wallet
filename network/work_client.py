@@ -108,8 +108,6 @@ class WorkClient(object):
                 NanoUtil.instance().work_generate(hash, difficulty=difficulty)
             )
 
-        result = None
-
         # Post work_generate to all peers simultaneously
         while tasks:
             done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED, timeout=30)
@@ -132,10 +130,9 @@ class WorkClient(object):
                             'action': 'work_cancel',
                             'hash': hash
                         }
-                        cancel_tasks = []
                         for p in self.work_urls:
                             asyncio.ensure_future(self.make_request(p, cancel_json))
-                        result = result['work']
+                        return result['work']
                     elif 'error' in result:
                         aiohttp.log.server_logger.info(f'work_generate task returned error {result["error"]}')
                 except Exception as exc:

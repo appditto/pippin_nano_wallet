@@ -1,4 +1,197 @@
-#!/usr/bin/env python
+#!/bin/sh
+# -*- mode: Python -*-
 
-import sys
-print(sys.executable)
+# Find suitable python version
+""":"
+for pyver in 3.7 3.8 3.9; do
+    which python$pyver > /dev/null 2>&1 && exec python$pyver "$0" "$@"
+done
+echo "Couldn't find python3.7, python3.8, or python3.9 in your PATH" >&2
+exit 1
+":"""
+
+from dotenv import load_dotenv
+load_dotenv()
+
+import argparse
+import asyncio
+import getpass
+
+from db.models.wallet import Wallet, WalletLocked, WalletNotFound
+from db.tortoise_config import DBConfig
+from tortoise import Tortoise
+from tortoise.transactions import in_transaction
+from util.crypt import AESCrypt, DecryptionError
+from util.random import RandomUtil
+from util.validators import Validators
+from version import __version__
+
+parser = argparse.ArgumentParser(description=f'Pippin v{__version__}')
+subparsers = parser.add_subparsers(title='available commands', dest='command')
+
+wallet_parser = subparsers.add_parser('wallet_list')
+
+wallet_create_parser = subparsers.add_parser('wallet_create')
+wallet_create_parser.add_argument('--seed', type=str, help='Seed for wallet (optional)', required=False)
+
+wallet_change_seed_parser = subparsers.add_parser('wallet_change_seed')
+wallet_change_seed_parser.add_argument('--wallet', type=str, help='ID of wallet to change seed for', required=True)
+wallet_change_seed_parser.add_argument('--seed', type=str, help='New seed for wallet (optional)', required=False)
+wallet_change_seed_parser.add_argument('--encrypt', action='store_true', help='If specified, will get prompted for a password to encrypt the wallet', default=False)
+
+wallet_view_seed_parser = subparsers.add_parser('wallet_view_seed')
+wallet_view_seed_parser.add_argument('--wallet', type=str, help='Backup your wallets seed', required=True)
+wallet_view_seed_parser.add_argument('--password', type=str, help='Password needed to decrypt wallet (if encrypted)', required=False)
+
+options = parser.parse_args()
+
+async def wallet_list():
+    wallets = await Wallet.all().prefetch_related('accounts', 'adhoc_accounts')
+    if len(wallets) == 0:
+        print("There aren't any wallets")
+        return
+
+    for w in wallets:
+        print(f"ID:{w.id}")
+        print("Accounts:")
+        for a in w.accounts:
+            print(a.address)
+
+async def wallet_create(seed):
+    async with in_transaction() as conn:
+        wallet = Wallet(
+            seed=RandomUtil.generate_seed() if seed is None else seed
+        )
+        await wallet.save(using_db=conn)
+        new_acct = await wallet.account_create(using_db=conn)
+    print(f"Wallet created, ID: {wallet.id}\nFirst account: {new_acct}")
+
+async def wallet_change_seed(wallet_id: str, seed: str, password: str) -> str:
+    encrypt = False
+    old_password = None
+    if len(password) > 0:
+        encrypt = True
+
+    # Retrieve wallet
+    try:
+        wallet = await Wallet.get_wallet(wallet_id)
+    except WalletNotFound:
+        print(f"No wallet found with ID: {wallet_id}")
+        exit(1)
+    except WalletLocked as wl:
+        wallet = wl.wallet
+        while True:
+            try:
+                npass = getpass.getpass(prompt='Enter current password:')
+                crypt = AESCrypt(npass)
+                try:
+                    decrypted = crypt.decrypt(wallet.seed)
+                    async with in_transaction() as conn:
+                        wallet.seed = decrypted
+                        wallet.encrypted = False
+                        await wallet.save(using_db=conn, update_fields=['seed', 'encrypted'])
+                        for a in await wallet.adhoc_accounts.all():
+                            a.private_key = crypt.decrypt(a.private_key)
+                            await a.save(using_db=conn, update_fields=['private_key'])
+                    old_password = npass
+                    break
+                except DecryptionError:
+                    print("**Invalid password**")
+            except KeyboardInterrupt:
+                break
+                exit(0)
+
+    # Change key
+    await wallet.change_seed(seed)
+
+    # Encrypt if necessary
+    if encrypt:
+        await wallet.encrypt_wallet(password)
+
+    # Get newest account
+    newest = await wallet.get_newest_account()
+
+    print(f"Seed changed for wallet {wallet.id}\nFirst account: {newest.address}")
+
+async def wallet_view_seed(wallet_id: str, password: str) -> str:
+    # Retrieve wallet
+    try:
+        wallet = await Wallet.get_wallet(wallet_id)
+    except WalletNotFound:
+        print(f"No wallet found with ID: {wallet_id}")
+        exit(1)
+    except WalletLocked as wl:
+        wallet = None
+        if password is not None:
+            crypt = AESCrypt(password)
+            try:
+                decrypted = crypt.decrypt(wl.wallet.seed)
+                wallet = wl.wallet
+                wallet.seed = decrypted
+            except DecryptionError:
+                pass
+        if wallet is None:
+            while True:
+                try:
+                    npass = getpass.getpass(prompt='Enter current password:')
+                    crypt = AESCrypt(npass)
+                    try:
+                        decrypted = crypt.decrypt(wl.wallet.seed)
+                        wallet = wl.wallet
+                        wallet.seed = decrypted
+                    except DecryptionError:
+                        print("**Invalid password**")
+                except KeyboardInterrupt:
+                    break
+                    exit(0)
+
+    print(f"{wallet.seed}")
+
+if __name__ == "__main__":
+    loop = asyncio.new_event_loop()
+    try:
+        loop.run_until_complete(DBConfig().init_db())
+        if options.command == 'wallet_list':
+            loop.run_until_complete(wallet_list())
+        elif options.command == 'wallet_create':
+            if options.seed is not None:
+                if not Validators.is_valid_block_hash(options.seed):
+                    print("Invalid seed specified")
+                    exit(1)
+            loop.run_until_complete(wallet_create(options.seed))
+        elif options.command == 'wallet_change_seed':
+            if options.seed is not None:
+                if not Validators.is_valid_block_hash(options.seed):
+                    print("Invalid seed specified")
+                    exit(1)
+            else:
+                while True:
+                    try:
+                        options.seed = getpass.getpass(prompt='Enter new wallet seed:')
+                        if Validators.is_valid_block_hash(options.seed):
+                            break
+                        print("**Invalid seed**, should be a 64-character hex string")
+                    except KeyboardInterrupt:
+                        break
+                        exit(0)
+            password = ''
+            if options.encrypt:
+                while True:
+                    try:
+                        password = getpass.getpass(prompt='Enter password to encrypt wallet:')
+                        if password.strip() == '':
+                            print("**Bad password** - cannot be blanke")
+                        break
+                    except KeyboardInterrupt:
+                        break
+                        exit(0)
+            loop.run_until_complete(wallet_change_seed(options.wallet, options.seed, password))
+        elif options.command == 'wallet_view_seed':
+            loop.run_until_complete(wallet_view_seed(options.wallet, options.password))
+        else:
+            parser.print_help()
+    except Exception as e:
+        print(str(e))
+    finally:
+        loop.run_until_complete(Tortoise.close_connections())
+        loop.close()

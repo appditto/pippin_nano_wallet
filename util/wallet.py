@@ -46,7 +46,11 @@ class WalletUtil(object):
     async def publish(self, state_block: dict, subtype: str = None) -> dict:
         """Publish a state block"""
         try:
-            return await RPCClient.instance().process(state_block, subtype=subtype)
+            resp = await RPCClient.instance().process(state_block, subtype=subtype)
+            # The RPC send/receive uses `block` as a key instead of `hash`
+            if 'hash' in resp:
+                return {'block': resp['hash']}
+            return resp
         except Exception:
             from db.models.wallet import ProcessFailed
             raise ProcessFailed()
@@ -211,6 +215,7 @@ class WalletUtil(object):
                         subtype='send'
                     )
                     await block.save()
+            return resp
 
     async def _change_block_create(self, representative: str, work: str = None, only_if_different: bool = False) -> dict:
         """Create a state block (change)"""

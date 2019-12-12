@@ -32,7 +32,7 @@ All runs used the same node, un-opened accounts, [BoomPoW](https://bpow.banano.c
 
 <p align="center">  <img src="https://raw.githubusercontent.com/appditto/pippin_nano_wallet/master/assets/benchmark.svg?sanitize=true" alt="Pippin Benchmarks" width="600" height="400"> </p>
 
-Benchmark that was uses is available [here](https://raw.githubusercontent.com/appditto/pippin_nano_wallet/master/benchmark.py)
+The benchmark script that was used is available [here](https://raw.githubusercontent.com/appditto/pippin_nano_wallet/master/benchmark.py)
 
 ## How Pippin Works
 

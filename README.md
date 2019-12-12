@@ -24,6 +24,16 @@ Pippin is the first drop-in replacement for the Nano developer wallet. It's incr
 
 Pippin can be used by exchanges, games, payment processors, tip bots, faucets, casinos, and a lot more.
 
+## Pippin Performance
+
+In a benchmark against the node developer wallet, Pippin was 2x faster on average over 3 runs.
+
+All runs used the same node, un-opened accounts, [BoomPoW](https://bpow.banano.cc) as the work peer.
+
+<p align="center">  <img src="https://raw.githubusercontent.com/appditto/pippin_nano_wallet/master/assets/benchmark.svg?sanitize=true" alt="Pippin Benchmarks" width="509" height="248"> </p>
+
+Benchmark that was uses is available [here](https://raw.githubusercontent.com/appditto/pippin_nano_wallet/master/benchmark.py)
+
 ## How Pippin Works
 
 Pippin provides an API that mimics the [Nano Wallet RPC Protocol](https://docs.nano.org/commands/rpc-protocol/#wallet-rpcs)

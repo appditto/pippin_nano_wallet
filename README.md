@@ -1,4 +1,4 @@
-<p align="center"> <a href="https://evilmartians.com/?utm_source=size-limit"> <img src="https://raw.githubusercontent.com/bbedward/graham_discord_bot/master/assets/pippin_logo.svg" alt="Pippin Wallet" width="1024" height="200"> </a> </p>
+<p align="center">  <img src="https://raw.githubusercontent.com/appditto/pippin_nano_wallet/master/assets/pippin_logo.svg" alt="Pippin Wallet" width="1024" height="200"> </p>
 
 [![GitHub release (latest)](https://img.shields.io/github/v/release/bbedward/pippin_nano_wallet)](https://github.com/bbedward/pippin_nano_wallet/releases) [![License](https://img.shields.io/github/license/bbedward/pippin_nano_wallet)](https://github.com/bbedward/pippin_nano_wallet/blob/master/LICENSE) [![Pipeline](https://gitlab.com/appditto/pippin_nano_wallet/badges/master/pipeline.svg)](https://gitlab.com/appditto/pippin_nano_wallet/pipelines)
 

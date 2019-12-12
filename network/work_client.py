@@ -109,41 +109,44 @@ class WorkClient(object):
             )
 
         # Post work_generate to all peers simultaneously
+        final_result = None
         while tasks:
             done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED, timeout=30)
             for task in done:
                 try:
                     result = task.result()
-                    try:
-                        tasks.remove(task)
-                    except ValueError:
-                        pass
                     if result is None:
                         aiohttp.log.server_logger.info("work_generate task returned None")
-                        continue
                     if isinstance(result, list):
                         result = json.loads(result[1])
                     elif isinstance(result, str):
                         result = {'work':result}
-                    if 'work' in result:
+                    if result is not None and 'work' in result:
                         cancel_json = {
                             'action': 'work_cancel',
                             'hash': hash
                         }
                         for p in self.work_urls:
                             asyncio.ensure_future(self.make_request(p, cancel_json))
-                        return result['work']
+                        final_result = result['work']
                     elif 'error' in result:
                         aiohttp.log.server_logger.info(f'work_generate task returned error {result["error"]}')
                 except Exception as exc:
                     aiohttp.log.server_logger.exception("work_generate Task raised an exception")
-                    break
-            for task in pending:
-                task.cancel()
-                try:
-                    tasks.remove(task)
-                except ValueError:
-                    pass
+                finally:
+                    try:
+                        tasks.remove(task)
+                    except ValueError:
+                        pass
+            gather = asyncio.gather(*pending)
+            gather.cancel()
+            try:
+                await gather
+            except asyncio.CancelledError:
+                pass
+
+        if final_result is not None:
+            return final_result
 
         # IF we're still here then all requests failed, set failure flag
         await RedisDB.instance().set(f"work_failure", "aa", expires=300)

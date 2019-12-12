@@ -144,6 +144,11 @@ class WorkClient(object):
                 await gather
             except asyncio.CancelledError:
                 pass
+            for task in pending:
+                try:
+                    tasks.remove(task)
+                except ValueError:
+                    pass
 
         if final_result is not None:
             return final_result

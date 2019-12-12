@@ -110,11 +110,15 @@ class WorkClient(object):
 
         # Post work_generate to all peers simultaneously
         final_result = None
-        while tasks:
+        while len(tasks) > 0:
+            # Fire all tasks simultaneously and fire when first one is completed
             done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED, timeout=30)
-            for task in done:
-                try:
+            # Set to True if any tasks completed before the timeout
+            has_done = len(done) > 0
+            try:
+                for task in done:
                     result = task.result()
+                    # Some tasks return different types of responses, e.g. DPoW is different than a normal work peer
                     if result is None:
                         aiohttp.log.server_logger.info("work_generate task returned None")
                     if isinstance(result, list):
@@ -129,26 +133,23 @@ class WorkClient(object):
                         for p in self.work_urls:
                             asyncio.ensure_future(self.make_request(p, cancel_json))
                         final_result = result['work']
-                    elif 'error' in result:
+                    elif result is not None and 'error' in result:
                         aiohttp.log.server_logger.info(f'work_generate task returned error {result["error"]}')
-                except Exception as exc:
-                    aiohttp.log.server_logger.exception("work_generate Task raised an exception")
-                finally:
-                    try:
-                        tasks.remove(task)
-                    except ValueError:
-                        pass
-            gather = asyncio.gather(*pending)
-            gather.cancel()
-            try:
-                await gather
-            except asyncio.CancelledError:
-                pass
-            for task in pending:
-                try:
-                    tasks.remove(task)
-                except ValueError:
-                    pass
+            except Exception:
+                aiohttp.log.server_logger.exception("work_generate task raised Exception")
+            finally:
+                # Either nothing finished before the timeout or something did
+                # Cancel any pending tasks
+                if not has_done or final_result is not None or len(pending) == 0:
+                    for p in pending:
+                        try:
+                            p.cancel()
+                        except Exception:
+                            pass
+                    break
+                elif len(pending) > 0:
+                    # wait again for pending tasks
+                    tasks = pending
 
         if final_result is not None:
             return final_result

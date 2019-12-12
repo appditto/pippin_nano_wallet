@@ -1,4 +1,4 @@
-<p align="left">  <img src="https://raw.githubusercontent.com/appditto/pippin_nano_wallet/master/assets/pippin_logo.svg?sanitize=true" alt="Pippin Wallet" width="384" height="75"> </p>
+<p align="left">  <img src="https://raw.githubusercontent.com/appditto/pippin_nano_wallet/master/assets/pippin_logo.svg?sanitize=true" alt="Pippin Wallet" width="256" height="50"> </p>
 
 [![GitHub release (latest)](https://img.shields.io/github/v/release/bbedward/pippin_nano_wallet)](https://github.com/bbedward/pippin_nano_wallet/releases) [![License](https://img.shields.io/github/license/bbedward/pippin_nano_wallet)](https://github.com/bbedward/pippin_nano_wallet/blob/master/LICENSE) [![Pipeline](https://gitlab.com/appditto/pippin_nano_wallet/badges/master/pipeline.svg)](https://gitlab.com/appditto/pippin_nano_wallet/pipelines)
 

@@ -33,7 +33,7 @@ In a benchmark against the node developer wallet, Pippin was 2x faster on averag
 - Every run consisted of 62 transactions (blocks)
 - [BoomPoW](https://bpow.banano.cc) was used as the work peer for all runs
 
-<p align="center">  <img src="https://raw.githubusercontent.com/appditto/pippin_nano_wallet/master/assets/benchmark.png?sanitize=true" alt="Pippin Benchmarks"> </p>
+<p align="center">  <img src="https://raw.githubusercontent.com/appditto/pippin_nano_wallet/master/assets/benchmark.png" alt="Pippin Benchmarks"> </p>
 
 The benchmark script that was used is available [here](https://raw.githubusercontent.com/appditto/pippin_nano_wallet/master/benchmark.py)
 

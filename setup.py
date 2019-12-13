@@ -20,9 +20,10 @@ setup(
     author="Appditto LLC",
     author_email="hello@appditto.com",
     # License
-    license="MIT LIcense",
+    license="MIT License",
     # Packages
     packages=find_packages(include=["pippin*"]),
+    package_data={'pippin': ['*.yaml']},
     zip_safe=True,
     # Details
     url="https://github.com/appditto/pippin_nano_wallet",

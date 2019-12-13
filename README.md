@@ -30,7 +30,7 @@ Pippin can be used by exchanges, games, payment processors, tip bots, faucets, c
 
 The benchmark script that was used is available [here](https://raw.githubusercontent.com/appditto/pippin_nano_wallet/master/benchmark.py)
 
-There were 3 independent runs for each wallet, 62 blocks each, same node, and the same work peer. Pippin was **2x faster** on average.
+There were 3 independent runs for each wallet, 62 blocks each, same node, and the same work peer. Pippin was consistently **twice as fast** versus the node wallet.
 
 ## How Pippin Works
 

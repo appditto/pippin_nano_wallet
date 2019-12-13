@@ -26,9 +26,12 @@ Pippin can be used by exchanges, games, payment processors, tip bots, faucets, c
 
 ## Pippin Performance
 
-In a benchmark against the node developer wallet, Pippin was 2x faster on average over 3 runs.
+In a benchmark against the node developer wallet, Pippin was 2x faster on average on 3 independent runs.
 
-All runs used the same node, un-opened accounts, [BoomPoW](https://bpow.banano.cc) as the work peer.
+- All runs used the same node (V20)
+- Every run created a new wallet and 21 accounts
+- Every run consisted of 62 transactions (blocks)
+- [BoomPoW](https://bpow.banano.cc) was used as the work peer for all runs
 
 <p align="center">  <img src="https://raw.githubusercontent.com/appditto/pippin_nano_wallet/master/assets/benchmark.svg?sanitize=true" alt="Pippin Benchmarks" width="600" height="400"> </p>
 

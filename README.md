@@ -191,13 +191,13 @@ Instructions for other Linux distributions should be similar.
 % sudo apt install build-essential python3.6 python3.6-dev python3-pip libb2-dev redis-server
 ```
 
-Update PIP to latest version **important**
+### Installing Pippin
+
+First, update PIP to latest version **important**
 
 ```
 % pip3 install -U pip
 ```
-
-### Installing Pippin
 
 For MacOS you might need to set the following environment variable:
 

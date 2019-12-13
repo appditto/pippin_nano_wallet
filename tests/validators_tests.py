@@ -1,4 +1,4 @@
-from util.validators import Validators
+from pippin.util.validators import Validators
 
 import os
 import string

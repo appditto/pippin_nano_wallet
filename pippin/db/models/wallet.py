@@ -9,12 +9,12 @@ from tortoise.functions import Max
 from tortoise.models import Model
 from tortoise.transactions import in_transaction
 
-import db.models.account as acct
-import db.models.adhoc_account as adhoc_acct
-from db.redis import RedisDB
-from model.secrets import SeedStorage
-from util.crypt import AESCrypt
-from util.wallet import WalletUtil
+import pippin.db.models.account as acct
+import pippin.db.models.adhoc_account as adhoc_acct
+from pippin.db.redis import RedisDB
+from pippin.model.secrets import SeedStorage
+from pippin.util.crypt import AESCrypt
+from pippin.util.wallet import WalletUtil
 
 
 class WalletNotFound(Exception):

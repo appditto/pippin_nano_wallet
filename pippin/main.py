@@ -5,19 +5,38 @@ try:
 except ImportError:
 	print("Couldn't install uvloop, falling back to the slower asyncio event loop")
 
+import argparse
 import asyncio
+import pathlib
+import os
+import shutil
 import logging
 
 from aiohttp import web, log
-from db.redis import RedisDB
+from pippin.db.redis import RedisDB
 from tortoise import Tortoise
-from db.tortoise_config import DBConfig
-from config import Config
+from pippin.db.tortoise_config import DBConfig
+from pippin.config import Config
 from logging.handlers import TimedRotatingFileHandler, WatchedFileHandler
-from network.rpc_client import RPCClient
-from network.work_client import WorkClient
-from server.pippin_server import PippinServer
-from util.nano_util import NanoUtil
+from pippin.network.rpc_client import RPCClient
+from pippin.network.work_client import WorkClient
+from pippin.server.pippin_server import PippinServer
+from pippin.util.nano_util import NanoUtil
+from pippin.util.utils import Utils
+
+parser = argparse.ArgumentParser(description="Pippin Server")
+parser.add_argument('--generate-config', action='store_true', help='Generate sample configuration file and exit', default=False)
+options = parser.parse_args()
+
+# Create sample file if not exists
+config_dir = Utils.get_project_root()
+sample_file = config_dir.joinpath(pathlib.PurePath('sample.config.yaml'))
+if not os.path.isfile(sample_file) or options.generate_config:
+    ref_file = pathlib.Path(__file__).parent.joinpath(pathlib.PurePath('sample.config.yaml'))
+    shutil.copyfile(ref_file, sample_file)
+    print(f"Sample configuration created at: {sample_file}")
+    if options.generate_config:
+        exit(0)
 
 # Configuration
 config = Config.instance()
@@ -41,7 +60,7 @@ else:
     root.addHandler(handler)
     root.addHandler(TimedRotatingFileHandler(config.log_file, when="d", interval=1, backupCount=100))  
 
-if __name__ == "__main__":
+def main():
     loop = asyncio.get_event_loop()
     try:
         # Initialize database first
@@ -87,3 +106,6 @@ if __name__ == "__main__":
         ]
         loop.run_until_complete(asyncio.wait(tasks))
         loop.close()
+
+if __name__ == "__main__":
+    main()

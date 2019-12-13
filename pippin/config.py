@@ -1,11 +1,15 @@
-from dotenv import load_dotenv
-load_dotenv()
-from aiohttp import log
-from version import __version__
-from util.utils import Utils
-from util.validators import Validators
 
 import pathlib
+from dotenv import load_dotenv
+load_dotenv()
+from pippin.util.utils import Utils
+load_dotenv(dotenv_path=Utils.get_project_root().joinpath(pathlib.PurePath('.env')))
+
+from aiohttp import log
+from pippin.version import __version__
+from pippin.util.utils import Utils
+from pippin.util.validators import Validators
+
 import secrets
 import yaml
 

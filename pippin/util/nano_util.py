@@ -2,7 +2,7 @@ from concurrent.futures.process import ProcessPoolExecutor
 from concurrent.futures.thread import ThreadPoolExecutor
 
 import asyncio
-import config
+import pippin.config as config
 import functools
 import nanopy
 

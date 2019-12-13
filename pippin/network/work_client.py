@@ -4,14 +4,14 @@ from typing import List
 
 import aiohttp
 import asyncio
-import config
+import pippin.config as config
 import nanopy
 import os
 import rapidjson as json
 
-from db.redis import RedisDB
-from network.dpow_websocket import ConnectionClosed, DpowClient
-from util.nano_util import NanoUtil
+from pippin.db.redis import RedisDB
+from pippin.network.dpow_websocket import ConnectionClosed, DpowClient
+from pippin.util.nano_util import NanoUtil
 
 class WorkClient(object):
     _instance = None

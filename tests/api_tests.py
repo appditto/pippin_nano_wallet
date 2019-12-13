@@ -5,12 +5,12 @@ import pathlib
 from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop
 from tortoise import Tortoise
 
-from config import Config
-from db.models.wallet import Wallet
-from db.tortoise_config import DBConfig
-from db.redis import RedisDB
-from server.pippin_server import PippinServer
-from util.utils import Utils
+from pippin.config import Config
+from pippin.db.models.wallet import Wallet
+from pippin.db.tortoise_config import DBConfig
+from pippin.db.redis import RedisDB
+from pippin.server.pippin_server import PippinServer
+from pippin.util.utils import Utils
 
 
 class PippinServerTest(AioHTTPTestCase):

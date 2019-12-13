@@ -1,32 +1,23 @@
-#!/bin/sh
-# -*- mode: Python -*-
-
-# Find suitable python version
-""":"
-for pyver in 3.7 3.8 3.9; do
-    which python$pyver > /dev/null 2>&1 && exec python$pyver "$0" "$@"
-done
-echo "Couldn't find python3.7, python3.8, or python3.9 in your PATH" >&2
-exit 1
-":"""
-
+import pathlib
 from dotenv import load_dotenv
 load_dotenv()
+from pippin.util.utils import Utils
+load_dotenv(dotenv_path=Utils.get_project_root().joinpath(pathlib.PurePath('.env')))
 
 import argparse
 import asyncio
 import getpass
 
-from db.models.wallet import Wallet, WalletLocked, WalletNotFound
-from db.tortoise_config import DBConfig
+from pippin.db.models.wallet import Wallet, WalletLocked, WalletNotFound
+from pippin.db.tortoise_config import DBConfig
 from tortoise import Tortoise
 from tortoise.transactions import in_transaction
-from util.crypt import AESCrypt, DecryptionError
-from util.random import RandomUtil
-from util.validators import Validators
-from version import __version__
+from pippin.util.crypt import AESCrypt, DecryptionError
+from pippin.util.random import RandomUtil
+from pippin.util.validators import Validators
+from pippin.version import __version__
 
-from config import Config
+from pippin.config import Config
 import os
 
 # Set and patch nanopy
@@ -177,6 +168,7 @@ async def wallet_view_seed(wallet_id: str, password: str, all_keys: bool) -> str
 async def account_create(wallet_id: str, key: str, count: int = 1) -> str:
     # Retrieve wallet
     crypt = None
+    password=None
     if count is None:
         count = 1
     try:
@@ -195,6 +187,7 @@ async def account_create(wallet_id: str, key: str, count: int = 1) -> str:
                         decrypted = crypt.decrypt(wl.wallet.seed)
                         wallet = wl.wallet
                         wallet.seed = decrypted
+                        password=npass
                     except DecryptionError:
                         print("**Invalid password**")
                 except KeyboardInterrupt:
@@ -214,7 +207,7 @@ async def account_create(wallet_id: str, key: str, count: int = 1) -> str:
         a = await wallet.adhoc_account_create(key, password=password)
         print(f"account: {a}")
 
-if __name__ == "__main__":
+def main():
     loop = asyncio.new_event_loop()
     try:
         loop.run_until_complete(DBConfig().init_db())
@@ -274,3 +267,6 @@ if __name__ == "__main__":
     finally:
         loop.run_until_complete(Tortoise.close_connections())
         loop.close()
+
+if __name__ == "__main__":
+    main()

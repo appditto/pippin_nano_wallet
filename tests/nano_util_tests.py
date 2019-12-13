@@ -1,5 +1,5 @@
 from aiounittest import async_test
-from util.nano_util import NanoUtil
+from pippin.util.nano_util import NanoUtil
 
 import asyncio
 import unittest

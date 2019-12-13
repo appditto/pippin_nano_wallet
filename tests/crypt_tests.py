@@ -1,4 +1,4 @@
-from util.crypt import AESCrypt, DecryptionError
+from pippin.util.crypt import AESCrypt, DecryptionError
 
 import unittest
 

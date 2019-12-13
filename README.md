@@ -125,17 +125,17 @@ APIs that the Nano node wallet supports but are not implemented in Pippin.
 
 Pippin has a CLI interface available, you can see available subcommands with:
 
-`./pippin --help`
+`pippin-cli --help`
 
 The primary goal of the CLI is key management. It's a more secure way to import a seed and backup your seed.
 
 For example a typical flow of creating a new wallet with a specific seed might look like (add --encrypt to wallet_change_seed if you want to lock the wallet with a password):
 
 ```
-% ./pippin wallet_create
+% pippin-cli wallet_create
 Wallet created, ID: d897b5ec-1897-4e7e-8a90-4526f454c8de
 First account: nano_31a7wzm4rayik1hthahzkekntsqz86u6dko5adg8jxueehzt5yhmhsqsuzdy
-% ./pippin wallet_change_seed --wallet d897b5ec-1897-4e7e-8a90-4526f454c8de
+% pippin-cli wallet_change_seed --wallet d897b5ec-1897-4e7e-8a90-4526f454c8de
 Enter new wallet seed: <hidden_input>
 Seed changed for wallet d897b5ec-1897-4e7e-8a90-4526f454c8de
 First account: nano_3ejy6ha1iuqhi5cshhifu57p5othdcymfbzsmxhjucdks53eh41yd4qpjtxf
@@ -144,7 +144,7 @@ First account: nano_3ejy6ha1iuqhi5cshhifu57p5othdcymfbzsmxhjucdks53eh41yd4qpjtxf
 To backup a seed (**warning:** this prints seed to stdout)
 
 ```
-% ./pippin wallet_view_seed --wallet <id>
+% pippin-cli wallet_view_seed --wallet <id>
 ```
 
 ## Setting up Pippin
@@ -190,19 +190,25 @@ On Linux, debian-based systems:
 % sudo apt install build-essential python3.7 python3.7-dev libb2-dev redis-server
 ```
 
-### Installing python dependencies
+### Installing Pippin
 
-MacOS:
-
-```
-% CC=/usr/local/bin/gcc-9 python3 -m pip install -U -r requirements.txt
-```
-
-Linux:
+MacOS you might need to set the following environment variable:
 
 ```
-% python3.7 -m pip install -r requirements.txt
+export CC=/usr/local/bin/gcc-9
 ```
+
+To install Pippin
+
+```
+% python3.7 -m pip install pippin-wallet
+```
+
+### Configuring Pippin
+
+Pippin creates a `PippinData` directory in your home directory.
+
+Run: `pippin-server --generate-config` to generate a sample in `~/PippinData/sample.config.yaml`
 
 ### Using Distributed PoW or BoomPoW
 
@@ -212,14 +218,14 @@ Pippin will use them automatically for work generation if the key/user is presen
 
 For DPoW:
 ```
-% echo "DPOW_USER=mydpowuser" >> .env
-% echo "DPOW_KEY=mydpowkey" >> .env
+% echo "DPOW_USER=mydpowuser" >> ~/PippinData/.env
+% echo "DPOW_KEY=mydpowkey" >> ~/PippinData/.env
 ```
 
 For BPoW:
 ```
-% echo "BPOW_USER=mybpowuser" >> .env
-% echo "BPOW_KEY=mybpowkey" >> .env
+% echo "BPOW_USER=mybpowuser" >> ~/PippinData/.env
+% echo "BPOW_KEY=mybpowkey" >> ~/PippinData/.env
 ```
 
 Replace `mybpowuser` and `mybpowkey` with the actual user and keys you have. If you need keys, visit their respected websites for instructions on how to request them.
@@ -234,34 +240,34 @@ To use postgres or mysql, you need to put your database information in some envi
 
 Required (replace `database_name`, `user_name`, and `mypassword` with the actual values):
 ```
-% echo "POSTGRES_DB=database_name" >> .env
-% echo "POSTGRES_USER=user_name" >> .env
-% echo "POSTGRES_PASSWORD=mypassword" >> .env
+% echo "POSTGRES_DB=database_name" >> ~/PippinData/.env
+% echo "POSTGRES_USER=user_name" >> ~/PippinData/.env
+% echo "POSTGRES_PASSWORD=mypassword" >> ~/PippinData/.env
 ```
 
 Optional:
 ```
 # 127.0.0.1 is default
-% echo "POSTGRES_HOST=127.0.0.1" >> .env 
+% echo "POSTGRES_HOST=127.0.0.1" >> ~/PippinData/.env 
 # 5432 is default
-% echo "POSTGRES_PORT=5432" >> .env
+% echo "POSTGRES_PORT=5432" >> ~/PippinData/.env
 ```
 
 **MySQL:**
 
 Required (replace `database_name`, `user_name`, and `mypassword` with the actual values):
 ```
-% echo "MYSQL_DB=database_name" >> .env
-% echo "MYSQL_USER=user_name" >> .env
-% echo "MYSQL_PASSWORD=mypassword" >> .env
+% echo "MYSQL_DB=database_name" >> ~/PippinData/.env
+% echo "MYSQL_USER=user_name" >> ~/PippinData/.env
+% echo "MYSQL_PASSWORD=mypassword" >> ~/PippinData/.env
 ```
 
 Optional:
 ```
 # 127.0.0.1 is default
-% echo "MYSQL_HOST=127.0.0.1" >> .env 
+% echo "MYSQL_HOST=127.0.0.1" >> ~/PippinData/.env 
 # 3306 is default
-% echo "MYSQL_PORT=3306" >> .env
+% echo "MYSQL_PORT=3306" >> ~/PippinData/.env
 ```
 
 ### Changing Redis Host/Port
@@ -271,18 +277,20 @@ Pippin uses Redis for distributed locks, so that every account works on its own 
 By default, it will look for redis on `127.0.0.1` on port `6379` and use db `0`, you can also change these with environment variables.
 
 ```
-echo "REDIS_HOST=127.0.0.1" >> .env
-echo "REDIS_PORT=6379" >> .env
-echo "REDIS_DB=0" >> .env
+echo "REDIS_HOST=127.0.0.1" >> ~/PippinData/.env
+echo "REDIS_PORT=6379" >> ~/PippinData/.env
+echo "REDIS_DB=0" >> ~/PippinData/.env
 ```
 
 ## Pippin Configuration
 
 Pippin uses a [yaml](https://yaml.org/) based configuration for everything else.
 
-All available options are in a sample file at `sample.config.yaml`
+All available options are in a sample file [here](https://github.com/appditto/pippin_nano_wallet/blob/master/sample.config.yaml)
 
-You can override any default by creating a file called `config.yaml` and choosing your own settings.
+You can override any default by creating a file called `~/PippinData/config.yaml` and choosing your own settings.
+
+It must be in your users home directory in a folder called `PippinData`
 
 ### Configuring Pippin for BANANO
 
@@ -311,7 +319,7 @@ server:
 
 ### Running Pippin
 
-Once configured, just start it with `python3 main.py`
+Once configured, just start it with `pippin-server`
 
 It can be started on boot using systemd (Linux)
 
@@ -328,13 +336,13 @@ After=network.target
 Type=simple
 User=YOUR_LINUX_USER
 Group=YOUR_LINUX_USER
-WorkingDirectory=/home/YOUR_LINUX_USER/pippin_nano_wallet
-EnvironmentFile=/home/YOUR_LINUX_USER/pippin_nano_wallet/.env
-ExecStart=/home/YOUR_LINUX_USER/pippin_nano_wallet/venv/bin/python main.py
+ExecStart=/path/to/pippin-server
 
 [Install]
 WantedBy=multi-user.target
 ```
+
+If you aren't sure what the full path of pippin-server is, run `which pippin-server`
 
 Then enable and start
 

@@ -1,6 +1,6 @@
 from tortoise.models import Model
 from tortoise import fields
-from model.secrets import SeedStorage
+from pippin.model.secrets import SeedStorage
 
 class AdHocAccount(Model):
     wallet  = fields.ForeignKeyField('db.Wallet', on_delete=fields.CASCADE, related_name='adhoc_accounts', index=True)

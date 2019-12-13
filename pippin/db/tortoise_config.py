@@ -1,11 +1,13 @@
 import logging
 import os
 from tortoise import Tortoise
+from pippin.util.utils import Utils
+import pathlib
 
 class DBConfig(object):
     def __init__(self, mock = False):
         self.logger = logging.getLogger()
-        self.modules = {'db': ['db.models.wallet', 'db.models.account', 'db.models.adhoc_account', 'db.models.block']}
+        self.modules = {'db': ['pippin.db.models.wallet', 'pippin.db.models.account', 'pippin.db.models.adhoc_account', 'pippin.db.models.block']}
         self.mock = mock
         if self.mock:
             self.use_postgres = False
@@ -50,8 +52,9 @@ class DBConfig(object):
             )
         else:
             self.logger.info(f"Using SQLite database pippin.db")
+            dbpath = Utils.get_project_root().joinpath(pathlib.PurePath('pippin.db')) if not self.mock else Utils.get_project_root().joinpath(pathlib.PurePath('mock.db'))
             await Tortoise.init(
-                db_url='sqlite://pippin.db' if not self.mock else 'sqlite://mock.db',
+                db_url=f'sqlite://{dbpath}',
                 modules=self.modules
             )
         # Create tables

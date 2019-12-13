@@ -5,16 +5,16 @@ from aiohttp import log
 from aioredis_lock import RedisLock
 from typing import List, Union, TYPE_CHECKING
 
-import config
-import util.nano_util as nano_util
-from db.models.account import Account
-from db.models.adhoc_account import AdHocAccount
-from db.models.block import Block
-from network.rpc_client import AccountNotFound, RPCClient
-from network.work_client import WorkClient
+import pippin.config as config
+import pippin.util.nano_util as nano_util
+from pippin.db.models.account import Account
+from pippin.db.models.adhoc_account import AdHocAccount
+from pippin.db.models.block import Block
+from pippin.network.rpc_client import AccountNotFound, RPCClient
+from pippin.network.work_client import WorkClient
 
 if TYPE_CHECKING:
-    from db.models.wallet import Wallet
+    from pippin.db.models.wallet import Wallet
 
 class WalletUtil(object):
     """Wallet utilities, like signing, creating blocks, etc."""
@@ -52,7 +52,7 @@ class WalletUtil(object):
                 return {'block': resp['hash']}
             return resp
         except Exception:
-            from db.models.wallet import ProcessFailed
+            from pippin.db.models.wallet import ProcessFailed
             raise ProcessFailed()
 
     async def _receive_block_create(self, hash: str, work: str = None) -> dict:

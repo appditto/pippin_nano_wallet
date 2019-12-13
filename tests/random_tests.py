@@ -1,4 +1,4 @@
-from util.random import RandomUtil
+from pippin.util.random import RandomUtil
 
 import unittest
 

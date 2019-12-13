@@ -7,18 +7,18 @@ from aiohttp import log, web
 from tortoise.transactions import in_transaction
 
 import asyncio
-import config
-from db.redis import RedisDB
-from db.models.account import Account
-from db.models.adhoc_account import AdHocAccount
-from db.models.wallet import (AccountAlreadyExists, Wallet, WalletLocked,
+import pippin.config as config
+from pippin.db.redis import RedisDB
+from pippin.db.models.account import Account
+from pippin.db.models.adhoc_account import AdHocAccount
+from pippin.db.models.wallet import (AccountAlreadyExists, Wallet, WalletLocked,
                               WalletNotFound)
-from network.rpc_client import AccountNotFound, BlockNotFound, RPCClient
-from network.nano_websocket import WebsocketClient
-from util.crypt import DecryptionError
-from util.random import RandomUtil
-from util.validators import Validators
-from util.wallet import (InsufficientBalance, ProcessFailed, WalletUtil,
+from pippin.network.rpc_client import AccountNotFound, BlockNotFound, RPCClient
+from pippin.network.nano_websocket import WebsocketClient
+from pippin.util.crypt import DecryptionError
+from pippin.util.random import RandomUtil
+from pippin.util.validators import Validators
+from pippin.util.wallet import (InsufficientBalance, ProcessFailed, WalletUtil,
                          WorkFailed)
 
 class PippinServer(object):

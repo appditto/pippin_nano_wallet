@@ -1,12 +1,12 @@
-from util.wallet import WalletUtil
-from util.nano_util import NanoUtil
-from util.utils import Utils
+from pippin.util.wallet import WalletUtil
+from pippin.util.nano_util import NanoUtil
+from pippin.util.utils import Utils
 from tortoise import Tortoise
-from db.tortoise_config import DBConfig
-from db.redis import RedisDB
-from db.models.account import Account
-from db.models.adhoc_account import AdHocAccount
-from db.models.wallet import Wallet
+from pippin.db.tortoise_config import DBConfig
+from pippin.db.redis import RedisDB
+from pippin.db.models.account import Account
+from pippin.db.models.adhoc_account import AdHocAccount
+from pippin.db.models.wallet import Wallet
 
 import os
 import asyncio
@@ -46,6 +46,7 @@ class TestWalletUtil(unittest.TestCase):
         try:
             os.remove(Utils.get_project_root().joinpath(pathlib.PurePath('mock.db')))
         except FileNotFoundError:
+            print(str(Utils.get_project_root().joinpath(pathlib.PurePath('mock.db'))))
             pass
         try:
             os.remove(Utils.get_project_root().joinpath(pathlib.PurePath('mock.db-wal')))

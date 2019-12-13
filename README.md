@@ -208,7 +208,7 @@ export CC=/usr/local/bin/gcc-9
 To install Pippin
 
 ```
-% pip3 install pippin-wallet
+% pip3 install --user pippin-wallet
 ```
 
 To upgrade Pippin in the future, add --upgrade
@@ -349,7 +349,7 @@ After=network.target
 Type=simple
 User=YOUR_LINUX_USER
 Group=YOUR_LINUX_USER
-ExecStart=/usr/local/bin/pippin-server
+ExecStart=/home/myuser/.local/bin/pippin-server
 
 [Install]
 WantedBy=multi-user.target

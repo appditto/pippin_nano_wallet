@@ -146,31 +146,35 @@ To backup a seed (**warning:** this prints seed to stdout)
 
 ### Requirements
 
-- Python 3.7 or newer
+- Python 3.6 or newer
 - GCC, for MacOS and Linux
 - libb2 (blake2b)
 - A Redis server
 
-On MacOS, with homebrew:
+**MacOS Instructions**
+
+1) Install [homebrew](https://brew.sh/), if it isn't already installed
+
+2) Install Redis (skip if you already have done so)
 
 ```
 % brew install gcc@9 python libb2 redis
 % launchctl load ~/Library/LaunchAgents/homebrew.mxcl.redis.plist
 ```
 
-To start redis at boot on MacOS:
+To start redis at boot (optional):
 
 ```
 % ln -sfv /usr/local/opt/redis/*.plist ~/Library/LaunchAgents
 ```
 
-MacOS users may find it convenient to priorize homebrew binaries.
+You may find it convenient to priorize homebrew binaries by including the install location first in your PATH.
 
 ```
 % export PATH=/usr/local/bin:$PATH
 ```
 
-This means you'll be using the homebrew installed python3 by default, to make it permanent:
+To make it permanent:
 
 ```
 # Catalina
@@ -179,15 +183,23 @@ This means you'll be using the homebrew installed python3 by default, to make it
 % echo "export PATH=/usr/local/bin:$PATH" >> ~/.profile
 ```
 
-On Linux, debian-based systems:
+**Ubuntu 18.04**
+
+Instructions for other Linux distributions should be similar.
 
 ```
-% sudo apt install build-essential python3.7 python3.7-dev libb2-dev redis-server
+% sudo apt install build-essential python3.6 python3.6-dev python3-pip libb2-dev redis-server
+```
+
+Update PIP to latest version **important**
+
+```
+% pip3 install -U pip
 ```
 
 ### Installing Pippin
 
-MacOS you might need to set the following environment variable:
+For MacOS you might need to set the following environment variable:
 
 ```
 export CC=/usr/local/bin/gcc-9
@@ -196,7 +208,13 @@ export CC=/usr/local/bin/gcc-9
 To install Pippin
 
 ```
-% python3.7 -m pip install pippin-wallet
+% pip3 install pippin-wallet
+```
+
+To upgrade Pippin in the future, add --upgrade
+
+```
+% pip3 install --upgrade pippin-wallet
 ```
 
 ### Configuring Pippin
@@ -331,7 +349,7 @@ After=network.target
 Type=simple
 User=YOUR_LINUX_USER
 Group=YOUR_LINUX_USER
-ExecStart=/path/to/pippin-server
+ExecStart=/usr/local/bin/pippin-server
 
 [Install]
 WantedBy=multi-user.target

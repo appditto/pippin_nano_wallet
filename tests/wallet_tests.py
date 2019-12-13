@@ -38,8 +38,8 @@ class TestWalletUtil(unittest.TestCase):
             private_key='86A3D926AB6BEBAA678C13823D7A92A97CAFAFD277EBF4B54C42C8BB9806EAEE'
         )
         await cls.adhoc_account.save()
-        cls.wallet_util = WalletUtil(cls.account, cls.wallet, await RedisDB.instance().get_redis())
-        cls.wallet_util_adhoc = WalletUtil(cls.adhoc_account, cls.wallet, await RedisDB.instance().get_redis())
+        cls.wallet_util = WalletUtil(cls.account, cls.wallet)
+        cls.wallet_util_adhoc = WalletUtil(cls.adhoc_account, cls.wallet)
 
     @classmethod
     def removeMockDB(cls):

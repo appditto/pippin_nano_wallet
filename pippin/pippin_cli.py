@@ -264,6 +264,7 @@ def main():
             parser.print_help()
     except Exception as e:
         print(str(e))
+        raise e
     finally:
         loop.run_until_complete(Tortoise.close_connections())
         loop.close()

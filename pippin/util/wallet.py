@@ -1,12 +1,14 @@
+from typing import TYPE_CHECKING, List, Union
+
 import aioredis
 import nanopy
 import rapidjson
 from aiohttp import log
-from aioredis_lock import RedisLock
-from typing import List, Union, TYPE_CHECKING
+from aioredlock import LockError
 
 import pippin.config as config
 import pippin.util.nano_util as nano_util
+from pippin.db.redis import RedisDB
 from pippin.db.models.account import Account
 from pippin.db.models.adhoc_account import AdHocAccount
 from pippin.db.models.block import Block
@@ -19,15 +21,9 @@ if TYPE_CHECKING:
 class WalletUtil(object):
     """Wallet utilities, like signing, creating blocks, etc."""
 
-    def __init__(self, acct: Union[Account, AdHocAccount], wallet: 'Wallet', redis: aioredis.Redis):
+    def __init__(self, acct: Union[Account, AdHocAccount], wallet: 'Wallet'):
         self.account = acct
         self.wallet = wallet
-        self.lock = RedisLock(
-            redis,
-            key=f"pippin:{self.account.address}",
-            timeout=300,
-            wait_timeout=300
-        )
 
     def get_representative(self):
         if self.wallet.representative is None:
@@ -109,7 +105,7 @@ class WalletUtil(object):
 
     async def receive(self, hash: str, work: str = None) -> dict:
         """Receive a block and return hash of published block"""
-        async with self.lock as lock:
+        async with await (await RedisDB.instance().get_lock_manager()).lock(f"pippin:{self.account.address}") as lock:
             block = await self._receive_block_create(hash, work)
             return await self.publish(block, subtype='receive')
 
@@ -128,7 +124,7 @@ class WalletUtil(object):
     async def receive_all(self) -> int:
         """Receive all pending blocks for this account and return # received"""
         received_count = 0
-        async with self.lock as lock:
+        async with await (await RedisDB.instance().get_lock_manager()).lock(f"pippin:{self.account.address}") as lock:
             received_count = await self._receive_all()
         return received_count
 
@@ -187,7 +183,8 @@ class WalletUtil(object):
     async def send(self, amount: int, destination: str, id: str = None, work: str = None) -> dict:
         """Create a send block and return hash of published block
             amount is in RAW"""
-        async with self.lock as lock:
+        
+        async with await (await RedisDB.instance().get_lock_manager()).lock(f"pippin:{self.account.address}") as lock:
             # See if block exists, if ID specified
             # If so just rebroadcast it and return the hash
             if id is not None:
@@ -259,7 +256,7 @@ class WalletUtil(object):
 
     async def representative_set(self, representative: str, work: str = None, only_if_different: bool = False) -> dict:
         """Create a change block and return hash of published block"""
-        async with self.lock as lock:
+        async with await (await RedisDB.instance().get_lock_manager()).lock(f"pippin:{self.account.address}") as lock:
             state_block = await self._change_block_create(representative, work=work, only_if_different=only_if_different)
 
             if state_block is None and only_if_different:

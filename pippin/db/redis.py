@@ -1,6 +1,8 @@
-import aioredis
 import asyncio
 import os
+
+import aioredis
+import aioredlock
 
 class RedisDB(object):
     _instance = None
@@ -13,6 +15,7 @@ class RedisDB(object):
         if cls._instance is None:
             cls._instance = cls.__new__(cls)
             cls.redis = None
+            cls.lock_manager = None
             cls.redis_host = os.getenv('REDIS_HOST', '127.0.0.1')
             cls.redis_port = int(os.getenv('REDIS_PORT', '6379'))
             cls.redis_db = int(os.getenv('REDIS_DB', 0))
@@ -32,6 +35,13 @@ class RedisDB(object):
             return cls.redis
         cls.redis = await aioredis.create_redis_pool((cls.redis_host, cls.redis_port), db=cls.redis_db, encoding='utf-8', minsize=1, maxsize=5)
         return cls.redis
+
+    @classmethod
+    async def get_lock_manager(cls) -> aioredlock.Aioredlock:
+        if cls.lock_manager is not None:
+            return cls.lock_manager
+        cls.lock_manager = aioredlock.Aioredlock([await cls.get_redis()], lock_timeout=300, retry_count=3, retry_delay_min=30, retry_delay_max=90)
+        return cls.lock_manager
 
     async def set(self, key: str, value: str, expires: int = 0):
         """Basic redis SET"""

@@ -3,7 +3,8 @@ from typing import List
 import nanopy
 import uuid
 from aiohttp import log
-from aioredis_lock import LockTimeoutError, RedisLock
+
+from aioredlock import LockError
 from tortoise import fields
 from tortoise.functions import Max
 from tortoise.models import Model
@@ -104,7 +105,7 @@ class Wallet(Model):
     async def bulk_representative_update(self, rep: str):
         """Set all account representatives to rep"""
         for a in await self.accounts.all():
-            w = WalletUtil(a, self, await RedisDB.instance().get_redis())
+            w = WalletUtil(a, self)
             await w.representative_set(rep, only_if_different=True)
 
     async def adhoc_account_create(self, key: str, password: str = None) -> str:
@@ -135,12 +136,7 @@ class Wallet(Model):
 
     async def account_create(self, using_db=None) -> str:
         """Create an account on this seed and return the created account"""
-        async with RedisLock(
-            await RedisDB.instance().get_redis(),
-            key=f"pippin:{str(self.id)}:account_create",
-            timeout=30,
-            wait_timeout=30
-        ):
+        async with await (await RedisDB.instance().get_lock_manager()).lock(f"pippin:{str(self.id)}:account_create") as lock:
             account = await self.get_newest_account()
             log.server_logger.debug(f"Creating account for {self.id}")
             index = account.max_index + 1 if account is not None and account.max_index is not None and account.max_index >= 0 else 0
@@ -157,12 +153,7 @@ class Wallet(Model):
     async def accounts_create(self, count=0, using_db=None) -> List[str]:
         """Create {count} accounts on this seed and return the created accounts"""
         count = max(1, count)
-        async with RedisLock(
-            await RedisDB.instance().get_redis(),
-            key=f"pippin:{str(self.id)}:account_create",
-            timeout=30,
-            wait_timeout=30
-        ):
+        async with await (await RedisDB.instance().get_lock_manager()).lock(f"pippin:{str(self.id)}:account_create") as lock:
             account = await acct.Account.filter(wallet=self).annotate(max_index=Max("account_index")).order_by('-account_index').first()
             log.server_logger.debug(f"Creating {count} accounts for {self.id}")
             current_index = account.max_index + 1 if account is not None and account.max_index is not None and account.max_index >= 0 else 0

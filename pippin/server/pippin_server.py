@@ -274,7 +274,7 @@ class PippinServer(object):
             )
 
         # Try to receive block
-        wallet = WalletUtil(account, wallet, await RedisDB.instance().get_redis())
+        wallet = WalletUtil(account, wallet)
         try:
             response = await wallet.receive(request_json['block'], work=work)
         except BlockNotFound:
@@ -339,7 +339,7 @@ class PippinServer(object):
             )
 
         # Try to create and publish send block
-        wallet = WalletUtil(account, wallet, await RedisDB.instance().get_redis())
+        wallet = WalletUtil(account, wallet)
         try:
             resp = await wallet.send(int(request_json['amount']), request_json['destination'], id=id, work=work)
         except AccountNotFound:
@@ -411,7 +411,7 @@ class PippinServer(object):
             )
 
         # Try to create and publish CHANGE block
-        wallet = WalletUtil(account, wallet, RedisDB.instance().get_redis())
+        wallet = WalletUtil(account, wallet)
         try:
             resp = await wallet.representative_set(request_json['representative'], work=work)
         except AccountNotFound:
@@ -933,7 +933,7 @@ class PippinServer(object):
         received_count = 0
         for k, v in balance_json['balances'].items():
             if int(v['pending']) > 0:
-                wallet_util = WalletUtil(await wallet.get_account(k), wallet, await RedisDB.instance().get_redis())
+                wallet_util = WalletUtil(await wallet.get_account(k), wallet)
                 received_count += await wallet_util.receive_all()
 
         return self.json_response(
@@ -962,7 +962,7 @@ class PippinServer(object):
                 if acct is None:
                     return
             log.server_logger.debug(f"Auto receiving {data['hash']} for {destination}")
-            wu = WalletUtil(acct, acct.wallet, await RedisDB.instance().get_redis())
+            wu = WalletUtil(acct, acct.wallet)
             try:
                 await wu.receive(data['hash'])
             except Exception:

@@ -5,11 +5,34 @@ import pippin.version
 
 from setuptools import find_packages, setup
 
-if sys.version_info < (3, 7):
-    raise RuntimeError("Pippin requires Python >= 3.7")
+if sys.version_info < (3, 6):
+    raise RuntimeError("Pippin requires Python >= 3.6")
 
 def requirements() -> list:
-    return open("requirements.txt", "rt").read().splitlines()
+    try:
+        return open("requirements.txt", "rt").read().splitlines()
+    except FileNotFoundError:
+        return [
+            'tortoise-orm==0.15.5',
+            'aiosqlite==0.10.0',
+            'asyncpg==0.20.0',
+            'aiomysql==0.0.20',
+            'bitstring==3.1.6',
+            'aiodns==2.0.0',
+            'uvloop==0.14.0',
+            'aioredis==1.3.0',
+            'pyyaml==5.1.2',
+            'aioredlock==0.3.0',
+            'python-dotenv==0.10.3',
+            'python-rapidjson==0.9.1',
+            'nanopy==20.0.0',
+            'aiohttp==3.6.2',
+            'pyyaml==5.1.2',
+            'pycryptodome==3.9.4',
+            'aiounittest==1.3.1',
+            'websockets==8.1',
+            'setuptools==42.0.2'
+        ]
 
 setup(
     # Application name:
@@ -35,6 +58,7 @@ setup(
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Framework :: AsyncIO",

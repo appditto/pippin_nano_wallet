@@ -50,8 +50,14 @@ wallet_change_seed_parser.add_argument('--seed', type=str, help='New seed for wa
 wallet_change_seed_parser.add_argument('--encrypt', action='store_true', help='If specified, will get prompted for a password to encrypt the wallet', default=False)
 
 wallet_view_seed_parser = subparsers.add_parser('wallet_view_seed')
-wallet_view_seed_parser.add_argument('--wallet', type=str, help='Backup your wallets seed', required=True)
+wallet_view_seed_parser.add_argument('--wallet', type=str, help='Wallet ID', required=True)
 wallet_view_seed_parser.add_argument('--password', type=str, help='Password needed to decrypt wallet (if encrypted)', required=False)
+wallet_view_seed_parser.add_argument('--all-keys', action='store_true', help='Also show all of the wallet address and keys', default=False)
+
+account_create_parser = subparsers.add_parser('account_create')
+account_create_parser.add_argument('--wallet', type=str, help='Wallet ID', required=True)
+account_create_parser.add_argument('--key', type=str, help='AdHoc Account Key', required=False)
+account_create_parser.add_argument('--count', type=int, help='Number of accounts to create (min: 1)', required=False)
 
 options = parser.parse_args()
 
@@ -123,8 +129,9 @@ async def wallet_change_seed(wallet_id: str, seed: str, password: str) -> str:
 
     print(f"Seed changed for wallet {wallet.id}\nFirst account: {newest.address}")
 
-async def wallet_view_seed(wallet_id: str, password: str) -> str:
+async def wallet_view_seed(wallet_id: str, password: str, all_keys: bool) -> str:
     # Retrieve wallet
+    crypt = None
     try:
         wallet = await Wallet.get_wallet(wallet_id)
     except WalletNotFound:
@@ -155,7 +162,57 @@ async def wallet_view_seed(wallet_id: str, password: str) -> str:
                     break
                     exit(0)
 
-    print(f"{wallet.seed}")
+    print(f"Seed: {wallet.seed}")
+    if all_keys:
+        for a in await wallet.accounts.all():
+            print(f"Addr: {a.address} PrivKey: {nanopy.deterministic_key(wallet.seed, index=a.account_index)[0].upper()}")
+    else:
+        print(f"AdHoc accounts:")
+        for a in await wallet.adhoc_accounts.all():
+            if not wallet.encrypted:
+                print(f"Addr: {a.address} PrivKey: {a.private_key.upper()}")
+            else:
+                print(f"Addr: {a.address} PrivKey: {crypt.decrypt(a.private_key)}")
+
+async def account_create(wallet_id: str, key: str, count: int = 1) -> str:
+    # Retrieve wallet
+    crypt = None
+    if count is None:
+        count = 1
+    try:
+        wallet = await Wallet.get_wallet(wallet_id)
+    except WalletNotFound:
+        print(f"No wallet found with ID: {wallet_id}")
+        exit(1)
+    except WalletLocked as wl:
+        wallet = wl.wallet
+        if key is not None:
+            while True:
+                try:
+                    npass = getpass.getpass(prompt='Enter current password to encrypt ad-hoc key:')
+                    crypt = AESCrypt(npass)
+                    try:
+                        decrypted = crypt.decrypt(wl.wallet.seed)
+                        wallet = wl.wallet
+                        wallet.seed = decrypted
+                    except DecryptionError:
+                        print("**Invalid password**")
+                except KeyboardInterrupt:
+                    break
+                    exit(0)
+
+    if key is None:
+        if count == 1:
+            a = await wallet.account_create()
+            print(f"account: {a}")
+        else:
+            async with in_transaction() as conn:
+                ass = await wallet.accounts_create(count=count)
+                for a in ass:
+                    print(f"account: {a}")
+    else:
+        a = await wallet.adhoc_account_create(key, password=password)
+        print(f"account: {a}")
 
 if __name__ == "__main__":
     loop = asyncio.new_event_loop()
@@ -197,7 +254,19 @@ if __name__ == "__main__":
                         exit(0)
             loop.run_until_complete(wallet_change_seed(options.wallet, options.seed, password))
         elif options.command == 'wallet_view_seed':
-            loop.run_until_complete(wallet_view_seed(options.wallet, options.password))
+            loop.run_until_complete(wallet_view_seed(options.wallet, options.password, options.all_keys))
+        elif options.command == 'account_create':
+            if options.key is not None:
+                if not Validators.is_valid_block_hash(options.key):
+                    print("Invalid Private Key")
+                    exit(0)
+            elif options.key is not None and options.count is not None:
+                print("You can only specify one: --key or --count")
+                print("--count can only be used for deterministic accounts")
+            elif options.count is not None:
+                if options.count < 1:
+                    print("Count needs to be at least 1...")
+            loop.run_until_complete(account_create(options.wallet, options.key, options.count))
         else:
             parser.print_help()
     except Exception as e:

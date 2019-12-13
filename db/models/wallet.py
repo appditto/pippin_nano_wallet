@@ -107,7 +107,7 @@ class Wallet(Model):
             w = WalletUtil(a, self, await RedisDB.instance().get_redis())
             await w.representative_set(rep, only_if_different=True)
 
-    async def adhoc_account_create(self, key: str) -> str:
+    async def adhoc_account_create(self, key: str, password: str = None) -> str:
         """Add an adhoc private key to the wallet, raise AccountAlreadyExists if it already exists"""
         pubkey = nanopy.ed25519_blake2b.publickey(bytes.fromhex(key)).hex()
         address = nanopy.account_get(pubkey)
@@ -118,9 +118,12 @@ class Wallet(Model):
         if a is not None:
             raise AccountAlreadyExists(a)
         # Create it
+        crypt = None
+        if password is not None:
+            crypt = AESCrypt(password)
         a = adhoc_acct.AdHocAccount(
             wallet=self,
-            private_key=key,
+            private_key=crypt.encrypt(key) if crypt is not None else key,
             address=address
         )
         await a.save()

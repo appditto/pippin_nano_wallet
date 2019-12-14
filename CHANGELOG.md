@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.7] - 2019-12-14
+
+- (Fix) Compatibility with PyYAML < 5.1
+
+## [1.0.6] - 2019-12-14
+
+- Compatibility with PyYAML < 5.1
+
 ## [1.0.5] - 2019-12-14
 
 - Add support for dynamic PoW (requires websocket configured)

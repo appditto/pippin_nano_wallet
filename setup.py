@@ -21,7 +21,6 @@ def requirements() -> list:
             'aiodns==2.0.0',
             'uvloop==0.14.0',
             'aioredis==1.3.0',
-            'pyyaml==5.1.2',
             'aioredlock==0.3.0',
             'python-dotenv==0.10.3',
             'python-rapidjson==0.9.1',

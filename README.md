@@ -193,7 +193,7 @@ Instructions for other Linux distributions should be similar.
 
 ### Installing Pippin
 
-First, update PIP to latest version **important**
+First, update PIP to latest version.
 
 ```
 % pip3 install -U pip
@@ -208,13 +208,13 @@ export CC=/usr/local/bin/gcc-9
 To install Pippin
 
 ```
-% pip3 install --user pippin-wallet
+% pip install --user pippin-wallet
 ```
 
 To upgrade Pippin in the future, add --upgrade
 
 ```
-% pip3 install --upgrade pippin-wallet
+% pip install --upgrade pippin-wallet
 ```
 
 ### Configuring Pippin

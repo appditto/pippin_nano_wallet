@@ -27,11 +27,10 @@ def requirements() -> list:
             'python-rapidjson==0.9.1',
             'nanopy==20.0.0',
             'aiohttp==3.6.2',
-            'pyyaml==5.1.2',
+            'pyyaml',
             'pycryptodome==3.9.4',
             'aiounittest==1.3.1',
-            'websockets==8.1',
-            'setuptools==42.0.2'
+            'websockets==8.1'
         ]
 
 setup(

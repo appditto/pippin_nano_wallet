@@ -11,9 +11,8 @@ class DpowClient(object):
     """Websocket client for DPoW & BoomPoW"""
     DPOW_SERVER = 'wss://dpow.nanocenter.org/service_ws/'
     BPOW_SERVER = 'wss://bpow.banano.cc/service_ws/'
-    NANO_DIFFICULTY_CONST = 'ffffffc000000000'
 
-    def __init__(self, dpow_user: str, dpow_key: str, force_nano_difficulty: bool = False, work_futures: dict = {}, bpow: bool = False):
+    def __init__(self, dpow_user: str, dpow_key: str, work_futures: dict = {}, bpow: bool = False):
         """work_futures is a dict of id, futures to keep track of requests and responses"""
         self.bpow = bpow
         self.url = self.BPOW_SERVER if self.bpow else self.DPOW_SERVER
@@ -22,7 +21,6 @@ class DpowClient(object):
         self.dpow_user = dpow_user
         self.dpow_key = dpow_key
         self.work_futures = work_futures
-        self.difficulty = self.NANO_DIFFICULTY_CONST if force_nano_difficulty else None
 
     async def request_work(self, id: str, hash: str, difficulty: str = None):
         """Request work from DPoW/BPoW WS"""
@@ -36,12 +34,9 @@ class DpowClient(object):
                 "api_key": self.dpow_key,
                 "hash": hash,
                 "id": id,
-                "timeout": 15
+                "timeout": 15,
+                "difficulty": difficulty
             }
-            if difficulty is not None:
-                req['difficulty'] = difficulty
-            elif self.difficulty is not None:
-                req['difficulty'] = self.difficulty
             await self.ws.send(json.dumps(req))
         except Exception:
             raise ConnectionClosed()        
@@ -51,7 +46,7 @@ class DpowClient(object):
             self.ws = await websockets.connect(self.url)
             log.server_logger.info(f"Connected to {'BoomPoW' if self.bpow else 'Distributed PoW'} Service")
         except Exception as e:
-            log.server_logger.critical("Error connecting to websocket server.")
+            log.server_logger.critical("DPOW WS: Error connecting to websocket server.")
             log.server_logger.error(traceback.format_exc())
             raise
 
@@ -60,14 +55,14 @@ class DpowClient(object):
         await self.ws.wait_closed()
 
     async def reconnect_forever(self):
-        log.server_logger.warn("Attempting websocket reconnection every 30 seconds...")
+        log.server_logger.warn("DPOW WS: Attempting websocket reconnection every 30 seconds...")
         while not self.stop:
             try:
                 await self.setup()
-                log.server_logger.warn("Connected to websocket!")
+                log.server_logger.warn("DPOW WS: Connected to websocket!")
                 break
             except:
-                log.server_logger.debug("Websocket reconnection failed")
+                log.server_logger.debug("DPOW WS: Websocket reconnection failed")
                 await asyncio.sleep(30)
 
     async def loop(self):
@@ -85,8 +80,8 @@ class DpowClient(object):
             except KeyboardInterrupt:
                 break
             except websockets.exceptions.ConnectionClosed as e:
-                log.server_logger.error(f"Connection closed to websocket. Code: {e.code} , reason: {e.reason}.")
+                log.server_logger.error(f"DPOW WS: Connection closed to websocket. Code: {e.code} , reason: {e.reason}.")
                 await self.reconnect_forever()
             except Exception as e:
-                log.server_logger.critical(f"Unknown exception while handling getting a websocket message:\n{traceback.format_exc()}")
+                log.server_logger.critical(f"DPOW WS: Unknown exception while handling getting a websocket message:\n{traceback.format_exc()}")
                 await self.reconnect_forever()

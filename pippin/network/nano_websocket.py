@@ -5,6 +5,7 @@ import asyncio
 import websockets
 import rapidjson as json
 import traceback
+from pippin.network.work_client import WorkClient
 
 
 def subscription(topic: str, ack: bool = False, options: dict = None):
@@ -26,9 +27,11 @@ class WebsocketClient(object):
             self.ws = await websockets.connect(self.uri)
             await self.ws.send(json.dumps(subscription("confirmation", ack=True)))
             await self.ws.recv()  # ack
+            await self.ws.send(json.dumps(subscription("active_difficulty", ack=True)))
+            await self.ws.recv()
         except Exception as e:
             if not silent:
-                log.server_logger.critical("Error connecting to websocket server. Check your settings in ~/Nano/config.json")
+                log.server_logger.critical("NANO WS: Error connecting to websocket server. Check your settings in ~/PippinData/config.yaml")
                 log.server_logger.error(traceback.format_exc())
             raise
 
@@ -37,14 +40,14 @@ class WebsocketClient(object):
         await self.ws.wait_closed()
 
     async def reconnect_forever(self):
-        log.server_logger.warn("Attempting websocket reconnection every 30 seconds...")
+        log.server_logger.warn("NANO WS: Attempting websocket reconnection every 30 seconds...")
         while not self.stop:
             try:
                 await self.setup(silent=True)
-                log.server_logger.warn("Connected to websocket!")
+                log.server_logger.warn("NANO WS: Connected to websocket!")
                 break
             except:
-                log.server_logger.debug("Websocket reconnection failed")
+                log.server_logger.debug("NANO WS: Websocket reconnection failed")
                 await asyncio.sleep(30)
 
     async def loop(self):
@@ -54,11 +57,14 @@ class WebsocketClient(object):
                 topic = rec.get("topic", None)
                 if topic and topic == "confirmation":
                     await self.arrival_cb(rec["message"])
+                elif topic and topic == "active_difficulty":
+                    if "network_current" in rec["message"]:
+                        WorkClient.instance().active_difficulty = rec["message"]["network_current"]
             except KeyboardInterrupt:
                 break
             except websockets.exceptions.ConnectionClosed as e:
-                log.server_logger.error(f"Connection closed to websocket. Code: {e.code} , reason: {e.reason}.")
+                log.server_logger.error(f"NANO WS: Connection closed to websocket. Code: {e.code} , reason: {e.reason}.")
                 await self.reconnect_forever()
             except Exception as e:
-                log.server_logger.critical(f"Unknown exception while handling getting a websocket message:\n{traceback.format_exc()}")
+                log.server_logger.critical(f"NANO WS: Unknown exception while handling getting a websocket message:\n{traceback.format_exc()}")
                 await self.reconnect_forever()

@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.5] - 2019-12-14
+
+- Add support for dynamic PoW (requires websocket configured)
+- Fix issues related to PyYAML dependency
+
+## [1.0.4] - 2019-12-13
+
+- Minor bug fixes
+
 ## [1.0.3] - 2019-12-13
 
 - Add support for Python 3.6

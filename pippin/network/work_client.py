@@ -28,6 +28,7 @@ class WorkClient(object):
                 cls.work_urls.append(config.Config.instance().node_url)
             cls.connector = aiohttp.TCPConnector(family=0 ,resolver=aiohttp.AsyncResolver())
             cls.session = aiohttp.ClientSession(connector=cls.connector, json_serialize=json.dumps)
+            cls.active_difficulty = nanopy.work_difficulty
             cls.dpow_client = None
             cls.dpow_futures = {}
             cls.dpow_id = 1
@@ -38,7 +39,6 @@ class WorkClient(object):
                 cls.dpow_client = DpowClient(
                     cls.dpow_user,
                     cls.dpow_key,
-                    force_nano_difficulty=True,
                     work_futures=cls.dpow_futures,
                     bpow=False
                 )
@@ -50,7 +50,6 @@ class WorkClient(object):
                     cls.dpow_client = DpowClient(
                         cls.dpow_user,
                         cls.dpow_key,
-                        force_nano_difficulty=not config.Config.instance().banano,
                         work_futures=cls.dpow_futures,
                         bpow=True
                     )
@@ -69,14 +68,11 @@ class WorkClient(object):
         async with self.session.post(url ,json=req_json, timeout=300) as resp:
             return await resp.json()
 
-    async def work_generate(self, hash: str, difficulty: str = None) -> str:
-        if difficulty is None:
-            difficulty =  nanopy.work_difficulty
-
+    async def work_generate(self, hash: str) -> str:
         work_generate = {
             'action': 'work_generate',
             'hash': hash,
-            'difficulty': difficulty
+            'difficulty': self.active_difficulty
         }
 
         # Build work_generate requests
@@ -90,7 +86,7 @@ class WorkClient(object):
             self.dpow_id += 1
             self.dpow_futures[dpow_id] = asyncio.get_event_loop().create_future()
             try:
-                success = await self.dpow_client.request_work(dpow_id, hash, difficulty=difficulty)
+                success = await self.dpow_client.request_work(dpow_id, hash, difficulty=self.active_difficulty)
                 tasks.append(self.dpow_futures[dpow_id])
             except ConnectionClosed:
                 # HTTP fallback for this request
@@ -98,14 +94,14 @@ class WorkClient(object):
                     "user": self.dpow_user,
                     "api_key": self.dpow_key,
                     "hash": hash,
-                    "difficulty": difficulty
+                    "difficulty": self.active_difficulty
                 }
                 tasks.append(self.make_request(self.dpow_fallback_url, dp_req))
 
         # Do it locally if no peers or if peers have been failing
         if await RedisDB.instance().exists("work_failure") or (len(self.work_urls) == 0 and self.dpow_client is None):
             tasks.append(
-                NanoUtil.instance().work_generate(hash, difficulty=difficulty)
+                NanoUtil.instance().work_generate(hash, difficulty=self.active_difficulty)
             )
 
         # Post work_generate to all peers simultaneously
@@ -156,4 +152,4 @@ class WorkClient(object):
 
         # IF we're still here then all requests failed, set failure flag
         await RedisDB.instance().set(f"work_failure", "aa", expires=300)
-        return await NanoUtil.instance().work_generate(hash, difficulty=difficulty)
+        return await NanoUtil.instance().work_generate(hash, difficulty=self.active_difficulty)

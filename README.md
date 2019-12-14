@@ -373,9 +373,11 @@ Send HTTP POST requests to Pippin just like you would a normal node.
 % curl -g -d '{"action":"account_balance", "account": "nano_3jb1fp4diu79wggp7e171jdpxp95auji4moste6gmc55pptwerfjqu48okse"}' localhost:11338
 ```
 
-### Auto-receive
+### Auto-receive & Dynamic PoW
 
 To automatically pocket pending transactions as they arrive, callback is required.
+
+Hooking up the websocket also adds support for **dynamic PoW** which means that blocks will get confirmed faster if the active difficulty is higher than the minimum.
 
 Pippin only supports the websocket callback, which can be setup like so in `config.yaml`:
 

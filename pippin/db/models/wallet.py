@@ -16,6 +16,7 @@ from pippin.db.redis import RedisDB
 from pippin.model.secrets import SeedStorage
 from pippin.util.crypt import AESCrypt
 from pippin.util.wallet import WalletUtil
+from pippin.network.rpc_client import AccountNotFound
 
 
 class WalletNotFound(Exception):

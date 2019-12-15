@@ -106,7 +106,10 @@ class Wallet(Model):
         """Set all account representatives to rep"""
         for a in await self.accounts.all():
             w = WalletUtil(a, self)
-            await w.representative_set(rep, only_if_different=True)
+            try:
+                await w.representative_set(rep, only_if_different=True)
+            except AccountNotFound:
+                pass
 
     async def adhoc_account_create(self, key: str, password: str = None) -> str:
         """Add an adhoc private key to the wallet, raise AccountAlreadyExists if it already exists"""

@@ -50,6 +50,17 @@ account_create_parser.add_argument('--wallet', type=str, help='Wallet ID', requi
 account_create_parser.add_argument('--key', type=str, help='AdHoc Account Key', required=False)
 account_create_parser.add_argument('--count', type=int, help='Number of accounts to create (min: 1)', required=False)
 
+wallet_destroy_parser = subparsers.add_parser('wallet_destroy')
+wallet_destroy_parser.add_argument('--wallet', type=str, help='Wallet ID', required=True)
+
+repget_parser = subparsers.add_parser('wallet_representative_get')
+repget_parser.add_argument('--wallet', type=str, help='Wallet ID', required=True)
+
+repset_parser = subparsers.add_parser('wallet_representative_set')
+repset_parser.add_argument('--wallet', type=str, help='Wallet ID', required=True)
+repset_parser.add_argument('--representative', type=str, help='New Wallet Representative', required=True)
+repset_parser.add_argument('--update-existing', action='store_true', help='Update existing accounts', default=False)
+
 options = parser.parse_args()
 
 async def wallet_list():
@@ -207,6 +218,70 @@ async def account_create(wallet_id: str, key: str, count: int = 1) -> str:
         a = await wallet.adhoc_account_create(key, password=password)
         print(f"account: {a}")
 
+async def wallet_destroy(wallet_id: str):
+    # Retrieve wallet
+    try:
+        wallet = await Wallet.get_wallet(wallet_id)
+    except WalletNotFound:
+        print(f"No wallet found with ID: {wallet_id}")
+        exit(1)
+    except WalletLocked as wl:
+        wallet = wl.wallet
+
+    await wallet.delete()
+    print("Wallet destroyed")
+
+async def wallet_representative_get(wallet_id: str):
+    # Retrieve wallet
+    try:
+        wallet = await Wallet.get_wallet(wallet_id)
+    except WalletNotFound:
+        print(f"No wallet found with ID: {wallet_id}")
+        exit(1)
+    except WalletLocked as wl:
+        wallet = wl.wallet
+
+    if wallet.representative is None:
+        print("Representative not set")
+    else:
+        print(f"Wallet representative: {wallet.representative}")
+
+async def wallet_representative_set(wallet_id: str, rep: str, update_existing: bool = False):
+    # Retrieve wallet
+    # Retrieve wallet
+    crypt = None
+    password=None
+    if not Validators.is_valid_address(rep):
+        print("Invalid representative")
+        exit(1)
+    try:
+        wallet = await Wallet.get_wallet(wallet_id)
+    except WalletNotFound:
+        print(f"No wallet found with ID: {wallet_id}")
+        exit(1)
+    except WalletLocked as wl:
+        wallet = wl.wallet
+        if update_existing:
+            while True:
+                try:
+                    npass = getpass.getpass(prompt='Enter current password to decrypt wallet:')
+                    crypt = AESCrypt(npass)
+                    try:
+                        decrypted = crypt.decrypt(wl.wallet.seed)
+                        wallet = wl.wallet
+                        wallet.seed = decrypted
+                        password=npass
+                    except DecryptionError:
+                        print("**Invalid password**")
+                except KeyboardInterrupt:
+                    break
+                    exit(0)
+
+    wallet.representative = rep
+    await wallet.save(update_fields=['representative'])
+    await wallet.bulk_representative_update(rep)
+    print(f"Representative changed")
+
 def main():
     loop = asyncio.new_event_loop()
     try:
@@ -260,6 +335,12 @@ def main():
                 if options.count < 1:
                     print("Count needs to be at least 1...")
             loop.run_until_complete(account_create(options.wallet, options.key, options.count))
+        elif options.command == 'wallet_destroy':
+            loop.run_until_complete(wallet_destroy(options.wallet))
+        elif options.command == 'wallet_representative_get':
+            loop.run_until_complete(wallet_representative_get(options.wallet))
+        elif options.command == 'wallet_representative_set':
+            loop.run_until_complete(wallet_representative_set(options.wallet, options.representatives, update_existing=options.update_existing))
         else:
             parser.print_help()
     except Exception as e:

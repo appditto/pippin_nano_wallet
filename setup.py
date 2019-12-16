@@ -29,7 +29,8 @@ def requirements() -> list:
             'pyyaml',
             'pycryptodome==3.9.4',
             'aiounittest==1.3.1',
-            'websockets==8.1'
+            'websockets==8.1',
+            'setuptools'
         ]
 
 setup(

@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.8] - 2019-12-16
+
+- Fix update_existing with wallet_representative_set when accounts aren't open
+- Add CLI commands: wallet_destroy, wallet_representative_set, wallet_representative_get
+- Add setuptools dependency
+
 ## [1.0.7] - 2019-12-14
 
 - (Fix) Compatibility with PyYAML < 5.1

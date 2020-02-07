@@ -299,7 +299,7 @@ echo "REDIS_DB=0" >> ~/PippinData/.env
 
 Pippin uses a [yaml](https://yaml.org/) based configuration for everything else.
 
-All available options are in a sample file [here](https://github.com/appditto/pippin_nano_wallet/blob/master/sample.config.yaml)
+All available options are in a [sample file](./pippin/sample.config.yaml).
 
 You can override any default by creating a file called `~/PippinData/config.yaml` and choosing your own settings.
 

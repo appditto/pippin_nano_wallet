@@ -1,5 +1,10 @@
 # Changelog
 
+
+## [1.1.1] - 2020-04-18
+
+- Fix ipv6 rpc/work URLs
+
 ## [1.1.0] - 2020-04-15
 
 - Make requirements less strict

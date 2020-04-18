@@ -1,4 +1,5 @@
 import aiohttp
+import ipaddress
 import rapidjson as json
 import socket
 from pippin.config import Config
@@ -15,8 +16,7 @@ class RPCClient(object):
         if cls._instance is None:
             cls._instance = cls.__new__(cls)
             cls.node_url = Config.instance().node_url
-            cls.connector = aiohttp.TCPConnector(family=socket.AF_INET, verify_ssl=False)
-            cls.session = aiohttp.ClientSession(connector=cls.connector, json_serialize=json.dumps)
+            cls.session = aiohttp.ClientSession(json_serialize=json.dumps)
         return cls._instance
 
 

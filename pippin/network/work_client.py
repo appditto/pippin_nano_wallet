@@ -25,9 +25,8 @@ class WorkClient(object):
             cls._instance = cls.__new__(cls)
             cls.work_urls = config.Config.instance().work_peers
             if config.Config.instance().node_work_generate:
-                cls.work_urls.append(config.Config.instance().node_url)
-            cls.connector = aiohttp.TCPConnector(family=socket.AF_INET, verify_ssl=False)
-            cls.session = aiohttp.ClientSession(connector=cls.connector, json_serialize=json.dumps)
+                cls.work_urls.append(config.Config.instance().node_url)                
+            cls.session = aiohttp.ClientSession(json_serialize=json.dumps)
             cls.active_difficulty = nanopy.work_difficulty
             cls.dpow_client = None
             cls.dpow_futures = {}

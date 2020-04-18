@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.1.0] - 2020-04-15
+
+- Make requirements less strict
+- Fix aiohttp TCPConnector in some cases
+
 ## [1.0.8] - 2019-12-16
 
 - Fix update_existing with wallet_representative_set when accounts aren't open

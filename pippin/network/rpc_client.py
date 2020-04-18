@@ -15,7 +15,7 @@ class RPCClient(object):
         if cls._instance is None:
             cls._instance = cls.__new__(cls)
             cls.node_url = Config.instance().node_url
-            cls.connector = aiohttp.TCPConnector(family=0 ,resolver=aiohttp.AsyncResolver())
+            cls.connector = aiohttp.TCPConnector(family=socket.AF_INET, verify_ssl=False)
             cls.session = aiohttp.ClientSession(connector=cls.connector, json_serialize=json.dumps)
         return cls._instance
 

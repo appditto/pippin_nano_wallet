@@ -31,7 +31,8 @@ options = parser.parse_args()
 # Create sample file if not exists
 config_dir = Utils.get_project_root()
 sample_file = config_dir.joinpath(pathlib.PurePath('sample.config.yaml'))
-if not os.path.isfile(sample_file) or options.generate_config:
+real_file = config_dir.joinpath(pathlib.PurePath('config.yaml'))
+if (not os.path.isfile(sample_file) and not os.path.isfile(real_file)) or options.generate_config:
     ref_file = pathlib.Path(__file__).parent.joinpath(pathlib.PurePath('sample.config.yaml'))
     shutil.copyfile(ref_file, sample_file)
     print(f"Sample configuration created at: {sample_file}")
@@ -51,6 +52,8 @@ if config.banano:
 # Setup logger
 if config.debug:
     logging.basicConfig(level=logging.DEBUG)
+elif config.stdout:
+    logging.basicConfig(level=logging.INFO)
 else:
     root = logging.getLogger('aiohttp.server')
     logging.basicConfig(level=logging.INFO)

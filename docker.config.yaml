@@ -3,11 +3,11 @@ server:
   # The host the pippin server will listen on
   # DANGER! Exposing pippin publicly can be dangerous!
   # Default: 127.0.0.1
-  #host: 127.0.0.1
+  host: 0.0.0.0
 
   # The port pippin server will listen on
   # Default: 11338
-  #port: 11338
+  port: 11338
 
   # The file pippin will write log messages to
   # Default: /tmp/pippin_wallet.log
@@ -15,9 +15,9 @@ server:
 
   # Whether to run in debug mode or not
   # Default: false
-  #debug: false
+  debug: false
 
-  #log_to_stdout: false
+  log_to_stdout: true
 
   # The RPC URL of the remote node to connect to
   # Non-wallet RPCs will be routed to this node

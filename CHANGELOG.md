@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.3] - 2020-04-20
+
+- Don't generate sample config if config.yaml exists already
+
+## [1.1.2] - 2020-04-20
+
+- Add log_to_stdout option
+- Changes for docker environments
 
 ## [1.1.1] - 2020-04-18
 

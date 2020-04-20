@@ -46,6 +46,7 @@ class Config(object):
             cls.banano = cls.get_yaml_property('wallet', 'banano', False)
             cls.log_file = cls.get_yaml_property('server', 'log_file', default='/tmp/pippin_wallet.log')
             cls.debug = cls.get_yaml_property('server', 'debug', default=False)
+            cls.stdout = cls.get_yaml_property('server', 'log_to_stdout', default=False)
             cls.node_url = cls.get_yaml_property('server', 'node_rpc_url', default='http://[::1]:7072' if cls.banano else 'http://[::1]:7076')
             cls.node_ws_url = cls.get_yaml_property('server', 'node_ws_url', None)
             cls.port = cls.get_yaml_property('server', 'port', default=11338)

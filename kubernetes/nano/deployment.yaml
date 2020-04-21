@@ -20,6 +20,10 @@ spec:
         - containerPort: 11338
           name: api
         env:
+          - name: REDIS_HOST
+            value: redis-0.redis
+          - name: REDIS_DB
+            value: "1"
           - name: POSTGRES_HOST
             value: postgres.postgres
           - name: POSTGRES_DB

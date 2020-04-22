@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.4] - 2020-04-22
+
+- Bump tortoise-orm minimum version to 0.15.24
+
 ## [1.1.3] - 2020-04-20
 
 - Don't generate sample config if config.yaml exists already

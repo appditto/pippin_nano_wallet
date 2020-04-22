@@ -13,7 +13,7 @@ def requirements() -> list:
         return open("requirements.txt", "rt").read().splitlines()
     except FileNotFoundError:
         return [
-            'tortoise-orm>=0.15.5,<0.16',
+            'tortoise-orm>=0.15.24,<0.16',
             'aiosqlite>=0.10.0',
             'asyncpg>=0.20.0',
             'aiomysql>=0.0.20',

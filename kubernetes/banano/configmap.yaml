@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pippin-banano
+  namespace: pippin
+data:
+  config.yaml: |
+    # Settings for the pippin server
+    server:
+      # The host the pippin server will listen on
+      # DANGER! Exposing pippin publicly can be dangerous!
+      # Default: 127.0.0.1
+      host: 0.0.0.0
+
+      # The port pippin server will listen on
+      # Default: 11338
+      port: 11338
+
+      # The RPC URL of the remote node to connect to
+      # Non-wallet RPCs will be routed to this node
+      # Default: http://[::1]:7076 for nano, http://[::1]:7072 for banano
+      node_rpc_url: http://banano-node.banano:7072
+
+      # The WebSocket URL of the node to connect to
+      # Optional, but required to receive transactions as they arrive to accounts
+      # Default: None
+      node_ws_url: ws://banano-node.banano:7074
+
+    # Settings for the pippin wallet
+    wallet:
+      # Run in banano mode
+      # If true, the wallet will operate based on the BANANO protocol
+      # Default: false
+      banano: true

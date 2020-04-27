@@ -93,7 +93,7 @@ class WorkClient(object):
                     "user": self.dpow_user,
                     "api_key": self.dpow_key,
                     "hash": hash,
-                    "difficulty": self.active_difficulty
+                    "difficulty": self.dpow_client.adjust_difficulty(self.active_difficulty)
                 }
                 tasks.append(self.make_request(self.dpow_fallback_url, dp_req))
 

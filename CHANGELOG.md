@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.6] - 2020-04-27
+
+- Fix difficulty adjustment
+
 ## [1.1.5] - 2020-04-26
 
 - Keep sane difficulty levels in DPoW and BPoW requests

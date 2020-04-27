@@ -30,7 +30,7 @@ class DpowClient(object):
             return nanolib.work.derive_work_difficulty(8, base_difficulty=nanopy.work_difficulty)
         return difficulty
 
-    async def request_work(self, id: str, hash: str, difficulty: str = None):
+    async def request_work(self, id: str, hash: str, difficulty: str):
         """Request work from DPoW/BPoW WS"""
         if self.stop or self.ws is None:
             return

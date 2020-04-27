@@ -3,6 +3,8 @@ import asyncio
 import websockets
 import rapidjson as json
 import traceback
+import nanopy
+import nanolib
 
 class ConnectionClosed(Exception):
     pass
@@ -22,6 +24,12 @@ class DpowClient(object):
         self.dpow_key = dpow_key
         self.work_futures = work_futures
 
+    def adjust_difficulty(self, difficulty: str) -> str:
+        """Ensure sane difficulty limits for DPoW/BPoW"""
+        if nanolib.work.derive_work_multiplier(difficulty, base_difficulty=nanopy.work_difficulty) > 8:
+            return nanolib.work.derive_work_difficulty(8, base_difficulty=nanopy.work_difficulty)
+        return difficulty
+
     async def request_work(self, id: str, hash: str, difficulty: str = None):
         """Request work from DPoW/BPoW WS"""
         if self.stop or self.ws is None:
@@ -35,7 +43,7 @@ class DpowClient(object):
                 "hash": hash,
                 "id": id,
                 "timeout": 15,
-                "difficulty": difficulty
+                "difficulty": self.adjust_difficulty(difficulty)
             }
             await self.ws.send(json.dumps(req))
         except Exception:

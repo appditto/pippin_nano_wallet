@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.5] - 2020-04-26
+
+- Keep sane difficulty levels in DPoW and BPoW requests
+
 ## [1.1.4] - 2020-04-22
 
 - Bump tortoise-orm minimum version to 0.15.24

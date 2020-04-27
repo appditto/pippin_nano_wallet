@@ -59,7 +59,7 @@ class WebsocketClient(object):
                     await self.arrival_cb(rec["message"])
                 elif topic and topic == "active_difficulty":
                     if "network_current" in rec["message"]:
-                        log.server_logger.info(f"Active difficulty changed to {rec['message']['network_current']}")
+                        log.server_logger.debug(f"Active difficulty changed to {rec['message']['network_current']}")
                         WorkClient.instance().active_difficulty = rec["message"]["network_current"]
             except KeyboardInterrupt:
                 break

@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.7] - 2020-04-27
+
+- Reduce log spam
+
 ## [1.1.6] - 2020-04-27
 
 - Fix difficulty adjustment

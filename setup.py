@@ -26,7 +26,7 @@ def requirements() -> list:
             'aioredlock>=0.3.0',
             'python-dotenv>=0.10.3',
             'python-rapidjson>=0.9.1',
-            'git+https://github.com/bbedward/nanopy#egg=nanopy',
+            'https://github.com/bbedward/nanopy/tarball/master#egg=nanopy',
             'aiohttp>=3.6.2',
             'pyyaml',
             'pycryptodome>=3.9.4',

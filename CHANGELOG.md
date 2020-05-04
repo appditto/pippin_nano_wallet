@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.8] - 2020-05-04
+
+- Windows compatibility
+
 ## [1.1.7] - 2020-04-27
 
 - Reduce log spam

@@ -1,7 +1,9 @@
 # Install uvloop
+import sys
 try:
-	import uvloop
-	uvloop.install()
+    if sys.platform not in ('win32', 'cygwin', 'cli'):
+        import uvloop
+        uvloop.install()
 except ImportError:
 	print("Couldn't install uvloop, falling back to the slower asyncio event loop")
 

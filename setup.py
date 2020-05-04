@@ -10,7 +10,6 @@ if sys.version_info < (3, 6):
 
 def requirements() -> list:
     try:
-        raise FileNotFoundError()
         ret = open("requirements.txt", "rt").read().splitlines()
         if sys.platform not in ('win32', 'cygwin', 'cli'):
             ret.append('uvloop>=0.14.0')
@@ -27,7 +26,7 @@ def requirements() -> list:
             'aioredlock>=0.3.0',
             'python-dotenv>=0.10.3',
             'python-rapidjson>=0.9.1',
-            'nanopy',
+            'nanopy @ git+https://github.com/bbedward/nanopy#egg=nanopy',
             'aiohttp>=3.6.2',
             'pyyaml',
             'pycryptodome>=3.9.4',
@@ -77,9 +76,6 @@ setup(
     ),
     # Dependent packages (distributions)
     install_requires=requirements(),
-    dependency_links = [
-        'git+https://github.com/bbedward/nanopy#egg=nanopy'
-    ],
     entry_points={
         'console_scripts': [
             'pippin-server = pippin.main:main',

@@ -26,7 +26,7 @@ def requirements() -> list:
             'aioredlock>=0.3.0',
             'python-dotenv>=0.10.3',
             'python-rapidjson>=0.9.1',
-            'https://github.com/bbedward/nanopy/tarball/master#egg=nanopy',
+            'nanopy',
             'aiohttp>=3.6.2',
             'pyyaml',
             'pycryptodome>=3.9.4',
@@ -76,6 +76,9 @@ setup(
     ),
     # Dependent packages (distributions)
     install_requires=requirements(),
+    dependency_links = [
+        'git+https://github.com/bbedward/nanopy#egg=nanopy'
+    ],
     entry_points={
         'console_scripts': [
             'pippin-server = pippin.main:main',

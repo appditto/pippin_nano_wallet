@@ -10,16 +10,17 @@ if sys.version_info < (3, 6):
 
 def requirements() -> list:
     try:
-        return open("requirements.txt", "rt").read().splitlines()
+        if sys.platform not in ('win32', 'cygwin', 'cli'):
+            return open("requirements.txt", "rt").read().splitlines()
+        return open("requirements.win.txt", "rt").read().splitlines()
     except FileNotFoundError:
-        return [
+        ret = [
             'tortoise-orm>=0.15.24,<0.16',
             'aiosqlite>=0.10.0',
             'asyncpg>=0.20.0',
             'aiomysql>=0.0.20',
             'bitstring>=3.1.6',
             'aiodns>=2.0.0',
-            'uvloop>=0.14.0',
             'aioredis>=1.3.0',
             'aioredlock>=0.3.0',
             'python-dotenv>=0.10.3',
@@ -32,7 +33,9 @@ def requirements() -> list:
             'websockets>=8.1',
             'setuptools'
         ]
-
+        if sys.platform not in ('win32', 'cygwin', 'cli'):
+            ret.append('uvloop>=0.14.0')
+        return ret
 setup(
     # Application name:
     name="pippin-wallet",

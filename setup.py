@@ -10,6 +10,7 @@ if sys.version_info < (3, 6):
 
 def requirements() -> list:
     try:
+        raise FileNotFoundError()
         ret = open("requirements.txt", "rt").read().splitlines()
         if sys.platform not in ('win32', 'cygwin', 'cli'):
             ret.append('uvloop>=0.14.0')

@@ -10,9 +10,10 @@ if sys.version_info < (3, 6):
 
 def requirements() -> list:
     try:
+        ret = open("requirements.txt", "rt").read().splitlines()
         if sys.platform not in ('win32', 'cygwin', 'cli'):
-            return open("requirements.txt", "rt").read().splitlines()
-        return open("requirements.win.txt", "rt").read().splitlines()
+            ret.append('uvloop>=0.14.0')
+        return ret
     except FileNotFoundError:
         ret = [
             'tortoise-orm>=0.15.24,<0.16',

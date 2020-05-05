@@ -14,7 +14,6 @@ import secrets
 import yaml
 
 DEFAULT_BANANO_REPS = [
-    'ban_1raizenpg6r7nyh1z8kgdw3by63hhidu89ogtpspugx4fo6jhgqxat5brph8',
     'ban_1ka1ium4pfue3uxtntqsrib8mumxgazsjf58gidh1xeo5te3whsq8z476goo',
     'ban_1cake36ua5aqcq1c5i3dg7k8xtosw7r9r7qbbf5j15sk75csp9okesz87nfn',
     'ban_1fomoz167m7o38gw4rzt7hz67oq6itejpt4yocrfywujbpatd711cjew8gjj'

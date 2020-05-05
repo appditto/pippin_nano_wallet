@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.10] - 2020-05-05
+
+- Remove non-voting default rep
+
 ## [1.1.9] - 2020-05-04
 
 - Windows compatibility

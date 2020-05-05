@@ -19,6 +19,7 @@ def requirements() -> list:
             'tortoise-orm>=0.15.24,<0.16',
             'aiosqlite>=0.10.0',
             'asyncpg>=0.20.0',
+            'pypika<0.37.0',
             'aiomysql>=0.0.20',
             'bitstring>=3.1.6',
             'aiodns>=2.0.0',

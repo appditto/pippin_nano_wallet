@@ -191,6 +191,69 @@ Instructions for other Linux distributions should be similar.
 % sudo apt install build-essential python3.6 python3.6-dev python3-pip libb2-dev redis-server
 ```
 
+**CentOS 8**
+
+Install the required developer tools:
+```
+# dnf install gcc libb2 redis python3-devel
+```
+
+The above may require the EPEL and PowerTools repos to be configured first:
+```
+# dnf install -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+# dnf config-manager --set-enabled PowerTools
+```
+
+**Redis basics for CentOS 8**
+
+After installing Redis, create directories for the Redis config and runtime files:
+```
+# mkdir /etc/redis /var/redis /var/redis/6379
+```
+By default, the dnf install places Redis config files in /etc, move them to your dedicated folders:
+```
+# mv /etc/redis-sentinel.conf /etc/redis/ 
+# mv /etc/redis.conf /etc/redis/6379.conf
+```
+Update your Redis config file to allow it to run in the background as a daemon, supervised by systemd:
+```
+# vim /etc/redis/6379.conf
+	Set daemonize to yes (by default it is set to no).
+	Set the pidfile to /var/run/redis_6379.pid (modify the port if needed).
+	Change the port if necessary (6379 is the default).	
+	Set the logfile to /var/log/redis_6379.log
+	Set the working dir to /var/redis/6379 
+	supervised systemd
+```
+
+Create the Systemd service to have Redis start automatically:
+```
+# vim /etc/systemd/system/redis.service
+[Unit]
+Description=Redis
+After=syslog.target
+
+[Service]
+Type=notify
+PIDFile=/var/run/redis_6379.pid
+ExecStart=/usr/bin/redis-server /etc/redis/6379.conf --supervised systemd
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start the service:
+```
+# systemctl enable --now /etc/systemd/system/redis.service
+```
+
+Verify that Redis is running:
+```
+# systemctl status redis
+# redis-cli
+```
+
 ### Installing Pippin
 
 First, update PIP to latest version.

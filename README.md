@@ -185,7 +185,7 @@ To make it permanent:
 
 **Ubuntu 18.04**
 
-Instructions for other Linux distributions should be similar.
+Instructions for other debian-based Linux distributions should be similar.
 
 ```
 % sudo apt install build-essential python3.6 python3.6-dev python3-pip libb2-dev redis-server
@@ -251,7 +251,7 @@ Enable and start the service:
 Verify that Redis is running:
 ```
 # systemctl status redis
-# redis-cli
+# redis-cli ping
 ```
 
 ### Installing Pippin
@@ -268,10 +268,16 @@ For MacOS you might need to set the following environment variable:
 export CC=/usr/local/bin/gcc-9
 ```
 
-To install Pippin
+To install Pippin on macos or Linux
 
 ```
 % pip install --user pippin-wallet
+```
+
+Windows requires visual c++ and should be prefixed with USE_VC=1
+
+```
+% USE_VC=1 pip install pippin-wallet
 ```
 
 To upgrade Pippin in the future, add --upgrade

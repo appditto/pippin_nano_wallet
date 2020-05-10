@@ -148,7 +148,6 @@ To backup a seed (**warning:** this prints seed to stdout)
 
 - Python 3.6 or newer
 - GCC, for MacOS and Linux
-- libb2 (blake2b)
 - A Redis server
 
 **MacOS Instructions**
@@ -158,7 +157,7 @@ To backup a seed (**warning:** this prints seed to stdout)
 2) Install Redis (skip if you already have done so)
 
 ```
-% brew install gcc@9 python libb2 redis
+% brew install gcc@9 python redis
 % launchctl load ~/Library/LaunchAgents/homebrew.mxcl.redis.plist
 ```
 
@@ -188,14 +187,14 @@ To make it permanent:
 Instructions for other debian-based Linux distributions should be similar.
 
 ```
-% sudo apt install build-essential python3.6 python3.6-dev python3-pip libb2-dev redis-server
+% sudo apt install build-essential python3.6 python3.6-dev python3-pip redis-server
 ```
 
 **CentOS 8**
 
 Install the required developer tools:
 ```
-# dnf install gcc libb2 redis python3-devel
+# dnf install gcc redis python3-devel
 ```
 
 The above may require the EPEL and PowerTools repos to be configured first:

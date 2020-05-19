@@ -115,6 +115,12 @@ class RPCClient(object):
         if 'blocks' in resp:
             if resp['blocks'] == '':
                 return []
+            # Response format changes when threshold is <= 0
+            # blocks: ['ABC...', 'ABC...']
+            if threshold <= 0:
+                return resp['blocks']
+            # When threshold is > 0
+            # blocks: {'ABC..', '10000', 'ABC..': '2000'}             
             for k,v in resp['blocks'].items():
                 ret.append(k)
             return ret

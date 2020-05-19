@@ -1,6 +1,6 @@
 <p align="left">  <img src="https://raw.githubusercontent.com/appditto/pippin_nano_wallet/master/assets/pippin_logo.svg?sanitize=true" alt="Pippin Wallet" width="256" height="50"> </p>
 
-[![PyPI](https://img.shields.io/pypi/v/pippin-wallet)](https://pypi.org/project/pippin-wallet/) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pippin-wallet) [![License](https://img.shields.io/github/license/bbedward/pippin_nano_wallet)](https://github.com/bbedward/pippin_nano_wallet/blob/master/LICENSE) [![Pipeline](https://gitlab.com/appditto/pippin_nano_wallet/badges/master/pipeline.svg)](https://gitlab.com/appditto/pippin_nano_wallet/pipelines)
+[![PyPI](https://img.shields.io/pypi/v/pippin-wallet)](https://pypi.org/project/pippin-wallet/) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pippin-wallet) [![License](https://img.shields.io/github/license/bbedward/pippin_nano_wallet)](https://github.com/bbedward/pippin_nano_wallet/blob/master/LICENSE) [![CI](https://github.com/appditto/pippin_nano_wallet/workflows/CI/badge.svg)](https://github.com/appditto/pippin_nano_wallet/actions?query=workflow%3ACI)
 
 Pippin is a production-ready, high-performance developer wallet for [Nano](https://nano.org) and [BANANO](https://banano.cc). Pippin's API is a drop-in replacement for the Nano developer wallet that is built in to the Nano node software.
 

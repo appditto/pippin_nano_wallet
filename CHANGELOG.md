@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.12] - 2020-05-19
+
+- Fix pending RPC when receive_minimum is < 1
+
 ## [1.1.10] - 2020-05-05
 
 - Remove non-voting default rep

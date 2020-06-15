@@ -38,7 +38,7 @@ class Config(object):
             cls._instance = cls.__new__(cls)
             try:
                 with open(f"{Utils.get_project_root().joinpath(pathlib.PurePath('config.yaml'))}", "r") as in_yaml:
-                    cls.yaml = list(yaml.load_all(in_yaml))[0]
+                    cls.yaml = list(yaml.load_all(in_yaml, Loader=yaml.FullLoader))[0]
             except FileNotFoundError:
                 cls.yaml = None
             # Parse options

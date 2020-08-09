@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.13] - 2020-08-09
+
+- Require aioredlock 0.3.0
+
 ## [1.1.12] - 2020-05-19
 
 - Fix pending RPC when receive_minimum is < 1

@@ -211,7 +211,7 @@ class PippinServer(object):
         """Route for creating new wallet"""
         if 'wallet' not in request_json:
             return self.generic_error()
-        elif 'count' in request_json and isinstance(request_json['acount'], int):
+        elif 'count' in request_json and isinstance(request_json['count'], int):
             count = request_json['count']
         else:
             count = 1000

@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: pippin-nano
-        image: bananocoin/pippin:1.1.11
+        image: bananocoin/pippin:1.1.15
         ports:
         - containerPort: 11338
           name: api

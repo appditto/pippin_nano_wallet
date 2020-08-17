@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.15] - 2020-08-17
+
+- Support Nano v21 PoW Difficulty
+
 ## [1.1.13] - 2020-08-09
 
 - Require aioredlock 0.3.0

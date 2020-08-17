@@ -27,8 +27,6 @@ class WebsocketClient(object):
             self.ws = await websockets.connect(self.uri)
             await self.ws.send(json.dumps(subscription("confirmation", ack=True)))
             await self.ws.recv()  # ack
-            await self.ws.send(json.dumps(subscription("active_difficulty", ack=True)))
-            await self.ws.recv()
         except Exception as e:
             if not silent:
                 log.server_logger.critical("NANO WS: Error connecting to websocket server. Check your settings in ~/PippinData/config.yaml")
@@ -57,10 +55,6 @@ class WebsocketClient(object):
                 topic = rec.get("topic", None)
                 if topic and topic == "confirmation":
                     await self.arrival_cb(rec["message"])
-                elif topic and topic == "active_difficulty":
-                    if "network_current" in rec["message"]:
-                        log.server_logger.debug(f"Active difficulty changed to {rec['message']['network_current']}")
-                        WorkClient.instance().active_difficulty = rec["message"]["network_current"]
             except KeyboardInterrupt:
                 break
             except websockets.exceptions.ConnectionClosed as e:

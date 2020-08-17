@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.16] - 2020-08-17
+
+- Fix backwards compatibility
+
 ## [1.1.15] - 2020-08-17
 
 - Support Nano v21 PoW Difficulty

@@ -18,7 +18,7 @@ from pippin.network.work_client import WorkClient
 if TYPE_CHECKING:
     from pippin.db.models.wallet import Wallet
 
-RECEIVE_DIFFICULTY = 'fffffe0000000000' if config.Config.instance().banano else 'fffffe0000000000'
+RECEIVE_DIFFICULTY = 'fffffe0000000000' if config.Config.instance().banano else 'ffffffc000000000'#'fffffe0000000000'
 SEND_DIFFICULTY = 'fffffe0000000000' if config.Config.instance().banano else 'fffffff800000000'
 
 class WalletUtil(object):

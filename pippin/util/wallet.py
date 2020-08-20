@@ -174,7 +174,7 @@ class WalletUtil(object):
         state_block['previous'] = previous
         state_block['representative'] = representative
         state_block['balance'] = balance
-        state_block['link'] = nanopy.account_key(destination)
+        state_block['link'] = nanopy.account_key(destination.replace("xrb_", "nano_"))
         state_block['work'] = work
 
         # Sign block

@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.1.17] - 2020-08-20
+
+- Fix transactions made to accounts with xrb_ prefix
+- Fix pyyaml dependency
+
 ## [1.1.16] - 2020-08-17
 
 - Fix backwards compatibility

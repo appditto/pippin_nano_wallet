@@ -361,6 +361,7 @@ By default, it will look for redis on `127.0.0.1` on port `6379` and use db `0`,
 echo "REDIS_HOST=127.0.0.1" >> ~/PippinData/.env
 echo "REDIS_PORT=6379" >> ~/PippinData/.env
 echo "REDIS_DB=0" >> ~/PippinData/.env
+echo "REDIS_PW=supersecretpassword" >> ~/PippinData/.env
 ```
 
 ## Pippin Configuration

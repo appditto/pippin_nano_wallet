@@ -19,6 +19,7 @@ class RedisDB(object):
             cls.redis_host = os.getenv('REDIS_HOST', '127.0.0.1')
             cls.redis_port = int(os.getenv('REDIS_PORT', '6379'))
             cls.redis_db = int(os.getenv('REDIS_DB', 0))
+            cls.redis_pw = os.getenv('REDIS_PW', None)
         return cls._instance
 
     @classmethod
@@ -33,7 +34,7 @@ class RedisDB(object):
     async def get_redis(cls) -> aioredis.Redis:
         if cls.redis is not None:
             return cls.redis
-        cls.redis = await aioredis.create_redis_pool((cls.redis_host, cls.redis_port), db=cls.redis_db, encoding='utf-8', minsize=1, maxsize=5)
+        cls.redis = await aioredis.create_redis_pool((cls.redis_host, cls.redis_port), db=cls.redis_db, password=cls.redis_pw, encoding='utf-8', minsize=1, maxsize=5)
         return cls.redis
 
     @classmethod

@@ -26,7 +26,11 @@ class WebsocketClient(object):
         try:
             self.ws = await websockets.connect(self.uri)
             await self.ws.send(json.dumps(subscription("confirmation", ack=True)))
-            await self.ws.recv()  # ack
+            await asyncio.wait_for(self.ws.recv(), 10)  # ack, timeout after waiting for 10 seconds
+        except asyncio.TimeoutError:
+            if not silent:
+                log.server_logger.critical("NANO WS: No response from connected websocket server. Ensure this server allows subscription to confirmations with no set filters")
+            raise
         except Exception as e:
             if not silent:
                 log.server_logger.critical("NANO WS: Error connecting to websocket server. Check your settings in ~/PippinData/config.yaml")

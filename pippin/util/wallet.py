@@ -134,15 +134,14 @@ class WalletUtil(object):
     async def _send_block_create(self, amount: int, destination: str, id: str = None, work: str = None) -> dict:
         """Create a state block (send)"""
         # Get account info
-        is_open = True
-        account_info = await RPCClient.instance().account_info(self.account.address)
-        if account_info is None:
+        account_balance = await RPCClient.instance().account_balance(self.account.address)
+        if account_balance is None:
             return None
 
         # Check balance
-        if amount > int(account_info['balance']):
+        if amount > int(account_balance['balance']):
             # Auto-receive blocks if they have it pending
-            if config.Config.instance().auto_receive_on_send and int(account_info['balance']) + int(account_info['pending']) >= amount:
+            if config.Config.instance().auto_receive_on_send and int(account_balance['balance']) + int(account_balance['pending']) >= amount:
                 await self._receive_all()
                 account_info = await RPCClient.instance().account_info(self.account.address)
                 if account_info is None:
@@ -150,8 +149,13 @@ class WalletUtil(object):
                 if amount > int(account_info['balance']):
                     raise InsufficientBalance(account_info['balance'])
             else:
-                raise InsufficientBalance(account_info['balance'])
+                raise InsufficientBalance(account_balance['balance'])
 
+        # Get account info
+        account_info = await RPCClient.instance().account_info(self.account.address)
+        if account_info is None:
+            return None
+        
         workbase = account_info['frontier']
 
         # Build other fields

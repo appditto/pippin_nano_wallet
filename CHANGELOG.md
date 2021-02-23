@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.1.18] - 2021-02-23
+
+- Fix server hanging when DPoW/BPoW is unavailable
+- Fix auto receives working for unopened accounts
+
 ## [1.1.17] - 2020-08-20
 
 - Fix transactions made to accounts with xrb_ prefix

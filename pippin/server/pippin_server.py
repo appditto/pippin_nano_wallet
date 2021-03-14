@@ -1004,13 +1004,13 @@ class PippinServer(object):
 
     async def difficulty_handler(self, data: dict):
         """invoked when active_difficulty changes"""
-        log.server_logger.debug("Received active difficulty message")
+        log.server_logger.debug("Received active difficulty message %s", json.dumps(data))
         is_send = False
         if 'network_current' in data and 'network_receive_current' in data:
             try:
                 DifficultyModel.instance().send_difficulty = DifficultyModel.instance().adjusted_send_difficulty(data['network_current'])
                 DifficultyModel.instance().receive_difficulty = DifficultyModel.instance().adjusted_receive_difficulty(data['network_receive_current'])
-                log.server_logger.info(f"Send difficulty set to {DifficultyModel.instance().send_difficulty}, receive set to {DifficultyModel.instance().receive_difficulty}")
+                log.server_logger.debug(f"Send difficulty set to {DifficultyModel.instance().send_difficulty}, receive set to {DifficultyModel.instance().receive_difficulty}")
             except Exception as err:
                 log.server_logger.exception("Exception in difficulty_handler %s", err)
                 return

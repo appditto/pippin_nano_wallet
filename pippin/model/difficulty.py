@@ -1,4 +1,4 @@
-import nanopy
+import nanolib
 import pippin.config as config
 
 class DifficultyModel(object):

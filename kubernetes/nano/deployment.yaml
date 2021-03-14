@@ -15,14 +15,14 @@ spec:
     spec:
       containers:
       - name: pippin-nano
-        image: bananocoin/pippin:1.1.18
+        image: bananocoin/pippin:1.1.19b1
         resources:
           requests:
-            cpu: 100m
-            memory: 100Mi
-          limits:
             cpu: 500m
-            memory: 1500Mi
+            memory: 500Mi
+          limits:
+            cpu: 1500m
+            memory: 4000Mi
         ports:
         - containerPort: 11338
           name: api

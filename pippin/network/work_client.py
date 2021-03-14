@@ -106,7 +106,7 @@ class WorkClient(object):
         final_result = None
         while len(tasks) > 0:
             # Fire all tasks simultaneously and fire when first one is completed
-            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED, timeout=30)
+            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED, timeout=100)
             # Set to True if any tasks completed before the timeout
             has_done = len(done) > 0
             try:

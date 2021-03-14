@@ -13,8 +13,10 @@ from pippin.db.models.account import Account
 from pippin.db.models.adhoc_account import AdHocAccount
 from pippin.db.models.wallet import (AccountAlreadyExists, Wallet, WalletLocked,
                               WalletNotFound)
+from pippin.model.difficulty import DifficultyModel
 from pippin.network.rpc_client import AccountNotFound, BlockNotFound, RPCClient
 from pippin.network.nano_websocket import WebsocketClient
+from pippin.network.work_client import WorkClient
 from pippin.util.crypt import DecryptionError
 from pippin.util.random import RandomUtil
 from pippin.util.validators import Validators
@@ -32,7 +34,7 @@ class PippinServer(object):
         self.port = port
         self.websocket = None
         if config.Config.instance().node_ws_url is not None:
-            self.websocket = WebsocketClient(config.Config.instance().node_ws_url, self.block_arrival_handler)
+            self.websocket = WebsocketClient(config.Config.instance().node_ws_url, self.block_arrival_handler, self.difficulty_handler)
 
     async def stop(self):
         await self.app.shutdown()
@@ -111,6 +113,8 @@ class PippinServer(object):
                 return await self.wallet_info(request, request_json)
             elif request_json['action'] == 'receive_all':
                 return await self.receive_all(request, request_json)
+            elif request_json['action'] == 'work_generate':
+                return await self.work_generate(request, request_json)
             elif request_json['action'] in ['account_move', 'account_remove', 'receive_minimum', 'receive_minimum_set', 'search_pending', 'search_pending_all', 'wallet_add_watch', 'wallet_export', 'wallet_history', 'wallet_ledger', 'wallet_republish', 'wallet_work_get', 'work_get', 'work_set']:
                 # Prevent unimplemented wallet RPCs from going to the node directly
                 return self.json_response(
@@ -942,6 +946,36 @@ class PippinServer(object):
             }
         )
 
+    async def work_generate(self, request: web.Request, request_json: dict):
+        """Route for running work_generate"""
+        if 'hash' in request_json:
+            if not Validators.is_valid_block_hash(request_json['hash']):
+                return self.json_response(
+                    data = {'error': 'Invalid hash'}
+                )
+        else:
+            return self.generic_error()
+
+        difficulty = DifficultyModel.instance().send_difficulty
+        if 'difficulty' in request_json:
+            difficulty = request_json['difficulty']
+        elif 'subtype' in request_json and request_json['subtype'] == 'receive':
+            difficulty = DifficultyModel.instance().receive_difficulty
+
+        # Generate work
+        work = await WorkClient.instance().work_generate(request_json['hash'], difficulty)
+        if work is None:
+            return self.json_response(
+                data = {
+                    'error': 'Failed to generate work'
+                }
+            )
+        return self.json_response(
+            data = {
+                'work': work
+            }
+        )
+
     async def block_arrival_handler(self, data: dict):
         """invoked when we receive a new block"""
         log.server_logger.debug("Received Callback")
@@ -967,6 +1001,19 @@ class PippinServer(object):
                 await wu.receive(data['hash'])
             except Exception:
                 log.server_logger.debug(f"Failed to receive {data['hash']}")
+
+    async def difficulty_handler(self, data: dict):
+        """invoked when active_difficulty changes"""
+        log.server_logger.debug("Received active difficulty message")
+        is_send = False
+        if 'network_current' in data and 'network_receive_current' in data:
+            try:
+                DifficultyModel.instance().send_difficulty = DifficultyModel.instance().adjusted_send_difficulty(data['network_current'])
+                DifficultyModel.instance().receive_difficulty = DifficultyModel.instance().adjusted_receive_difficulty(data['network_receive_current'])
+                log.server_logger.info(f"Send difficulty set to {DifficultyModel.instance().send_difficulty}, receive set to {DifficultyModel.instance().receive_difficulty}")
+            except Exception as err:
+                log.server_logger.exception("Exception in difficulty_handler %s", err)
+                return
 
     async def start(self):
         """Start the server"""

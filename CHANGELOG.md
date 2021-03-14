@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.1.19] - 2021-03-14
+
+- Support work_generate action, supports 'subtype' to automatically choose correct difficulty
+- Subscribe to active_difficulty websocket for dynamic PoW
+
 ## [1.1.18] - 2021-02-23
 
 - Fix server hanging when DPoW/BPoW is unavailable

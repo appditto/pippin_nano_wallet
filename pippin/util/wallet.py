@@ -12,14 +12,12 @@ from pippin.db.redis import RedisDB
 from pippin.db.models.account import Account
 from pippin.db.models.adhoc_account import AdHocAccount
 from pippin.db.models.block import Block
+from pippin.model.difficulty import DifficultyModel
 from pippin.network.rpc_client import AccountNotFound, RPCClient
 from pippin.network.work_client import WorkClient
 
 if TYPE_CHECKING:
     from pippin.db.models.wallet import Wallet
-
-RECEIVE_DIFFICULTY = 'fffffe0000000000' if config.Config.instance().banano else 'ffffffc000000000'#'fffffe0000000000'
-SEND_DIFFICULTY = 'fffffe0000000000' if config.Config.instance().banano else 'fffffff800000000'
 
 class WalletUtil(object):
     """Wallet utilities, like signing, creating blocks, etc."""
@@ -83,7 +81,7 @@ class WalletUtil(object):
         # Generate work
         if work is None:
             try:
-                work = await WorkClient.instance().work_generate(workbase, RECEIVE_DIFFICULTY)
+                work = await WorkClient.instance().work_generate(workbase, DifficultyModel.instance().receive_difficulty)
                 if work is None:
                     log.server_logger.error("WORK FAILED")
                     raise WorkFailed(workbase)
@@ -166,7 +164,7 @@ class WalletUtil(object):
         # Generate work
         if work is None:
             try:
-                work = await WorkClient.instance().work_generate(workbase, SEND_DIFFICULTY)
+                work = await WorkClient.instance().work_generate(workbase, DifficultyModel.instance().send_difficulty)
                 if work is None:
                     raise WorkFailed(workbase)
             except Exception:
@@ -240,7 +238,7 @@ class WalletUtil(object):
         # Generate work
         if work is None:
             try:
-                work = await WorkClient.instance().work_generate(workbase, SEND_DIFFICULTY)
+                work = await WorkClient.instance().work_generate(workbase, DifficultyModel.instance().send_difficulty)
                 if work is None:
                     raise WorkFailed(workbase)
             except Exception:

@@ -99,7 +99,8 @@ class RPCClient(object):
         """Return accounts_pending for accounts"""
         pending_action = {
             'action': 'accounts_pending',
-            'accounts': accounts
+            'accounts': accounts,
+            'include_only_confirmed': True
         }
         return await self.make_request(pending_action)
 
@@ -108,7 +109,8 @@ class RPCClient(object):
         pending_action = {
             'action': 'pending',
             'account': account,
-            'threshold': str(threshold)
+            'threshold': str(threshold),
+            'include_only_confirmed': True
         }
         resp = await self.make_request(pending_action)
         ret = []

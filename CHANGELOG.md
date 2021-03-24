@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.20] - 2021-03-24
+
+- Only receive cemented blocks
+
 ## [1.1.19] - 2021-03-14
 
 - Support work_generate action, supports 'subtype' to automatically choose correct difficulty

@@ -44,10 +44,10 @@ jobs:
       - name: Get version from tag
         if: github.event_name != 'pull_request'
         shell: bash
-        run: 
-          - echo "TAG_NAME=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-          - echo "STG_ONE=${TAG_NAME#*v}" >> $GITHUB_ENV
-          - echo "RELEASE_VER=${STG_ONE%-release}" >> $GITHUB_ENV
+        run: |
+          echo "TAG_NAME=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+          echo "STG_ONE=${TAG_NAME#*v}" >> $GITHUB_ENV
+          echo "RELEASE_VER=${STG_ONE%-release}" >> $GITHUB_ENV
 
       - name: Login to registry
         uses: actions-hub/docker/login@master
@@ -55,12 +55,22 @@ jobs:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USER }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and tag
+      - name: Build and tag (version)
         if: success()
         run: docker build -t bananocoin/pippin:${{ env.RELEASE_VER }} .
 
-      - name: Push image   
+      - name: Push image (version)
         if: success()
         uses: actions-hub/docker@master
         with:
           args: push bananocoin/pippin:${{ env.RELEASE_VER }} .
+
+      - name: Build and tag (latest)
+        if: success()
+        run: docker build -t bananocoin/pippin:latest .
+
+      - name: Push image (latest)
+        if: success()
+        uses: actions-hub/docker@master
+        with:
+          args: push bananocoin/pippin:latest

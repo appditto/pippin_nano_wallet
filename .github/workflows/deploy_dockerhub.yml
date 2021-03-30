@@ -46,8 +46,8 @@ jobs:
         shell: bash
         run: |
           echo "TAG_NAME=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-          echo "STG_ONE=${TAG_NAME#*v}" >> $GITHUB_ENV
-          echo "RELEASE_VER=${STG_ONE%-release}" >> $GITHUB_ENV
+          echo "STG_ONE=${{ env.TAG_NAME#*v }}" >> $GITHUB_ENV
+          echo "RELEASE_VER=${{ env.STG_ONE%-release }}" >> $GITHUB_ENV
 
       - name: Login to registry
         uses: actions-hub/docker/login@master

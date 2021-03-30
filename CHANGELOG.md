@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.21] - 2021-03-30
+
+- Automate docker hub deployments
+
 ## [1.1.20] - 2021-03-24
 
 - Only receive cemented blocks

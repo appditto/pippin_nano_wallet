@@ -63,7 +63,7 @@ jobs:
         if: success()
         uses: actions-hub/docker@master
         with:
-          args: push bananocoin/pippin:${{ env.RELEASE_VER }} .
+          args: push bananocoin/pippin:${{ env.RELEASE_VER }}
 
       - name: Build and tag (latest)
         if: success()

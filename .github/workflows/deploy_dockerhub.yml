@@ -45,8 +45,8 @@ jobs:
         if: github.event_name != 'pull_request'
         shell: bash
         run: |
-          echo "TAG_NAME=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-          echo "STG_ONE=${{ env.TAG_NAME#*v }}" >> $GITHUB_ENV
+          export TAG_NAME=${GITHUB_REF#refs/*/}
+          export STG_ONE=${TAG_NAME#*v}
           echo "RELEASE_VER=${{ env.STG_ONE%-release }}" >> $GITHUB_ENV
 
       - name: Login to registry

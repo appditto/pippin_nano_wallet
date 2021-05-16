@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.22] - 2021-05-16
+
+- Remove dynamic PoW as V22 node doesn't use it anymore
+
 ## [1.1.21] - 2021-03-30
 
 - Automate docker hub deployments

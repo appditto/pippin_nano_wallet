@@ -34,7 +34,7 @@ class PippinServer(object):
         self.port = port
         self.websocket = None
         if config.Config.instance().node_ws_url is not None:
-            self.websocket = WebsocketClient(config.Config.instance().node_ws_url, self.block_arrival_handler, self.difficulty_handler)
+            self.websocket = WebsocketClient(config.Config.instance().node_ws_url, self.block_arrival_handler)
 
     async def stop(self):
         await self.app.shutdown()
@@ -1001,19 +1001,6 @@ class PippinServer(object):
                 await wu.receive(data['hash'])
             except Exception:
                 log.server_logger.debug(f"Failed to receive {data['hash']}")
-
-    async def difficulty_handler(self, data: dict):
-        """invoked when active_difficulty changes"""
-        log.server_logger.debug("Received active difficulty message %s", json.dumps(data))
-        is_send = False
-        if 'network_current' in data and 'network_receive_current' in data:
-            try:
-                DifficultyModel.instance().send_difficulty = DifficultyModel.instance().adjusted_send_difficulty(data['network_current'])
-                DifficultyModel.instance().receive_difficulty = DifficultyModel.instance().adjusted_receive_difficulty(data['network_receive_current'])
-                log.server_logger.debug(f"Send difficulty set to {DifficultyModel.instance().send_difficulty}, receive set to {DifficultyModel.instance().receive_difficulty}")
-            except Exception as err:
-                log.server_logger.exception("Exception in difficulty_handler %s", err)
-                return
 
     async def start(self):
         """Start the server"""

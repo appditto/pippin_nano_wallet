@@ -16,10 +16,9 @@ def subscription(topic: str, ack: bool = False, options: dict = None):
 
 class WebsocketClient(object):
 
-    def __init__(self, uri, callback, difficulty_callback):
+    def __init__(self, uri, callback):
         self.uri = uri
         self.arrival_cb = callback
-        self.difficulty_cb = difficulty_callback
         self.ws = None
         self.stop = False
 
@@ -27,8 +26,6 @@ class WebsocketClient(object):
         try:
             self.ws = await websockets.connect(self.uri)
             await self.ws.send(json.dumps(subscription("confirmation", ack=True)))
-            await asyncio.wait_for(self.ws.recv(), 10)  # ack, timeout after waiting for 10 seconds
-            await self.ws.send(json.dumps(subscription("active_difficulty", ack=True)))
             await asyncio.wait_for(self.ws.recv(), 10)  # ack, timeout after waiting for 10 seconds            
         except asyncio.TimeoutError:
             if not silent:
@@ -62,8 +59,6 @@ class WebsocketClient(object):
                 topic = rec.get("topic", None)
                 if topic and topic == "confirmation":
                     await self.arrival_cb(rec["message"])
-                elif topic and topic == "active_difficulty":
-                    await self.difficulty_cb(rec["message"])
             except KeyboardInterrupt:
                 break
             except websockets.exceptions.ConnectionClosed as e:

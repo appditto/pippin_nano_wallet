@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.23] - 2021-08-31
+
+- Fix aioredis requirement
+
 ## [1.1.22] - 2021-05-16
 
 - Remove dynamic PoW as V22 node doesn't use it anymore

@@ -27,8 +27,8 @@ class RPCClient(object):
         if cls._instance is not None:
             cls._instance = None
 
-    async def make_request(self, req_json: dict):
-        async with self.session.post(self.node_url ,json=req_json, timeout=300) as resp:
+    async def make_request(self, req_json: dict, url = None):
+        async with self.session.post(self.node_url if url is None else url ,json=req_json, timeout=300) as resp:
             return await resp.json()
 
     async def account_balance(self, account: str) -> dict:

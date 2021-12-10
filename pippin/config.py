@@ -72,7 +72,8 @@ class Config(object):
             # Go to default if None
             if cls.preconfigured_reps is None:
                 cls.preconfigured_reps = DEFAULT_BANANO_REPS if cls.banano else DEFAULT_NANO_REPS
-
+            cls.enable_payments = cls.get_yaml_property('payments', 'enabled', False)
+            cls.pingback_success_payment = cls.get_yaml_property('payments', 'pingback_success_payment', "http://localhost:8090")
         return cls._instance
 
     @classmethod

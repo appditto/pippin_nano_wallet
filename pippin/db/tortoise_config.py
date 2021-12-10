@@ -7,7 +7,7 @@ import pathlib
 class DBConfig(object):
     def __init__(self, mock = False):
         self.logger = logging.getLogger()
-        self.modules = {'db': ['pippin.db.models.wallet', 'pippin.db.models.account', 'pippin.db.models.adhoc_account', 'pippin.db.models.block']}
+        self.modules = {'db': ['pippin.db.models.wallet', 'pippin.db.models.account', 'pippin.db.models.adhoc_account', 'pippin.db.models.block', 'pippin.db.models.payment']}
         self.mock = mock
         if self.mock:
             self.use_postgres = False

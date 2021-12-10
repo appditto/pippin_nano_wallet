@@ -76,3 +76,14 @@ wallet:
   # Maximum number of threads to sign blocks on.
   # Default: 1, minimum: 1
   #max_sign_threads: 1
+payments:
+  # `new_payment` action parameters are:
+  #   `amount` in raw 
+  #   `business_memo_id` from your app like `offerID-userID` as a string
+  #   `wallet` like other rpc calls
+  # Default: False
+  #enable_payments: false
+
+  # the url to pingback in case of successful payments
+  # Default: http://localhost:8090
+  #pingback_success_payment: http://localhost:8090

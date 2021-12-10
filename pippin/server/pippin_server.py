@@ -10,6 +10,7 @@ import asyncio
 import pippin.config as config
 from pippin.db.redis import RedisDB
 from pippin.db.models.account import Account
+from pippin.db.models.payment import Payment
 from pippin.db.models.adhoc_account import AdHocAccount
 from pippin.db.models.wallet import (AccountAlreadyExists, Wallet, WalletLocked,
                               WalletNotFound)
@@ -115,6 +116,8 @@ class PippinServer(object):
                 return await self.receive_all(request, request_json)
             elif request_json['action'] == 'work_generate':
                 return await self.work_generate(request, request_json)
+            elif request_json['action'] == 'new_payment':
+                return await self.new_payment(request, request_json)
             elif request_json['action'] in ['account_move', 'account_remove', 'receive_minimum', 'receive_minimum_set', 'search_pending', 'search_pending_all', 'wallet_add_watch', 'wallet_export', 'wallet_history', 'wallet_ledger', 'wallet_republish', 'wallet_work_get', 'work_get', 'work_set']:
                 # Prevent unimplemented wallet RPCs from going to the node directly
                 return self.json_response(
@@ -946,6 +949,46 @@ class PippinServer(object):
             }
         )
 
+    async def new_payment(self, request: web.Request, request_json: dict):
+        if 'amount' not in request_json or 'business_memo_id' not in request_json or 'wallet' not in request_json:
+            return self.generic_error()
+
+        if not config.Config.instance().enable_payments:
+            return self.json_response(
+                data={
+                    'error': 'Payments not enabled'
+                }
+            )
+
+        try:
+            wallet = await Wallet.get_wallet(request_json['wallet'])
+        except WalletNotFound:
+            return self.json_response(
+                data={
+                    'error': 'wallet not found'
+                }
+            )
+        except WalletLocked:
+            return self.json_response(
+                data={
+                    'error': 'wallet locked'
+                }
+            )
+        async with in_transaction() as conn:
+            account = await wallet.account_create(using_db=conn)
+        
+        payment = Payment(
+            address = account,
+            business_memo_id = str(request_json['business_memo_id']),
+            is_paid = False,
+            amount = str(request_json['amount'])
+        )
+        await payment.save()
+
+        return self.json_response(
+                    data = payment.asdict()
+                )
+
     async def work_generate(self, request: web.Request, request_json: dict):
         """Route for running work_generate"""
         if 'hash' in request_json:
@@ -995,12 +1038,35 @@ class PippinServer(object):
                 acct = await AdHocAccount.filter(address=destination).prefetch_related('wallet').first()
                 if acct is None:
                     return
+
+            if config.Config.instance().enable_payments:
+                await self.check_if_in_payments(destination)
+
             log.server_logger.debug(f"Auto receiving {data['hash']} for {destination}")
             wu = WalletUtil(acct, acct.wallet)
             try:
                 await wu.receive(data['hash'])
             except Exception:
                 log.server_logger.debug(f"Failed to receive {data['hash']}")
+
+    async def check_if_in_payments(self, destination):
+        payment = await Payment.filter(address=destination, is_paid=False).first()
+
+        if payment is not None:
+            account_balance_action = {
+                'action': 'account_balance',
+                'account': destination,
+            }
+            account_balance = await RPCClient.instance().make_request(account_balance_action)
+            total = int(account_balance['balance']) + int(account_balance['pending'])
+            if total >= int(payment.amount):
+                payment.is_paid = True
+                await payment.save()
+                await RPCClient.instance().make_request(req_json=payment.asdict(), url=config.Config.instance().pingback_success_payment)
+            else:
+                #payment fail or not enough paid
+                pass      
+        pass
 
     async def start(self):
         """Start the server"""

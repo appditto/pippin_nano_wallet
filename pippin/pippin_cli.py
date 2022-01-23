@@ -340,7 +340,7 @@ def main():
         elif options.command == 'wallet_representative_get':
             loop.run_until_complete(wallet_representative_get(options.wallet))
         elif options.command == 'wallet_representative_set':
-            loop.run_until_complete(wallet_representative_set(options.wallet, options.representatives, update_existing=options.update_existing))
+            loop.run_until_complete(wallet_representative_set(options.wallet, options.representative, update_existing=options.update_existing))
         else:
             parser.print_help()
     except Exception as e:

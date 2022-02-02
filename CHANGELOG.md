@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.25] - 2022-02-02
+
+- Bump minimum aiohttp version to 3.8.1
+
+## [1.1.24] - 2022-02-02
+
+- Fix CLI wallet representative set
+
 ## [1.1.23] - 2021-08-31
 
 - Fix aioredis requirement

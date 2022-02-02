@@ -28,7 +28,7 @@ def requirements() -> list:
             'python-dotenv>=0.10.3',
             'python-rapidjson>=0.9.1',
             'nanopy>=20.0.0',
-            'aiohttp>=3.6.2',
+            'aiohttp>=3.8.1',
             'pyyaml>=5.3.1',
             'pycryptodome>=3.9.4',
             'aiounittest>=1.3.1',

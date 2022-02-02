@@ -22,11 +22,12 @@ class PippinServerTest(AioHTTPTestCase):
     def setUpClass(cls):
         return super().setUpClass()
 
-    async def setUpAsync(self):
+    async def setUpAsync(self) -> None:
         if 'BANANO' in os.environ:
             del os.environ['BANANO']
         await DBConfig(mock=True).init_db()
         await RedisDB.instance().get_redis()
+        await super().setUpAsync()
 
     async def tearDownAsync(self):
         if 'BANANO' in os.environ:
@@ -45,6 +46,7 @@ class PippinServerTest(AioHTTPTestCase):
             os.remove(Utils.get_project_root().joinpath(pathlib.PurePath('mock.db-shm')))
         except FileNotFoundError:
             pass
+        await super().tearDownAsync()
 
     async def json_request(self, data: str):
         return await self.client.request(

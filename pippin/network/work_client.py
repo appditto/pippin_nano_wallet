@@ -5,13 +5,18 @@ from typing import List
 import aiohttp
 import asyncio
 import pippin.config as config
+import nanolib
 import nanopy
 import os
 import rapidjson as json
 
 from pippin.db.redis import RedisDB
-from pippin.network.dpow_websocket import ConnectionClosed, DpowClient
 from pippin.util.nano_util import NanoUtil
+
+from aiographql.client import (GraphQLClient, GraphQLRequest, GraphQLResponse)
+
+BPOW_URL = "http://host.docker.internal:8080/graphql"
+
 
 class WorkClient(object):
     _instance = None
@@ -25,33 +30,14 @@ class WorkClient(object):
             cls._instance = cls.__new__(cls)
             cls.work_urls = config.Config.instance().work_peers
             if config.Config.instance().node_work_generate:
-                cls.work_urls.append(config.Config.instance().node_url)                
+                cls.work_urls.append(config.Config.instance().node_url)
             cls.session = aiohttp.ClientSession(json_serialize=json.dumps)
-            cls.dpow_client = None
-            cls.dpow_futures = {}
-            cls.dpow_id = 1
-            # Construct DPoW Client
-            cls.dpow_user = os.getenv('DPOW_USER', None)
-            cls.dpow_key = os.getenv('DPOW_KEY', None)
-            if cls.dpow_user is not None and cls.dpow_key is not None:
-                cls.dpow_client = DpowClient(
-                    cls.dpow_user,
-                    cls.dpow_key,
-                    work_futures=cls.dpow_futures,
-                    bpow=False
+            cls.bpow_key = os.getenv('BPOW_KEY', None)
+            if cls.bpow_key is not None:
+                cls.bpow_client = GraphQLClient(
+                    endpoint=BPOW_URL,
+                    headers={"Authorization": f"{cls.bpow_key}"},
                 )
-                cls.dpow_fallback_url = 'https://dpow.nanocenter.org/service/'
-            else:
-                cls.dpow_user = os.getenv('BPOW_USER', None)
-                cls.dpow_key = os.getenv('BPOW_KEY', None)
-                if cls.dpow_user is not None and cls.dpow_key is not None:
-                    cls.dpow_client = DpowClient(
-                        cls.dpow_user,
-                        cls.dpow_key,
-                        work_futures=cls.dpow_futures,
-                        bpow=True
-                    )
-                    cls.dpow_fallback_url = 'https://bpow.banano.cc/service/'
 
         return cls._instance
 
@@ -63,7 +49,7 @@ class WorkClient(object):
             cls._instance = None
 
     async def make_request(self, url: str, req_json: dict):
-        async with self.session.post(url ,json=req_json, timeout=300) as resp:
+        async with self.session.post(url, json=req_json, timeout=300) as resp:
             return await resp.json()
 
     async def work_generate(self, hash: str, difficulty: str) -> str:
@@ -78,29 +64,27 @@ class WorkClient(object):
         for p in self.work_urls:
             tasks.append(self.make_request(p, work_generate))
 
-        # Use DPoW if applicable
-        if self.dpow_client is not None:
-            dpow_id = str(self.dpow_id)
-            self.dpow_id += 1
-            self.dpow_futures[dpow_id] = asyncio.get_event_loop().create_future()
-            try:
-                success = await self.dpow_client.request_work(dpow_id, hash, difficulty=difficulty)
-                tasks.append(self.dpow_futures[dpow_id])
-            except ConnectionClosed:
-                # HTTP fallback for this request
-                dp_req = {
-                    "user": self.dpow_user,
-                    "api_key": self.dpow_key,
-                    "hash": hash,
-                    "difficulty": difficulty
-                }
-                tasks.append(self.make_request(self.dpow_fallback_url, dp_req))
+        # Use BPoW if applicable
+        if self.bpow_client is not None:
+            multiplier = int(nanolib.work.derive_work_multiplier(
+                difficulty, base_difficulty="fffffe0000000000"))
+            if multiplier < 1:
+                multiplier = 1
+            request = GraphQLRequest(
+                query="""
+                    mutation($hash:String!, $difficultyMultiplier: Int!) {
+                        workGenerate(input:{hash:$hash, difficultyMultiplier:$difficultyMultiplier})
+                    }
+                """,
+                variables={"hash": hash, "difficultyMultiplier":  multiplier}
+            )
+            tasks.append(self.bpow_client.query(request=request))
 
         # Do it locally if no peers or if peers have been failing
-        if await RedisDB.instance().exists("work_failure") or (len(self.work_urls) == 0 and self.dpow_client is None):
-            tasks.append(
-                NanoUtil.instance().work_generate(hash, difficulty=difficulty)
-            )
+        # if await RedisDB.instance().exists("work_failure") or (len(self.work_urls) == 0 and self.bpow_client is None):
+        #     tasks.append(
+        #         NanoUtil.instance().work_generate(hash, difficulty=difficulty)
+        #     )
 
         # Post work_generate to all peers simultaneously
         final_result = None
@@ -114,23 +98,32 @@ class WorkClient(object):
                     result = task.result()
                     # Some tasks return different types of responses, e.g. DPoW is different than a normal work peer
                     if result is None:
-                        aiohttp.log.server_logger.info("work_generate task returned None")
-                    if isinstance(result, list):
+                        aiohttp.log.server_logger.info(
+                            "work_generate task returned None")
+                    if isinstance(result, GraphQLResponse):
+                        if len(result.errors) > 0:
+                            result = None
+                        else:
+                            result = {"work": result.data}
+                    elif isinstance(result, list):
                         result = json.loads(result[1])
                     elif isinstance(result, str):
-                        result = {'work':result}
+                        result = {'work': result}
                     if result is not None and 'work' in result:
                         cancel_json = {
                             'action': 'work_cancel',
                             'hash': hash
                         }
                         for p in self.work_urls:
-                            asyncio.ensure_future(self.make_request(p, cancel_json))
+                            asyncio.ensure_future(
+                                self.make_request(p, cancel_json))
                         final_result = result['work']
                     elif result is not None and 'error' in result:
-                        aiohttp.log.server_logger.info(f'work_generate task returned error {result["error"]}')
+                        aiohttp.log.server_logger.info(
+                            f'work_generate task returned error {result["error"]}')
             except Exception:
-                aiohttp.log.server_logger.exception("work_generate task raised Exception")
+                aiohttp.log.server_logger.exception(
+                    "work_generate task raised Exception")
             finally:
                 # Either nothing finished before the timeout or something did
                 # Cancel any pending tasks

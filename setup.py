@@ -33,7 +33,8 @@ def requirements() -> list:
             'pycryptodome>=3.9.4',
             'aiounittest>=1.3.1',
             'websockets>=8.1',
-            'setuptools'
+            'setuptools',
+            'aiographql-client'
         ]
         if sys.platform not in ('win32', 'cygwin', 'cli'):
             ret.append('uvloop>=0.14.0')

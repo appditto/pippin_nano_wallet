@@ -113,3 +113,5 @@ venv.bak/
 
 # Configuration
 **/config.yaml
+.data/*/**
+!.data/*/.gitkeep

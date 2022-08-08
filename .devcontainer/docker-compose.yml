@@ -1,0 +1,28 @@
+version: '3.9'
+services:
+     app:
+        container_name: pippin_dev
+        security_opt:
+            - "seccomp:unconfined"        
+        environment:
+          - REDIS_HOST=redis
+          - REDIS_DB=0
+          - POSTGRES_HOST=db
+          - POSTGRES_DB=pippin
+          - POSTGRES_USER=postgres
+          - POSTGRES_PASSWORD=postgres
+        ports:
+            - '127.0.0.1:11338:11338'
+        build:
+            context: .
+            dockerfile: Dockerfile.dev
+        volumes:
+            - $PWD:/app:cached
+            - .data/site-packages:/usr/local/lib/python3.9/site-packages:delegated
+            - .data/PippinData:/root/PippinData:delegated
+        depends_on:
+            - redis
+            - db
+        command: /bin/sh -c "while sleep 1000; do :; done"  
+        networks: ['app-network']
+ 

@@ -1,11 +1,12 @@
 # Install uvloop
+import nanopy
 import sys
 try:
     if sys.platform not in ('win32', 'cygwin', 'cli'):
         import uvloop
         uvloop.install()
 except ImportError:
-	print("Couldn't install uvloop, falling back to the slower asyncio event loop")
+    print("Couldn't install uvloop, falling back to the slower asyncio event loop")
 
 import argparse
 import asyncio
@@ -27,7 +28,8 @@ from pippin.util.nano_util import NanoUtil
 from pippin.util.utils import Utils
 
 parser = argparse.ArgumentParser(description="Pippin Server")
-parser.add_argument('--generate-config', action='store_true', help='Generate sample configuration file and exit', default=False)
+parser.add_argument('--generate-config', action='store_true',
+                    help='Generate sample configuration file and exit', default=False)
 options = parser.parse_args()
 
 # Create sample file if not exists
@@ -35,7 +37,8 @@ config_dir = Utils.get_project_root()
 sample_file = config_dir.joinpath(pathlib.PurePath('sample.config.yaml'))
 real_file = config_dir.joinpath(pathlib.PurePath('config.yaml'))
 if (not os.path.isfile(sample_file) and not os.path.isfile(real_file)) or options.generate_config:
-    ref_file = pathlib.Path(__file__).parent.joinpath(pathlib.PurePath('sample.config.yaml'))
+    ref_file = pathlib.Path(__file__).parent.joinpath(
+        pathlib.PurePath('sample.config.yaml'))
     shutil.copyfile(ref_file, sample_file)
     print(f"Sample configuration created at: {sample_file}")
     if options.generate_config:
@@ -45,7 +48,6 @@ if (not os.path.isfile(sample_file) and not os.path.isfile(real_file)) or option
 config = Config.instance()
 
 # Set and patch nanopy
-import nanopy
 nanopy.account_prefix = 'ban_' if config.banano else 'nano_'
 if config.banano:
     nanopy.standard_exponent = 29
@@ -60,10 +62,13 @@ else:
     root = logging.getLogger('aiohttp.server')
     logging.basicConfig(level=logging.INFO)
     handler = WatchedFileHandler(config.log_file)
-    formatter = logging.Formatter("%(asctime)s;%(levelname)s;%(message)s", "%Y-%m-%d %H:%M:%S %z")
+    formatter = logging.Formatter(
+        "%(asctime)s;%(levelname)s;%(message)s", "%Y-%m-%d %H:%M:%S %z")
     handler.setFormatter(formatter)
     root.addHandler(handler)
-    root.addHandler(TimedRotatingFileHandler(config.log_file, when="d", interval=1, backupCount=100))  
+    root.addHandler(TimedRotatingFileHandler(
+        config.log_file, when="d", interval=1, backupCount=100))
+
 
 def main():
     loop = asyncio.get_event_loop()
@@ -71,6 +76,9 @@ def main():
         # Initialize database first
         log.server_logger.info("Initializing database")
         loop.run_until_complete(DBConfig().init_db())
+        if os.getenv('BPOW_KEY', None) is not None:
+            log.server_logger.info(
+                "💥 Using BoomPOW For Work Generation")
         # Setup server
         server = PippinServer(config.host, config.port)
         # Check is remote node is alive
@@ -81,18 +89,15 @@ def main():
             is_alive = False
         finally:
             if not is_alive:
-                log.server_logger.error(f"Error: Could not connect to remote node at {Config.instance().node_url}")
+                log.server_logger.error(
+                    f"Error: Could not connect to remote node at {Config.instance().node_url}")
                 exit(1)
         # Start server
-        log.server_logger.info(f"Pippin server starting at {config.host}:{config.port}")
+        log.server_logger.info(
+            f"Pippin server starting at {config.host}:{config.port}")
         tasks = [
             server.start()
         ]
-        # Check if DPoW should be started
-        dpow_client = WorkClient.instance().dpow_client
-        if dpow_client is not None:
-            loop.run_until_complete(dpow_client.setup())
-            tasks.append(dpow_client.loop())
         loop.run_until_complete(asyncio.wait(tasks))
         loop.run_forever()
     except Exception:
@@ -111,6 +116,7 @@ def main():
         ]
         loop.run_until_complete(asyncio.wait(tasks))
         loop.close()
+
 
 if __name__ == "__main__":
     main()

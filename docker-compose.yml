@@ -1,0 +1,26 @@
+version: '3.9'
+services:
+    redis:
+        container_name: pippin_redis
+        image: redis:7-alpine
+        restart: unless-stopped
+        networks: ['app-network']
+
+    db:
+        container_name: pippin_postgres
+        image: postgres:14
+        ports:
+            - '127.0.0.1:5434:5432'
+        restart: unless-stopped
+        environment:
+            - POSTGRES_DB=pippin
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=postgres
+            - PGDATA=/var/lib/postgresql/data/dev
+        volumes:
+            - .data/postgres:/var/lib/postgresql/data:delegated # Delegated indicates the containers view of the volume takes priority
+        networks: ['app-network']
+
+networks:
+    app-network:
+        driver: bridge

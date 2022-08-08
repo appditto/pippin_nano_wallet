@@ -1,4 +1,4 @@
-# From Guilhermelawless: 
+# From Guilhermelawless:
 # https://github.com/guilhermelawless/nano-dpow/blob/master/server/dpow/nano_websocket.py
 from aiohttp import log
 import asyncio
@@ -14,6 +14,7 @@ def subscription(topic: str, ack: bool = False, options: dict = None):
         d["options"] = options
     return d
 
+
 class WebsocketClient(object):
 
     def __init__(self, uri, callback):
@@ -26,14 +27,17 @@ class WebsocketClient(object):
         try:
             self.ws = await websockets.connect(self.uri)
             await self.ws.send(json.dumps(subscription("confirmation", ack=True)))
-            await asyncio.wait_for(self.ws.recv(), 10)  # ack, timeout after waiting for 10 seconds            
+            # ack, timeout after waiting for 10 seconds
+            await asyncio.wait_for(self.ws.recv(), 10)
         except asyncio.TimeoutError:
             if not silent:
-                log.server_logger.critical("NANO WS: No response from connected websocket server. Ensure this server allows subscription to confirmations with no set filters")
+                log.server_logger.critical(
+                    "NANO WS: No response from connected websocket server. Ensure this server allows subscription to confirmations with no set filters")
             raise
         except Exception as e:
             if not silent:
-                log.server_logger.critical("NANO WS: Error connecting to websocket server. Check your settings in ~/PippinData/config.yaml")
+                log.server_logger.critical(
+                    "NANO WS: Error connecting to websocket server. Check your settings in ~/PippinData/config.yaml")
                 log.server_logger.error(traceback.format_exc())
             raise
 
@@ -42,14 +46,16 @@ class WebsocketClient(object):
         await self.ws.wait_closed()
 
     async def reconnect_forever(self):
-        log.server_logger.warn("NANO WS: Attempting websocket reconnection every 30 seconds...")
+        log.server_logger.warn(
+            "NANO WS: Attempting websocket reconnection every 30 seconds...")
         while not self.stop:
             try:
                 await self.setup(silent=True)
                 log.server_logger.warn("NANO WS: Connected to websocket!")
                 break
             except:
-                log.server_logger.debug("NANO WS: Websocket reconnection failed")
+                log.server_logger.debug(
+                    "NANO WS: Websocket reconnection failed")
                 await asyncio.sleep(30)
 
     async def loop(self):
@@ -62,8 +68,10 @@ class WebsocketClient(object):
             except KeyboardInterrupt:
                 break
             except websockets.exceptions.ConnectionClosed as e:
-                log.server_logger.error(f"NANO WS: Connection closed to websocket. Code: {e.code} , reason: {e.reason}.")
+                log.server_logger.error(
+                    f"NANO WS: Connection closed to websocket. Code: {e.code} , reason: {e.reason}.")
                 await self.reconnect_forever()
             except Exception as e:
-                log.server_logger.critical(f"NANO WS: Unknown exception while handling getting a websocket message:\n{traceback.format_exc()}")
+                log.server_logger.critical(
+                    f"NANO WS: Unknown exception while handling getting a websocket message:\n{traceback.format_exc()}")
                 await self.reconnect_forever()

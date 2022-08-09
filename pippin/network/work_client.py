@@ -15,7 +15,7 @@ from pippin.util.nano_util import NanoUtil
 
 from aiographql.client import (GraphQLClient, GraphQLRequest, GraphQLResponse)
 
-BPOW_URL = "http://host.docker.internal:8080/graphql"
+BPOW_URL = "https://bpow-next.banano.cc/graphql"
 
 
 class WorkClient(object):
@@ -81,10 +81,10 @@ class WorkClient(object):
             tasks.append(self.bpow_client.query(request=request))
 
         # Do it locally if no peers or if peers have been failing
-        # if await RedisDB.instance().exists("work_failure") or (len(self.work_urls) == 0 and self.bpow_client is None):
-        #     tasks.append(
-        #         NanoUtil.instance().work_generate(hash, difficulty=difficulty)
-        #     )
+        if await RedisDB.instance().exists("work_failure") or (len(self.work_urls) == 0 and self.bpow_client is None):
+            tasks.append(
+                NanoUtil.instance().work_generate(hash, difficulty=difficulty)
+            )
 
         # Post work_generate to all peers simultaneously
         final_result = None
@@ -104,7 +104,7 @@ class WorkClient(object):
                         if len(result.errors) > 0:
                             result = None
                         else:
-                            result = {"work": result.data}
+                            result = {"work": result.data["workGenerate"]}
                     elif isinstance(result, list):
                         result = json.loads(result[1])
                     elif isinstance(result, str):

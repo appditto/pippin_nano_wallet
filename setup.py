@@ -5,8 +5,9 @@ import pippin.version
 
 from setuptools import find_packages, setup
 
-if sys.version_info < (3, 6):
-    raise RuntimeError("Pippin requires Python >= 3.6")
+if sys.version_info < (3, 7):
+    raise RuntimeError("Pippin requires Python >= 3.7")
+
 
 def requirements() -> list:
     try:
@@ -39,6 +40,8 @@ def requirements() -> list:
         if sys.platform not in ('win32', 'cygwin', 'cli'):
             ret.append('uvloop>=0.14.0')
         return ret
+
+
 setup(
     # Application name:
     name="pippin-wallet",

@@ -152,9 +152,9 @@ To backup a seed (**warning:** this prints seed to stdout)
 
 **MacOS Instructions**
 
-1) Install [homebrew](https://brew.sh/), if it isn't already installed
+1. Install [homebrew](https://brew.sh/), if it isn't already installed
 
-2) Install Redis (skip if you already have done so)
+2. Install Redis (skip if you already have done so)
 
 ```
 % brew install gcc@9 python redis
@@ -193,11 +193,13 @@ Instructions for other debian-based Linux distributions should be similar.
 **CentOS 8**
 
 Install the required developer tools:
+
 ```
 # dnf install gcc redis python3-devel
 ```
 
 The above may require the EPEL and PowerTools repos to be configured first:
+
 ```
 # dnf install -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
 # dnf config-manager --set-enabled PowerTools
@@ -206,26 +208,32 @@ The above may require the EPEL and PowerTools repos to be configured first:
 **Redis basics for CentOS 8**
 
 After installing Redis, create directories for the Redis config and runtime files:
+
 ```
 # mkdir /etc/redis /var/redis /var/redis/6379
 ```
+
 By default, the dnf install places Redis config files in /etc, move them to your dedicated folders:
+
 ```
-# mv /etc/redis-sentinel.conf /etc/redis/ 
+# mv /etc/redis-sentinel.conf /etc/redis/
 # mv /etc/redis.conf /etc/redis/6379.conf
 ```
+
 Update your Redis config file to allow it to run in the background as a daemon, supervised by systemd:
+
 ```
 # vim /etc/redis/6379.conf
 	Set daemonize to yes (by default it is set to no).
 	Set the pidfile to /var/run/redis_6379.pid (modify the port if needed).
-	Change the port if necessary (6379 is the default).	
+	Change the port if necessary (6379 is the default).
 	Set the logfile to /var/log/redis_6379.log
-	Set the working dir to /var/redis/6379 
+	Set the working dir to /var/redis/6379
 	supervised systemd
 ```
 
 Create the Systemd service to have Redis start automatically:
+
 ```
 # vim /etc/systemd/system/redis.service
 [Unit]
@@ -243,11 +251,13 @@ WantedBy=multi-user.target
 ```
 
 Enable and start the service:
+
 ```
 # systemctl enable --now /etc/systemd/system/redis.service
 ```
 
 Verify that Redis is running:
+
 ```
 # systemctl status redis
 # redis-cli ping
@@ -291,25 +301,17 @@ Pippin creates a `PippinData` directory in your home directory.
 
 Run: `pippin-server --generate-config` to generate a sample in `~/PippinData/sample.config.yaml`
 
-### Using Distributed PoW or BoomPoW
+### Using BoomPoW
 
-Want to use [DPoW](https://dpow.nanocenter.org) or [BPoW](https://bpow.banano.cc)?
+Want to use [BPoW](https://bpow.banano.cc)?
 
-Pippin will use them automatically for work generation if the key/user is present in the environment.
-
-For DPoW:
-```
-% echo "DPOW_USER=mydpowuser" >> ~/PippinData/.env
-% echo "DPOW_KEY=mydpowkey" >> ~/PippinData/.env
-```
+Pippin will use them automatically for work generation if the key is present in the environment.
 
 For BPoW:
-```
-% echo "BPOW_USER=mybpowuser" >> ~/PippinData/.env
-% echo "BPOW_KEY=mybpowkey" >> ~/PippinData/.env
-```
 
-Replace `mybpowuser` and `mybpowkey` with the actual user and keys you have. If you need keys, visit their respected websites for instructions on how to request them.
+```
+% echo "BPOW_KEY=service:mybpowkey" >> ~/PippinData/.env
+```
 
 ### Configuring PostgreSQL or MySQL
 
@@ -320,6 +322,7 @@ To use postgres or mysql, you need to put your database information in some envi
 **Postgres:**
 
 Required (replace `database_name`, `user_name`, and `mypassword` with the actual values):
+
 ```
 % echo "POSTGRES_DB=database_name" >> ~/PippinData/.env
 % echo "POSTGRES_USER=user_name" >> ~/PippinData/.env
@@ -327,9 +330,10 @@ Required (replace `database_name`, `user_name`, and `mypassword` with the actual
 ```
 
 Optional:
+
 ```
 # 127.0.0.1 is default
-% echo "POSTGRES_HOST=127.0.0.1" >> ~/PippinData/.env 
+% echo "POSTGRES_HOST=127.0.0.1" >> ~/PippinData/.env
 # 5432 is default
 % echo "POSTGRES_PORT=5432" >> ~/PippinData/.env
 ```
@@ -337,6 +341,7 @@ Optional:
 **MySQL:**
 
 Required (replace `database_name`, `user_name`, and `mypassword` with the actual values):
+
 ```
 % echo "MYSQL_DB=database_name" >> ~/PippinData/.env
 % echo "MYSQL_USER=user_name" >> ~/PippinData/.env
@@ -344,9 +349,10 @@ Required (replace `database_name`, `user_name`, and `mypassword` with the actual
 ```
 
 Optional:
+
 ```
 # 127.0.0.1 is default
-% echo "MYSQL_HOST=127.0.0.1" >> ~/PippinData/.env 
+% echo "MYSQL_HOST=127.0.0.1" >> ~/PippinData/.env
 # 3306 is default
 % echo "MYSQL_PORT=3306" >> ~/PippinData/.env
 ```

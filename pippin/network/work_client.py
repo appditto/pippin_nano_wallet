@@ -15,7 +15,7 @@ from pippin.util.nano_util import NanoUtil
 
 from aiographql.client import (GraphQLClient, GraphQLRequest, GraphQLResponse)
 
-BPOW_URL = "https://bpow-next.banano.cc/graphql"
+BPOW_URL = "https://boompow.banano.cc/graphql"
 
 
 class WorkClient(object):
@@ -71,6 +71,7 @@ class WorkClient(object):
             if multiplier < 1:
                 multiplier = 1
             request = GraphQLRequest(
+                validate=False,
                 query="""
                     mutation($hash:String!, $difficultyMultiplier: Int!) {
                         workGenerate(input:{hash:$hash, difficultyMultiplier:$difficultyMultiplier})

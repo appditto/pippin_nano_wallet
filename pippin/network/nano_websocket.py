@@ -2,7 +2,8 @@
 # https://github.com/guilhermelawless/nano-dpow/blob/master/server/dpow/nano_websocket.py
 from aiohttp import log
 import asyncio
-import websockets
+from websockets.exceptions import ConnectionClosed
+from websockets.client import connect
 import rapidjson as json
 import traceback
 from pippin.network.work_client import WorkClient
@@ -25,7 +26,7 @@ class WebsocketClient(object):
 
     async def setup(self, silent=False):
         try:
-            self.ws = await websockets.connect(self.uri)
+            self.ws = await connect(self.uri)
             await self.ws.send(json.dumps(subscription("confirmation", ack=True)))
             # ack, timeout after waiting for 10 seconds
             await asyncio.wait_for(self.ws.recv(), 10)
@@ -67,7 +68,7 @@ class WebsocketClient(object):
                     await self.arrival_cb(rec["message"])
             except KeyboardInterrupt:
                 break
-            except websockets.exceptions.ConnectionClosed as e:
+            except ConnectionClosed as e:
                 log.server_logger.error(
                     f"NANO WS: Connection closed to websocket. Code: {e.code} , reason: {e.reason}.")
                 await self.reconnect_forever()

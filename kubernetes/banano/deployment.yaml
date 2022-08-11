@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: pippin-banano
-        image: bananocoin/pippin:1.1.25
+        image: bananocoin/pippin:2.0.1
         resources:
           requests:
             cpu: 100m
@@ -48,16 +48,13 @@ spec:
               secretKeyRef:
                 name: banano
                 key: postgres_password
-          - name: BPOW_USER
-            valueFrom:
-              secretKeyRef:
-                name: banano
-                key: bpow_user
           - name: BPOW_KEY
             valueFrom:
               secretKeyRef:
                 name: banano
                 key: bpow_key
+          - name: BPOW_URL
+            value: http://boompow-service.boompow-next:8080/graphql             
         volumeMounts:
         - name: conf
           mountPath: /root/PippinData

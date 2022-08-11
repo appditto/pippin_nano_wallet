@@ -15,7 +15,7 @@ from pippin.util.nano_util import NanoUtil
 
 from aiographql.client import (GraphQLClient, GraphQLRequest, GraphQLResponse)
 
-BPOW_URL = "https://boompow.banano.cc/graphql"
+BPOW_URL = os.getenv("BPOW_URL", "https://boompow.banano.cc/graphql")
 
 
 class WorkClient(object):

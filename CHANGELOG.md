@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.0.1] - 2022-08-11
+
+- Allow BPOW_URL to be configurable
+
 ## [2.0.0] - 2022-08-11
 
 - **BREAKING CHANGE**Support BoomPoW V2 - if you're using BoomPoW you will need to get a new key for BoomPoW v2 and set it to the `BPOW_KEY` environment variable.
@@ -40,7 +44,7 @@
 
 ## [1.1.17] - 2020-08-20
 
-- Fix transactions made to accounts with xrb_ prefix
+- Fix transactions made to accounts with xrb\_ prefix
 - Fix pyyaml dependency
 
 ## [1.1.16] - 2020-08-17

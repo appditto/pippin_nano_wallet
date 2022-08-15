@@ -12,7 +12,7 @@ from pippin.db.redis import RedisDB
 from pippin.db.models.account import Account
 from pippin.db.models.adhoc_account import AdHocAccount
 from pippin.db.models.wallet import (AccountAlreadyExists, Wallet, WalletLocked,
-                              WalletNotFound)
+                                     WalletNotFound)
 from pippin.model.difficulty import DifficultyModel
 from pippin.network.rpc_client import AccountNotFound, BlockNotFound, RPCClient
 from pippin.network.nano_websocket import WebsocketClient
@@ -21,12 +21,15 @@ from pippin.util.crypt import DecryptionError
 from pippin.util.random import RandomUtil
 from pippin.util.validators import Validators
 from pippin.util.wallet import (InsufficientBalance, ProcessFailed, WalletUtil,
-                         WorkFailed)
+                                WorkFailed)
+
 
 class PippinServer(object):
     """API for wallet requests"""
+
     def __init__(self, host: str, port: int):
-        self.app = web.Application(middlewares=[web.normalize_path_middleware()])
+        self.app = web.Application(
+            middlewares=[web.normalize_path_middleware()])
         self.app.add_routes([
             web.post('/', self.gateway)
         ])
@@ -34,7 +37,8 @@ class PippinServer(object):
         self.port = port
         self.websocket = None
         if config.Config.instance().node_ws_url is not None:
-            self.websocket = WebsocketClient(config.Config.instance().node_ws_url, self.block_arrival_handler)
+            self.websocket = WebsocketClient(
+                config.Config.instance().node_ws_url, self.block_arrival_handler)
 
     async def stop(self):
         await self.app.shutdown()
@@ -52,14 +56,14 @@ class PippinServer(object):
         """The node returns this generic error when the request is bad"""
         return self.json_response(
             data={
-                'error':"Unable to parse json"
+                'error': "Unable to parse json"
             }
         )
 
     async def gateway(self, request: web.Request):
         """Gateway route to mimic nano's API of specifying action in a string"""
         try:
-            request_json = await request.json(loads=json.loads)    
+            request_json = await request.json(loads=json.loads)
         except json.JSONDecodeError:
             return self.generic_error()
         if 'action' in request_json:
@@ -118,7 +122,7 @@ class PippinServer(object):
             elif request_json['action'] in ['account_move', 'account_remove', 'receive_minimum', 'receive_minimum_set', 'search_pending', 'search_pending_all', 'wallet_add_watch', 'wallet_export', 'wallet_history', 'wallet_ledger', 'wallet_republish', 'wallet_work_get', 'work_get', 'work_set']:
                 # Prevent unimplemented wallet RPCs from going to the node directly
                 return self.json_response(
-                    data = {
+                    data={
                         'error': 'not_implemented'
                     }
                 )
@@ -126,7 +130,7 @@ class PippinServer(object):
             # Proxy other requests to the node
             resp_json = await RPCClient.instance().make_request(request_json)
             return self.json_response(
-                data = resp_json
+                data=resp_json
             )
 
         return self.generic_error()
@@ -136,7 +140,7 @@ class PippinServer(object):
         if 'seed' in request_json:
             if not Validators.is_valid_block_hash(request_json['seed']):
                 return self.json_response(
-                    data = {'error': 'Invalid seed'}
+                    data={'error': 'Invalid seed'}
                 )
             new_seed = request_json['seed']
         else:
@@ -148,7 +152,7 @@ class PippinServer(object):
             await wallet.save(using_db=conn)
             await wallet.account_create(using_db=conn)
         return self.json_response(
-            data = {
+            data={
                 'wallet': str(wallet.id)
             }
         )
@@ -177,7 +181,7 @@ class PippinServer(object):
         async with in_transaction() as conn:
             account = await wallet.account_create(using_db=conn)
         return self.json_response(
-            data = {
+            data={
                 'account': account
             }
         )
@@ -206,7 +210,7 @@ class PippinServer(object):
         async with in_transaction() as conn:
             accounts = await wallet.accounts_create(count=request_json['count'], using_db=conn)
         return self.json_response(
-            data = {
+            data={
                 'accounts': accounts
             }
         )
@@ -236,7 +240,7 @@ class PippinServer(object):
             )
 
         return self.json_response(
-            data = {'accounts': [a.address for a in await wallet.accounts.all().limit(count)]}
+            data={'accounts': [a.address for a in await wallet.accounts.all().limit(count)]}
         )
 
     async def receive(self, request: web.Request, request_json: dict):
@@ -605,7 +609,7 @@ class PippinServer(object):
             )
 
         return self.json_response(
-            data={'account':address}
+            data={'account': address}
         )
 
     async def wallet_lock(self, request: web.Request, request_json: dict):
@@ -628,7 +632,7 @@ class PippinServer(object):
         await wallet.lock_wallet()
 
         return self.json_response(
-            data={'locked':'1'}
+            data={'locked': '1'}
         )
 
     async def wallet_locked(self, request: web.Request, request_json: dict):
@@ -651,7 +655,7 @@ class PippinServer(object):
             )
 
         return self.json_response(
-            data={'locked':'0'}
+            data={'locked': '0'}
         )
 
     async def wallet_balances(self, request: web.Request, request_json: dict):
@@ -886,7 +890,7 @@ class PippinServer(object):
             return self.json_response(
                 data={'error': 'failed to retrieve balances'}
             )
-    
+
         for k, v in balance_json['balances'].items():
             balance += int(v['balance'])
             pending_bal += int(v['pending'])
@@ -933,7 +937,7 @@ class PippinServer(object):
             return self.json_response(
                 data={'error': 'failed to retrieve balances'}
             )
-    
+
         received_count = 0
         for k, v in balance_json['balances'].items():
             if int(v['pending']) > 0:
@@ -951,7 +955,7 @@ class PippinServer(object):
         if 'hash' in request_json:
             if not Validators.is_valid_block_hash(request_json['hash']):
                 return self.json_response(
-                    data = {'error': 'Invalid hash'}
+                    data={'error': 'Invalid hash'}
                 )
         else:
             return self.generic_error()
@@ -962,16 +966,21 @@ class PippinServer(object):
         elif 'subtype' in request_json and request_json['subtype'] == 'receive':
             difficulty = DifficultyModel.instance().receive_difficulty
 
+        if 'block_award' in request_json:
+            block_award = request_json['block_award']
+        else:
+            block_award = False
+
         # Generate work
-        work = await WorkClient.instance().work_generate(request_json['hash'], difficulty)
+        work = await WorkClient.instance().work_generate(request_json['hash'], difficulty, blockAward=block_award)
         if work is None:
             return self.json_response(
-                data = {
+                data={
                     'error': 'Failed to generate work'
                 }
             )
         return self.json_response(
-            data = {
+            data={
                 'work': work
             }
         )
@@ -995,7 +1004,8 @@ class PippinServer(object):
                 acct = await AdHocAccount.filter(address=destination).prefetch_related('wallet').first()
                 if acct is None:
                     return
-            log.server_logger.debug(f"Auto receiving {data['hash']} for {destination}")
+            log.server_logger.debug(
+                f"Auto receiving {data['hash']} for {destination}")
             wu = WalletUtil(acct, acct.wallet)
             try:
                 await wu.receive(data['hash'])
@@ -1004,7 +1014,8 @@ class PippinServer(object):
 
     async def start(self):
         """Start the server"""
-        runner = web.AppRunner(self.app, access_log = None if not config.Config.instance().debug else log.server_logger)
+        runner = web.AppRunner(self.app, access_log=None if not config.Config.instance(
+        ).debug else log.server_logger)
         await runner.setup()
         site = web.TCPSite(runner, self.host, self.port)
         tasks = []

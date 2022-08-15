@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.0.2] - 2022-08-15
+
+- Support blockAward in BoomPoW v2
+
 ## [2.0.1] - 2022-08-11
 
 - Allow BPOW_URL to be configurable

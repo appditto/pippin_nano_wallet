@@ -52,7 +52,7 @@ class WorkClient(object):
         async with self.session.post(url, json=req_json, timeout=300) as resp:
             return await resp.json()
 
-    async def work_generate(self, hash: str, difficulty: str) -> str:
+    async def work_generate(self, hash: str, difficulty: str, blockAward: bool = True) -> str:
         work_generate = {
             'action': 'work_generate',
             'hash': hash,
@@ -73,11 +73,12 @@ class WorkClient(object):
             request = GraphQLRequest(
                 validate=False,
                 query="""
-                    mutation($hash:String!, $difficultyMultiplier: Int!) {
-                        workGenerate(input:{hash:$hash, difficultyMultiplier:$difficultyMultiplier})
+                    mutation($hash:String!, $difficultyMultiplier: Int!, $blockAward: Boolean) {
+                        workGenerate(input:{hash:$hash, difficultyMultiplier:$difficultyMultiplier, blockAward:$blockAward})
                     }
                 """,
-                variables={"hash": hash, "difficultyMultiplier":  multiplier}
+                variables={
+                    "hash": hash, "difficultyMultiplier":  multiplier, "blockAward": blockAward}
             )
             tasks.append(self.bpow_client.query(request=request))
 

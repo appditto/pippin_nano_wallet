@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: pippin-banano
-        image: bananocoin/pippin:2.0.2
+        image: bananocoin/pippin:2.0.1
         resources:
           requests:
             cpu: 100m
@@ -28,11 +28,11 @@ spec:
           name: api
         env:
           - name: REDIS_HOST
-            value: redis-0.redis
+            value: redis.redis
           - name: REDIS_DB
             value: "16"
           - name: POSTGRES_HOST
-            value: postgres.postgres
+            value: postgres-ha-postgresql-ha-pgpool.postgres
           - name: POSTGRES_DB
             valueFrom:
               secretKeyRef:

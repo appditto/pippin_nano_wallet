@@ -22,6 +22,7 @@ from pippin.util.random import RandomUtil
 from pippin.util.validators import Validators
 from pippin.util.wallet import (InsufficientBalance, ProcessFailed, WalletUtil,
                                 WorkFailed)
+from pippin.db.tortoise_config import DBConfig
 
 
 class PippinServer(object):
@@ -30,6 +31,7 @@ class PippinServer(object):
     def __init__(self, host: str, port: int):
         self.app = web.Application(
             middlewares=[web.normalize_path_middleware()])
+        DBConfig().init_db_aiohttp(self.app)
         self.app.add_routes([
             web.post('/', self.gateway)
         ])
@@ -969,7 +971,7 @@ class PippinServer(object):
         if 'block_award' in request_json:
             block_award = request_json['block_award']
         else:
-            block_award = False
+            block_award = True
 
         # Generate work
         work = await WorkClient.instance().work_generate(request_json['hash'], difficulty, blockAward=block_award)

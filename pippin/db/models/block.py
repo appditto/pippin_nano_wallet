@@ -16,3 +16,6 @@ class Block(Model):
     class Meta:
         table = 'blocks'
         unique_together = ('account', 'send_id')
+
+
+        

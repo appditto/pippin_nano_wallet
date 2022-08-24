@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
       - name: pippin-banano
-        image: bananocoin/pippin:2.0.1
+        image: bananocoin/pippin:2.1.0
+        imagePullPolicy: Always
         resources:
           requests:
             cpu: 100m

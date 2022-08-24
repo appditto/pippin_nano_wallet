@@ -17,7 +17,7 @@ def requirements() -> list:
         return ret
     except FileNotFoundError:
         ret = [
-            'tortoise-orm>=0.15.24,<0.16',
+            'tortoise-orm',
             'aiosqlite>=0.10.0',
             'asyncpg>=0.20.0',
             'pypika<0.37.0',

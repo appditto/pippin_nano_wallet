@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.1.0] - 2022-08-24
+
+**BREAKING**
+Date times need to be updated do datetime aware objects in the database.
+
+In postgres, you can run the following migration:
+
+```
+alter table blocks alter column created_at type timestamptz;
+alter table accounts alter column created_at type timestamptz;
+alter table adhoc_accounts alter column created_at type timestamptz;
+alter table wallets alter column created_at type timestamptz;
+```
+
+- Update Tortoise ORM
+- Improve connection handling
+
 ## [2.0.2] - 2022-08-15
 
 - Support blockAward in BoomPoW v2

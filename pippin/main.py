@@ -18,7 +18,6 @@ import logging
 from aiohttp import web, log
 from pippin.db.redis import RedisDB
 from tortoise import Tortoise
-from pippin.db.tortoise_config import DBConfig
 from pippin.config import Config
 from logging.handlers import TimedRotatingFileHandler, WatchedFileHandler
 from pippin.network.rpc_client import RPCClient
@@ -75,7 +74,6 @@ def main():
     try:
         # Initialize database first
         log.server_logger.info("Initializing database")
-        loop.run_until_complete(DBConfig().init_db())
         if os.getenv('BPOW_KEY', None) is not None:
             log.server_logger.info(
                 "💥 Using BoomPOW For Work Generation")
@@ -112,7 +110,6 @@ def main():
             RedisDB.close(),
             WorkClient.close(),
             NanoUtil.close(),
-            Tortoise.close_connections()
         ]
         loop.run_until_complete(asyncio.wait(tasks))
         loop.close()

@@ -42,31 +42,27 @@ class DBConfig(object):
                 raise Exception(
                     "ERROR: Postgres is not properly configured. MYSQL_DB, MYSQL_USER, and MYSQL_PASSWORD environment variables are all required.")
 
+    def get_db_url(self) -> str:
+        if self.use_postgres:
+            self.logger.info("Using PostgreSQL Database {self.postgres_db}")
+            return f'postgres://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}'
+        elif self.use_mysql:
+            self.logger.info("Using MySQL Database {self.mysql_db}")
+            return f'mysql://{self.mysql_user}:{self.mysql_password}@{self.mysql_host}:{self.mysql_port}/{self.mysql_db}'
+        self.logger.info(f"Using SQLite database pippin.db")
+        dbpath = Utils.get_project_root().joinpath(pathlib.PurePath('pippin.db')
+                                                   ) if not self.mock else Utils.get_project_root().joinpath(pathlib.PurePath('mock.db'))
+        return f'sqlite://{dbpath}'
+
     def init_db_aiohttp(self, app):
-        register_tortoise(app, db_url=f'postgres://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}',
+        register_tortoise(app, db_url=self.get_db_url(),
                           modules=self.modules,
                           generate_schemas=True)
 
     async def init_db(self):
-        if self.use_postgres:
-            self.logger.info(f"Using PostgreSQL Database {self.postgres_db}")
-            await Tortoise.init(
-                db_url=f'postgres://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}',
-                modules=self.modules
-            )
-        elif self.use_mysql:
-            self.logger.info(f"Using MySQL Database {self.mysql_db}")
-            await Tortoise.init(
-                db_url=f'mysql://{self.mysql_user}:{self.mysql_password}@{self.mysql_host}:{self.mysql_port}/{self.mysql_db}',
-                modules=self.modules
-            )
-        else:
-            self.logger.info(f"Using SQLite database pippin.db")
-            dbpath = Utils.get_project_root().joinpath(pathlib.PurePath('pippin.db')
-                                                       ) if not self.mock else Utils.get_project_root().joinpath(pathlib.PurePath('mock.db'))
-            await Tortoise.init(
-                db_url=f'sqlite://{dbpath}',
-                modules=self.modules
-            )
+        await Tortoise.init(
+            db_url=self.get_db_url(),
+            modules=self.modules
+        )
         # Create tables
         await Tortoise.generate_schemas(safe=True)

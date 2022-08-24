@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.1.1] - 2022-08-24
+
+- Fix MySQL and SQLite
+
 ## [2.1.0] - 2022-08-24
 
 **BREAKING**

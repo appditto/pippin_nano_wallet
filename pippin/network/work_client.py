@@ -36,7 +36,6 @@ class WorkClient(object):
             if cls.bpow_key is not None:
                 cls.bpow_client = GraphQLClient(
                     endpoint=BPOW_URL,
-                    headers={"Authorization": f"{cls.bpow_key}"},
                 )
 
         return cls._instance
@@ -52,7 +51,7 @@ class WorkClient(object):
         async with self.session.post(url, json=req_json, timeout=300) as resp:
             return await resp.json()
 
-    async def work_generate(self, hash: str, difficulty: str, blockAward: bool = True) -> str:
+    async def work_generate(self, hash: str, difficulty: str, blockAward: bool = True, bpow_key: str = None) -> str:
         work_generate = {
             'action': 'work_generate',
             'hash': hash,
@@ -80,7 +79,8 @@ class WorkClient(object):
                 variables={
                     "hash": hash, "difficultyMultiplier":  multiplier, "blockAward": blockAward}
             )
-            tasks.append(self.bpow_client.query(request=request))
+            tasks.append(self.bpow_client.query(request=request, headers={
+                         "Authorization": self.bpow_key if bpow_key is None else bpow_key}))
 
         # Do it locally if no peers or if peers have been failing
         if await RedisDB.instance().exists("work_failure") or (len(self.work_urls) == 0 and self.bpow_client is None):

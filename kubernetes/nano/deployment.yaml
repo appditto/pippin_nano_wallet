@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: pippin-nano
-        image: bananocoin/pippin:2.1.0
+        image: bananocoin/pippin:2.1.2
         imagePullPolicy: Always
         resources:
           requests:

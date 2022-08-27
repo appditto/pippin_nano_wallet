@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.1.2] - 2022-08-26
+
+- Allow setting bpow_key in requests
+
 ## [2.1.1] - 2022-08-24
 
 - Fix MySQL and SQLite

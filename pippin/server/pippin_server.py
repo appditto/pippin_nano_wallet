@@ -1,6 +1,7 @@
 import datetime
 import logging
 from json import JSONDecodeError
+import re
 
 import rapidjson as json
 from aiohttp import log, web
@@ -283,10 +284,15 @@ class PippinServer(object):
                 data={'error': 'Account not found'}
             )
 
+        if 'bpow_key' in request_json:
+            bpow_key = request_json['bpow_key']
+        else:
+            bpow_key = None
+
         # Try to receive block
         wallet = WalletUtil(account, wallet)
         try:
-            response = await wallet.receive(request_json['block'], work=work)
+            response = await wallet.receive(request_json['block'], work=work, bpow_key=bpow_key)
         except BlockNotFound:
             return self.json_response(
                 data={'error': 'Block not found'}
@@ -341,6 +347,11 @@ class PippinServer(object):
                 }
             )
 
+        if 'bpow_key' in request_json:
+            bpow_key = request_json['bpow_key']
+        else:
+            bpow_key = None
+
         # Retrieve account on wallet
         account = await wallet.get_account(request_json['source'])
         if account is None:
@@ -351,7 +362,7 @@ class PippinServer(object):
         # Try to create and publish send block
         wallet = WalletUtil(account, wallet)
         try:
-            resp = await wallet.send(int(request_json['amount']), request_json['destination'], id=id, work=work)
+            resp = await wallet.send(int(request_json['amount']), request_json['destination'], id=id, work=work, bpow_key=bpow_key)
         except AccountNotFound:
             return self.json_response(
                 data={'error': 'Account not found'}
@@ -420,10 +431,15 @@ class PippinServer(object):
                 data={'error': 'Account not found'}
             )
 
+        if 'bpow_key' in request_json:
+            bpow_key = request_json['bpow_key']
+        else:
+            bpow_key = None
+
         # Try to create and publish CHANGE block
         wallet = WalletUtil(account, wallet)
         try:
-            resp = await wallet.representative_set(request_json['representative'], work=work)
+            resp = await wallet.representative_set(request_json['representative'], work=work, bpow_key=bpow_key)
         except AccountNotFound:
             return self.json_response(
                 data={'error': 'Account not found'}
@@ -940,11 +956,16 @@ class PippinServer(object):
                 data={'error': 'failed to retrieve balances'}
             )
 
+        if 'bpow_key' in request_json:
+            bpow_key = request_json['bpow_key']
+        else:
+            bpow_key = None
+
         received_count = 0
         for k, v in balance_json['balances'].items():
             if int(v['pending']) > 0:
                 wallet_util = WalletUtil(await wallet.get_account(k), wallet)
-                received_count += await wallet_util.receive_all()
+                received_count += await wallet_util.receive_all(bpow_key=bpow_key)
 
         return self.json_response(
             data={
@@ -973,8 +994,13 @@ class PippinServer(object):
         else:
             block_award = True
 
+        if 'bpow_key' in request_json:
+            bpow_key = request_json['bpow_key']
+        else:
+            bpow_key = None
+
         # Generate work
-        work = await WorkClient.instance().work_generate(request_json['hash'], difficulty, blockAward=block_award)
+        work = await WorkClient.instance().work_generate(request_json['hash'], difficulty, blockAward=block_award, bpow_key=bpow_key)
         if work is None:
             return self.json_response(
                 data={

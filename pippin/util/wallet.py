@@ -19,6 +19,7 @@ from pippin.network.work_client import WorkClient
 if TYPE_CHECKING:
     from pippin.db.models.wallet import Wallet
 
+
 class WalletUtil(object):
     """Wallet utilities, like signing, creating blocks, etc."""
 
@@ -39,7 +40,6 @@ class WalletUtil(object):
             return self.account.private_key_get()
         return self.account.private_key(self.wallet.seed)
 
-
     async def publish(self, state_block: dict, subtype: str = None) -> dict:
         """Publish a state block"""
         try:
@@ -52,7 +52,7 @@ class WalletUtil(object):
             from pippin.db.models.wallet import ProcessFailed
             raise ProcessFailed()
 
-    async def _receive_block_create(self, hash: str, work: str = None) -> dict:
+    async def _receive_block_create(self, hash: str, work: str = None, bpow_key: str = None) -> dict:
         """Build a state block (receive)"""
         # Get block info
         block_info = await RPCClient.instance().block_info(hash)
@@ -74,14 +74,17 @@ class WalletUtil(object):
             workbase = nanopy.account_key(self.account.address)
 
         # Build other fields
-        previous = '0000000000000000000000000000000000000000000000000000000000000000' if not is_open else account_info['frontier']
-        representative = self.get_representative() if not is_open else account_info['representative']
-        balance = block_info['amount'] if not is_open else str(int(account_info['balance']) + int(block_info['amount']))
+        previous = '0000000000000000000000000000000000000000000000000000000000000000' if not is_open else account_info[
+            'frontier']
+        representative = self.get_representative(
+        ) if not is_open else account_info['representative']
+        balance = block_info['amount'] if not is_open else str(
+            int(account_info['balance']) + int(block_info['amount']))
 
         # Generate work
         if work is None:
             try:
-                work = await WorkClient.instance().work_generate(workbase, DifficultyModel.instance().receive_difficulty)
+                work = await WorkClient.instance().work_generate(workbase, DifficultyModel.instance().receive_difficulty, bpow_key=bpow_key)
                 if work is None:
                     log.server_logger.error("WORK FAILED")
                     raise WorkFailed(workbase)
@@ -104,32 +107,32 @@ class WalletUtil(object):
 
         return state_block
 
-    async def receive(self, hash: str, work: str = None) -> dict:
+    async def receive(self, hash: str, work: str = None, bpow_key: str = None) -> dict:
         """Receive a block and return hash of published block"""
         async with await (await RedisDB.instance().get_lock_manager()).lock(f"pippin:{self.account.address}") as lock:
-            block = await self._receive_block_create(hash, work)
+            block = await self._receive_block_create(hash, work, bpow_key)
             return await self.publish(block, subtype='receive')
 
-    async def _receive_all(self) -> int:
+    async def _receive_all(self, bpow_key: str = None) -> int:
         """Receive and publish multiple blocks"""
         received_count = 0
         p = await RPCClient.instance().pending(self.account.address, threshold=config.Config.instance().receive_minimum)
         if p is None:
             return received_count
         for block in p:
-            state_block = await self._receive_block_create(block)
+            state_block = await self._receive_block_create(block, bpow_key=bpow_key)
             await self.publish(state_block, subtype='receive')
             received_count += 1
         return received_count
 
-    async def receive_all(self) -> int:
+    async def receive_all(self, bpow_key: str = None) -> int:
         """Receive all pending blocks for this account and return # received"""
         received_count = 0
         async with await (await RedisDB.instance().get_lock_manager()).lock(f"pippin:{self.account.address}") as lock:
-            received_count = await self._receive_all()
+            received_count = await self._receive_all(bpow_key=bpow_key)
         return received_count
 
-    async def _send_block_create(self, amount: int, destination: str, id: str = None, work: str = None) -> dict:
+    async def _send_block_create(self, amount: int, destination: str, id: str = None, work: str = None, bpow_key: str = None) -> dict:
         """Create a state block (send)"""
         # Get account info
         account_balance = await RPCClient.instance().account_balance(self.account.address)
@@ -153,7 +156,7 @@ class WalletUtil(object):
         account_info = await RPCClient.instance().account_info(self.account.address)
         if account_info is None:
             return None
-        
+
         workbase = account_info['frontier']
 
         # Build other fields
@@ -164,7 +167,7 @@ class WalletUtil(object):
         # Generate work
         if work is None:
             try:
-                work = await WorkClient.instance().work_generate(workbase, DifficultyModel.instance().send_difficulty)
+                work = await WorkClient.instance().work_generate(workbase, DifficultyModel.instance().send_difficulty, bpow_key=bpow_key)
                 if work is None:
                     raise WorkFailed(workbase)
             except Exception:
@@ -176,7 +179,8 @@ class WalletUtil(object):
         state_block['previous'] = previous
         state_block['representative'] = representative
         state_block['balance'] = balance
-        state_block['link'] = nanopy.account_key(destination.replace("xrb_", "nano_"))
+        state_block['link'] = nanopy.account_key(
+            destination.replace("xrb_", "nano_"))
         state_block['work'] = work
 
         # Sign block
@@ -185,10 +189,10 @@ class WalletUtil(object):
 
         return state_block
 
-    async def send(self, amount: int, destination: str, id: str = None, work: str = None) -> dict:
+    async def send(self, amount: int, destination: str, id: str = None, work: str = None, bpow_key: str = None) -> dict:
         """Create a send block and return hash of published block
             amount is in RAW"""
-        
+
         async with await (await RedisDB.instance().get_lock_manager()).lock(f"pippin:{self.account.address}") as lock:
             # See if block exists, if ID specified
             # If so just rebroadcast it and return the hash
@@ -201,7 +205,7 @@ class WalletUtil(object):
                     await RPCClient.instance().process(block.block)
                     return {"block": block.block_hash.upper()}
             # Create block
-            state_block = await self._send_block_create(amount, destination, id=id, work=work)
+            state_block = await self._send_block_create(amount, destination, id=id, work=work, bpow_key=bpow_key)
             # Publish block
             resp = await self.publish(state_block, subtype='send')
             # Cache if ID specified
@@ -219,7 +223,7 @@ class WalletUtil(object):
                     await block.save()
             return resp
 
-    async def _change_block_create(self, representative: str, work: str = None, only_if_different: bool = False) -> dict:
+    async def _change_block_create(self, representative: str, work: str = None, only_if_different: bool = False, bpow_key: str = None) -> dict:
         """Create a state block (change)"""
         # Get account info
         account_info = await RPCClient.instance().account_info(self.account.address)
@@ -238,7 +242,7 @@ class WalletUtil(object):
         # Generate work
         if work is None:
             try:
-                work = await WorkClient.instance().work_generate(workbase, DifficultyModel.instance().send_difficulty)
+                work = await WorkClient.instance().work_generate(workbase, DifficultyModel.instance().send_difficulty, bpow_key=bpow_key)
                 if work is None:
                     raise WorkFailed(workbase)
             except Exception:
@@ -259,10 +263,10 @@ class WalletUtil(object):
 
         return state_block
 
-    async def representative_set(self, representative: str, work: str = None, only_if_different: bool = False) -> dict:
+    async def representative_set(self, representative: str, work: str = None, only_if_different: bool = False, bpow_key: str = None) -> dict:
         """Create a change block and return hash of published block"""
         async with await (await RedisDB.instance().get_lock_manager()).lock(f"pippin:{self.account.address}") as lock:
-            state_block = await self._change_block_create(representative, work=work, only_if_different=only_if_different)
+            state_block = await self._change_block_create(representative, work=work, only_if_different=only_if_different, bpow_key=bpow_key)
 
             if state_block is None and only_if_different:
                 return None
@@ -270,11 +274,14 @@ class WalletUtil(object):
             # Publish
             return await self.publish(state_block, subtype='change')
 
+
 class WorkFailed(Exception):
     pass
 
+
 class ProcessFailed(Exception):
     pass
+
 
 class InsufficientBalance(Exception):
     pass

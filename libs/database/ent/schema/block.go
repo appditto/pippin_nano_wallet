@@ -33,7 +33,7 @@ func (Block) Fields() []ent.Field {
 		field.String("block_hash").MaxLen(64).Unique(),
 		// TODO use a proper struct, not map[string]interface{}
 		field.JSON("block", map[string]interface{}{}),
-		field.String("send_id").MaxLen(128).Nillable().Optional(),
+		field.String("send_id").MaxLen(64).Nillable().Optional(),
 		field.String("subtype").MaxLen(10),
 		field.Time("created_at").Default(time.Now),
 	}

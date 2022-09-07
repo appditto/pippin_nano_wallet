@@ -5,6 +5,8 @@ use (
 	./apps/server
 	./libs/config
 	./libs/database
+	./libs/models
 	./libs/rpc
 	./libs/utils
+	./libs/wallet
 )

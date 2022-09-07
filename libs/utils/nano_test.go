@@ -33,7 +33,7 @@ func TestGetAddresChecksum(t *testing.T) {
 	pub, err := AddressToPub(address)
 	assert.Nil(t, err)
 	checksum := GetAddressChecksum(pub)
-	assert.Equal(t, "51j", hex.EncodeToString(checksum))
+	assert.Equal(t, "87dc940c11", hex.EncodeToString(checksum))
 }
 
 func TestReversed(t *testing.T) {

@@ -1,0 +1,18 @@
+name: 💫 CI
+
+on:
+  push:
+    branches: [go]
+
+jobs:
+  test:
+    name: ☔️ Tests
+    runs-on: ubuntu-latest
+    container: golang:1.19
+    steps:
+      - name: Check out code
+        uses: actions/checkout@master
+
+      - name: Run Tests
+        run: |
+          go test -v -parallel 1 $(go list -f '{{.Dir}}/...' -m | xargs)

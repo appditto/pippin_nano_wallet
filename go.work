@@ -3,6 +3,7 @@ go 1.19
 use (
 	./apps/cli
 	./apps/server
+	./libs/config
 	./libs/database
 	./libs/rpc
 	./libs/utils

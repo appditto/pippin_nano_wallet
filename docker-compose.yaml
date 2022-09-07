@@ -49,7 +49,7 @@ services:
             context: .
             dockerfile: Dockerfile.dev
         volumes:
-            - $PWD:/app:cached
+            - $PWD:/app
         restart: on-failure
         entrypoint: /bin/zsh
         stdin_open: true

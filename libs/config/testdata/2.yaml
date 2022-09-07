@@ -4,11 +4,11 @@ server:
   # The host the pippin server will listen on
   # DANGER! Exposing pippin publicly can be dangerous!
   # Default: 127.0.0.1
-  host: 0.0.0.0
+  # host: 0.0.0.0
 
   # The port pippin server will listen on
   # Default: 11338
-  port: 11338
+  # port: 500
 
   # The file pippin will write log messages to
   # Default: /tmp/pippin_wallet.log
@@ -35,7 +35,7 @@ wallet:
   # Run in banano mode
   # If true, the wallet will operate based on the BANANO protocol
   # Default: false
-  #banano: false
+  banano: true
 
   # Preconfigured wallet representative list
   # Only used when accounts are open

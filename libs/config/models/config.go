@@ -17,13 +17,30 @@ type WalletConfig struct {
 	PreconfiguredRepresentativesNano   []string `yaml:"preconfigured_representatives_nano" default:"[\"nano_1x7biz69cem95oo7gxkrw6kzhfywq4x5dupw4z1bdzkb74dk9kpxwzjbdhhs\",\"nano_1thingspmippfngcrtk1ofd3uwftffnu4qu9xkauo9zkiuep6iknzci3jxa6\",\"nano_1natrium1o3z5519ifou7xii8crpxpk8y65qmkih8e8bpsjri651oza8imdd\",\"nano_3o7uzba8b9e1wqu5ziwpruteyrs3scyqr761x7ke6w1xctohxfh5du75qgaj\"]"`
 	WorkPeers                          []string `yaml:"work_peers"`
 	NodeWorkGenerate                   bool     `yaml:"node_work_generate" default:"false"`
-	// 1000000000000000000000000000 banano
-	// 1000000000000000000000000 nano
-	ReceiveMinimum    string `yaml:"receive_minimum"`
-	AutoReceiveOnSend bool   `yaml:"auto_receive_on_send" default:"true"`
+	ReceiveMinimum                     string   `yaml:"receive_minimum"`
+	AutoReceiveOnSend                  *bool    `yaml:"auto_receive_on_send" default:"true"`
 }
 
 type PippinConfig struct {
 	Server ServerConfig `yaml:"server"`
 	Wallet WalletConfig `yaml:"wallet"`
+}
+
+// Implements the interface from creasty package
+func (c *PippinConfig) SetDefaults() {
+	if c.Wallet.Banano {
+		if c.Wallet.ReceiveMinimum == "" {
+			c.Wallet.ReceiveMinimum = "1000000000000000000000000000"
+		}
+		if c.Server.NodeRpcUrl == "" {
+			c.Server.NodeRpcUrl = "http://[::1]:7072"
+		}
+	} else {
+		if c.Wallet.ReceiveMinimum == "" {
+			c.Wallet.ReceiveMinimum = "1000000000000000000000000"
+		}
+		if c.Server.NodeRpcUrl == "" {
+			c.Server.NodeRpcUrl = "http://[::1]:7076"
+		}
+	}
 }

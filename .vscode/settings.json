@@ -1,5 +1,8 @@
 {
   "gopls": {
       "experimentalWorkspaceModule": true
-  }
+  },
+  "cSpell.words": [
+    "appditto"
+  ]
 }

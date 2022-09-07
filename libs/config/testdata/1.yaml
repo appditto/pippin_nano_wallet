@@ -1,0 +1,78 @@
+# Settings for the pippin server
+server:
+  # The host the pippin server will listen on
+  # DANGER! Exposing pippin publicly can be dangerous!
+  # Default: 127.0.0.1
+  host: 0.0.0.0
+
+  # The port pippin server will listen on
+  # Default: 11338
+  port: 11338
+
+  # The file pippin will write log messages to
+  # Default: /tmp/pippin_wallet.log
+  #log_file: /tmp/pippin_wallet.log
+
+  # Whether to run in debug mode or not
+  # Default: false
+  debug: false
+
+  log_to_stdout: true
+
+  # The RPC URL of the remote node to connect to
+  # Non-wallet RPCs will be routed to this node
+  # Default: http://[::1]:7076 for nano, http://[::1]:7072 for banano
+  #node_rpc_url: https://coolnanonode.com/rpc
+
+  # The WebSocket URL of the node to connect to
+  # Optional, but required to receive transactions as they arrive to accounts
+  # Default: None
+  #node_ws_url: ws://[::1]:7078
+
+# Settings for the pippin wallet
+wallet:
+  # Run in banano mode
+  # If true, the wallet will operate based on the BANANO protocol
+  # Default: false
+  #banano: false
+
+  # Preconfigured wallet representative list
+  # Only used when accounts are open
+  #preconfigured_representatives_banano:
+  #  - ban_1ka1ium4pfue3uxtntqsrib8mumxgazsjf58gidh1xeo5te3whsq8z476goo
+  #  - ban_1cake36ua5aqcq1c5i3dg7k8xtosw7r9r7qbbf5j15sk75csp9okesz87nfn
+  #  - ban_1fomoz167m7o38gw4rzt7hz67oq6itejpt4yocrfywujbpatd711cjew8gjj
+
+  #preconfigured_representatives_nano:
+  #  - nano_1x7biz69cem95oo7gxkrw6kzhfywq4x5dupw4z1bdzkb74dk9kpxwzjbdhhs
+  #  - nano_1thingspmippfngcrtk1ofd3uwftffnu4qu9xkauo9zkiuep6iknzci3jxa6
+  #  - nano_1natrium1o3z5519ifou7xii8crpxpk8y65qmkih8e8bpsjri651oza8imdd
+  #  - nano_3o7uzba8b9e1wqu5ziwpruteyrs3scyqr761x7ke6w1xctohxfh5du75qgaj
+
+  # Set work peer(s) to retrieve work from
+  # DPoW/BPoW will be used automatically if environment is present, see README for details
+  #work_peers:
+  #  - http://localhost:5555
+  #  - http://myotherworkpeer.com
+
+  # Get work from node, this will send work_generate directly to the node if selected
+  # Default: False
+  #node_work_generate: False
+
+  # Automatically receive transactions greater or equal to this amount
+  #receive_minimum: 1000000000000000000000000000
+
+  # Automatically receive pending balances when doing RPC send, if balance < amount, but pending+balance >= amount
+  # Respects receive_minimum
+  # Default: True
+  #auto_receive_on_send: true
+
+  # Maximum number of processes to compute work locally on.
+  # Local work is only computed if work_peers are not available
+  # Should not be more than # of CPUs, set to 0 to disable local work gen
+  # Default: 1
+  #max_work_processes: 1
+
+  # Maximum number of threads to sign blocks on.
+  # Default: 1, minimum: 1
+  #max_sign_threads: 1

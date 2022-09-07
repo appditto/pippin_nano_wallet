@@ -1,0 +1,9 @@
+go 1.19
+
+use (
+	./apps/cli
+	./apps/server
+	./libs/database
+	./libs/rpc
+	./libs/utils
+)

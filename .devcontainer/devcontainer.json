@@ -3,55 +3,32 @@
 // If you want to run as a non-root user in the container, see .devcontainer/docker-compose.yml.
 {
 	"name": "Existing Docker Compose (Extend)",
-	// Update the 'dockerComposeFile' list if you have more compose files or use different names.
-	// The .devcontainer/docker-compose.yml file contains any overrides you need/want to make.
-	"dockerComposeFile": [
-		"../docker-compose.yml",
-		"docker-compose.yml"
-	],
-	// The 'service' property is the name of the service for the container that VS Code should
-	// use. Update this value and .devcontainer/docker-compose.yml to the real service name.
+	"dockerComposeFile": ["../docker-compose.yaml"],
 	"service": "app",
-	// The optional 'workspaceFolder' property is the path VS Code should open by default when
-	// connected. This is typically a file mount in .devcontainer/docker-compose.yml
 	"workspaceFolder": "/app",
 	"settings": {
-		"terminal.integrated.shell.linux": "/bin/zsh"
-	},
-	// Configure tool-specific properties.
-	"customizations": {
-		// Configure properties specific to VS Code.
-		"vscode": {
-			// Set *default* container specific settings.json values on container create.
-			"settings": {
-				"python.defaultInterpreterPath": "/usr/local/bin/python",
-				"python.linting.enabled": true,
-				"python.linting.pylintEnabled": true,
-				"python.formatting.autopep8Path": "/usr/local/bin/autopep8",
-				"python.formatting.blackPath": "/usr/local/bin/black",
-				"python.formatting.yapfPath": "/usr/local/bin/yapf",
-				"python.linting.banditPath": "/usr/local/bin/bandit",
-				"python.linting.flake8Path": "/usr/local/bin/flake8",
-				"python.linting.mypyPath": "/usr/local/bin/mypy",
-				"python.linting.pycodestylePath": "/usr/local/bin/pycodestyle",
-				"python.linting.pydocstylePath": "/usr/local/bin/pydocstyle",
-				"python.linting.pylintPath": "/usr/local/bin/pylint"
-			},
-			// Add the IDs of extensions you want installed when the container is created.
-			"extensions": [
-				"ms-python.python",
-				"ms-python.vscode-pylance"
-			]
+		"terminal.integrated.inheritEnv": false,
+		"terminal.integrated.defaultProfile.linux": "zsh",
+		"terminal.integrated.defaultProfile.windows": "zsh",
+		"terminal.integrated.defaultProfile.osx": "zsh",
+		"terminal.integrated.profiles.linux": {
+			"zsh": {
+				"path": "/bin/zsh"
+			}
 		}
 	},
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
-	// Uncomment the next line if you want start specific services in your Docker Compose config.
-	// "runServices": [],
-	// Uncomment the next line if you want to keep your containers running after VS Code shuts down.
-	// "shutdownAction": "none",
-	// Uncomment the next line to run commands after the container is created - for example installing curl.
-	// "postCreateCommand": "apt-get update && apt-get install -y curl",
-	// Uncomment to connect as a non-root user if you've added one. See https://aka.ms/vscode-remote/containers/non-root.
-	// "remoteUser": "vscode"
+	"customizations": {
+		"vscode": {
+			"settings": {},
+			"extensions": [
+				"GitHub.copilot",
+				"ms-azuretools.vscode-docker",
+				"redhat.vscode-yaml",
+				"streetsidesoftware.code-spell-checker",
+				"eamodio.gitlens",
+				"Gruntfuggly.todo-tree",
+				"golang.go"
+			]
+		}
+	}
 }

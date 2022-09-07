@@ -32,7 +32,7 @@ func (Wallet) Fields() []ent.Field {
 		field.String("representative").MaxLen(65).Nillable().Optional(),
 		field.Bool("encrypted").Default(false),
 		field.Bool("work").Default(true),
-		field.Time("created_at").Default(time.Now),
+		field.Time("created_at").Default(time.Now).Immutable(),
 	}
 }
 

@@ -30,12 +30,12 @@ func (Block) Fields() []ent.Field {
 		// account id from accounts
 		field.UUID("account_id", uuid.UUID{}),
 		field.UUID("adhoc_account_id", uuid.UUID{}),
-		field.String("block_hash").MaxLen(64).Unique(),
+		field.String("block_hash").MaxLen(64).Unique().Immutable(),
 		// TODO use a proper struct, not map[string]interface{}
-		field.JSON("block", map[string]interface{}{}),
-		field.String("send_id").MaxLen(64).Nillable().Optional(),
+		field.JSON("block", map[string]interface{}{}).Immutable(),
+		field.String("send_id").MaxLen(64).Nillable().Immutable().Optional(),
 		field.String("subtype").MaxLen(10),
-		field.Time("created_at").Default(time.Now),
+		field.Time("created_at").Default(time.Now).Immutable(),
 	}
 }
 

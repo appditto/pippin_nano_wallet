@@ -28,8 +28,9 @@ func (AdhocAccount) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("wallet_id", uuid.UUID{}),
 		field.String("address").MaxLen(65),
+		field.String("private_key").MaxLen(128),
 		field.Bool("work").Default(true),
-		field.Time("created_at").Default(time.Now),
+		field.Time("created_at").Default(time.Now).Immutable(),
 	}
 }
 

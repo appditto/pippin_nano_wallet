@@ -31,7 +31,7 @@ func (Account) Fields() []ent.Field {
 		field.String("address").MaxLen(65),
 		field.Int("account_index"),
 		field.Bool("work").Default(true),
-		field.Time("created_at").Default(time.Now),
+		field.Time("created_at").Default(time.Now).Immutable(),
 	}
 }
 

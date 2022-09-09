@@ -4,6 +4,8 @@ import (
 	"encoding/hex"
 	"testing"
 
+	"github.com/appditto/pippin_nano_wallet/libs/utils/ed25519"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,6 +28,19 @@ func TestAddressToPub(t *testing.T) {
 	pub, err = AddressToPub(address)
 	assert.NotNil(t, err)
 	assert.Equal(t, "", hex.EncodeToString(pub))
+}
+
+func TestPubkeyToAddress(t *testing.T) {
+	pubkey := "58E3EC60070DD5D991B899E4BAB6CFD97657AB79A388A9276E4456108E13D6BB"
+	pub, _ := hex.DecodeString(pubkey)
+	pubEd25519 := ed25519.PublicKey(pub)
+
+	address := PubKeyToAddress(pubEd25519, false)
+	assert.Equal(t, "nano_1p95xji1g5gou8auj8h6qcuezpdpcyoqmawao6mpwj4p44939oouoturkggc", address)
+
+	// Banano
+	address = PubKeyToAddress(pubEd25519, true)
+	assert.Equal(t, "ban_1p95xji1g5gou8auj8h6qcuezpdpcyoqmawao6mpwj4p44939oouoturkggc", address)
 }
 
 func TestGetAddresChecksum(t *testing.T) {

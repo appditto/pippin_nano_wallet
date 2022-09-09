@@ -47,7 +47,7 @@ func TestGetSqlDbConnSqlite(t *testing.T) {
 	conn, err := GetSqlDbConn(false)
 	assert.Nil(t, err)
 
-	assert.Equal(t, "file:/home/user/PippinData/pippin.db?cache=shared&mode=rwc", conn.DSN())
+	assert.Equal(t, "file:/home/user/PippinData/pippin.db?cache=shared&mode=rwc&_fk=1", conn.DSN())
 	assert.Equal(t, "sqlite3", conn.Dialect())
 }
 
@@ -55,6 +55,6 @@ func TestGetSqlDbConnMock(t *testing.T) {
 	conn, err := GetSqlDbConn(true)
 	assert.Nil(t, err)
 
-	assert.Equal(t, "file:testing?cache=shared&mode=memory", conn.DSN())
+	assert.Equal(t, "file:testing?cache=shared&mode=memory&_fk=1", conn.DSN())
 	assert.Equal(t, "sqlite3", conn.Dialect())
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net/http"
@@ -47,6 +48,7 @@ func main() {
 	}
 
 	// Setup database conn
+	ctx := context.Background()
 	fmt.Println("🏡 Connecting to database...")
 	dbconn, err := database.GetSqlDbConn(false)
 	if err != nil {
@@ -59,6 +61,13 @@ func main() {
 		os.Exit(1)
 	}
 	defer entClient.Close()
+
+	// Run migrations
+	klog.Infoln("🦋 Running migrations...")
+	if err := entClient.Schema.Create(ctx); err != nil {
+		klog.Fatalf("Failed to run migrations: %v", err)
+		os.Exit(1)
+	}
 
 	// Create app
 	app := chi.NewRouter()

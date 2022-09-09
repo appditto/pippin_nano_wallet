@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/base32"
 	"errors"
+	"fmt"
 
 	"github.com/appditto/pippin_nano_wallet/libs/utils/ed25519"
 
@@ -54,6 +55,24 @@ func AddressToPub(account string) (public_key []byte, err error) {
 	}
 
 	return nil, errors.New("Invalid address format")
+}
+
+func PubKeyToAddress(pub ed25519.PublicKey, banano bool) string {
+	// Pubkey is 256bits, base32 must be multiple of 5 bits
+	// to encode properly.
+	// Pad the start with 0's and strip them off after base32 encoding
+	padded := append([]byte{0, 0, 0}, pub...)
+	address := NanoEncoding.EncodeToString(padded)[4:]
+	checksum := NanoEncoding.EncodeToString(GetAddressChecksum(pub))
+
+	var prefix string
+	if banano {
+		prefix = "ban_"
+	} else {
+		prefix = "nano_"
+	}
+
+	return fmt.Sprintf("%s%s%s", prefix, address, checksum)
 }
 
 func GetAddressChecksum(pub ed25519.PublicKey) []byte {

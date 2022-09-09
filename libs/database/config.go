@@ -52,7 +52,7 @@ type SqliteConn struct {
 }
 
 func (c *SqliteConn) DSN() string {
-	return fmt.Sprintf("file:%s?cache=shared&mode=%s", c.FileName, c.Mode)
+	return fmt.Sprintf("file:%s?cache=shared&mode=%s&_fk=1", c.FileName, c.Mode)
 }
 
 func (c *SqliteConn) Dialect() string {

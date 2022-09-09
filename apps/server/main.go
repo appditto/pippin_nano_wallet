@@ -84,7 +84,7 @@ func main() {
 	hc := controller.HttpController{Wallet: &nanoWallet}
 
 	// HTTP Routes
-	app.Post("/", hc.HandleAction)
+	app.Post("/", hc.Gateway)
 
 	http.ListenAndServe(fmt.Sprintf("%s:%d", conf.Server.Host, conf.Server.Port), app)
 }

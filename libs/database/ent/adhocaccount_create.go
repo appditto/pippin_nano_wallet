@@ -4,11 +4,16 @@ package ent
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/adhocaccount"
+	"github.com/appditto/pippin_nano_wallet/libs/database/ent/block"
+	"github.com/appditto/pippin_nano_wallet/libs/database/ent/wallet"
+	"github.com/google/uuid"
 )
 
 // AdhocAccountCreate is the builder for creating a AdhocAccount entity.
@@ -16,6 +21,86 @@ type AdhocAccountCreate struct {
 	config
 	mutation *AdhocAccountMutation
 	hooks    []Hook
+}
+
+// SetWalletID sets the "wallet_id" field.
+func (aac *AdhocAccountCreate) SetWalletID(u uuid.UUID) *AdhocAccountCreate {
+	aac.mutation.SetWalletID(u)
+	return aac
+}
+
+// SetAddress sets the "address" field.
+func (aac *AdhocAccountCreate) SetAddress(s string) *AdhocAccountCreate {
+	aac.mutation.SetAddress(s)
+	return aac
+}
+
+// SetPrivateKey sets the "private_key" field.
+func (aac *AdhocAccountCreate) SetPrivateKey(s string) *AdhocAccountCreate {
+	aac.mutation.SetPrivateKey(s)
+	return aac
+}
+
+// SetWork sets the "work" field.
+func (aac *AdhocAccountCreate) SetWork(b bool) *AdhocAccountCreate {
+	aac.mutation.SetWork(b)
+	return aac
+}
+
+// SetNillableWork sets the "work" field if the given value is not nil.
+func (aac *AdhocAccountCreate) SetNillableWork(b *bool) *AdhocAccountCreate {
+	if b != nil {
+		aac.SetWork(*b)
+	}
+	return aac
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (aac *AdhocAccountCreate) SetCreatedAt(t time.Time) *AdhocAccountCreate {
+	aac.mutation.SetCreatedAt(t)
+	return aac
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (aac *AdhocAccountCreate) SetNillableCreatedAt(t *time.Time) *AdhocAccountCreate {
+	if t != nil {
+		aac.SetCreatedAt(*t)
+	}
+	return aac
+}
+
+// SetID sets the "id" field.
+func (aac *AdhocAccountCreate) SetID(u uuid.UUID) *AdhocAccountCreate {
+	aac.mutation.SetID(u)
+	return aac
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (aac *AdhocAccountCreate) SetNillableID(u *uuid.UUID) *AdhocAccountCreate {
+	if u != nil {
+		aac.SetID(*u)
+	}
+	return aac
+}
+
+// SetWallet sets the "wallet" edge to the Wallet entity.
+func (aac *AdhocAccountCreate) SetWallet(w *Wallet) *AdhocAccountCreate {
+	return aac.SetWalletID(w.ID)
+}
+
+// AddBlockIDs adds the "blocks" edge to the Block entity by IDs.
+func (aac *AdhocAccountCreate) AddBlockIDs(ids ...uuid.UUID) *AdhocAccountCreate {
+	aac.mutation.AddBlockIDs(ids...)
+	return aac
+}
+
+// AddBlocks adds the "blocks" edges to the Block entity.
+func (aac *AdhocAccountCreate) AddBlocks(b ...*Block) *AdhocAccountCreate {
+	ids := make([]uuid.UUID, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return aac.AddBlockIDs(ids...)
 }
 
 // Mutation returns the AdhocAccountMutation object of the builder.
@@ -29,6 +114,7 @@ func (aac *AdhocAccountCreate) Save(ctx context.Context) (*AdhocAccount, error) 
 		err  error
 		node *AdhocAccount
 	)
+	aac.defaults()
 	if len(aac.hooks) == 0 {
 		if err = aac.check(); err != nil {
 			return nil, err
@@ -92,8 +178,52 @@ func (aac *AdhocAccountCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (aac *AdhocAccountCreate) defaults() {
+	if _, ok := aac.mutation.Work(); !ok {
+		v := adhocaccount.DefaultWork
+		aac.mutation.SetWork(v)
+	}
+	if _, ok := aac.mutation.CreatedAt(); !ok {
+		v := adhocaccount.DefaultCreatedAt()
+		aac.mutation.SetCreatedAt(v)
+	}
+	if _, ok := aac.mutation.ID(); !ok {
+		v := adhocaccount.DefaultID()
+		aac.mutation.SetID(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (aac *AdhocAccountCreate) check() error {
+	if _, ok := aac.mutation.WalletID(); !ok {
+		return &ValidationError{Name: "wallet_id", err: errors.New(`ent: missing required field "AdhocAccount.wallet_id"`)}
+	}
+	if _, ok := aac.mutation.Address(); !ok {
+		return &ValidationError{Name: "address", err: errors.New(`ent: missing required field "AdhocAccount.address"`)}
+	}
+	if v, ok := aac.mutation.Address(); ok {
+		if err := adhocaccount.AddressValidator(v); err != nil {
+			return &ValidationError{Name: "address", err: fmt.Errorf(`ent: validator failed for field "AdhocAccount.address": %w`, err)}
+		}
+	}
+	if _, ok := aac.mutation.PrivateKey(); !ok {
+		return &ValidationError{Name: "private_key", err: errors.New(`ent: missing required field "AdhocAccount.private_key"`)}
+	}
+	if v, ok := aac.mutation.PrivateKey(); ok {
+		if err := adhocaccount.PrivateKeyValidator(v); err != nil {
+			return &ValidationError{Name: "private_key", err: fmt.Errorf(`ent: validator failed for field "AdhocAccount.private_key": %w`, err)}
+		}
+	}
+	if _, ok := aac.mutation.Work(); !ok {
+		return &ValidationError{Name: "work", err: errors.New(`ent: missing required field "AdhocAccount.work"`)}
+	}
+	if _, ok := aac.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "AdhocAccount.created_at"`)}
+	}
+	if _, ok := aac.mutation.WalletID(); !ok {
+		return &ValidationError{Name: "wallet", err: errors.New(`ent: missing required edge "AdhocAccount.wallet"`)}
+	}
 	return nil
 }
 
@@ -105,8 +235,13 @@ func (aac *AdhocAccountCreate) sqlSave(ctx context.Context) (*AdhocAccount, erro
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
+		}
+	}
 	return _node, nil
 }
 
@@ -116,11 +251,86 @@ func (aac *AdhocAccountCreate) createSpec() (*AdhocAccount, *sqlgraph.CreateSpec
 		_spec = &sqlgraph.CreateSpec{
 			Table: adhocaccount.Table,
 			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
+				Type:   field.TypeUUID,
 				Column: adhocaccount.FieldID,
 			},
 		}
 	)
+	if id, ok := aac.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = &id
+	}
+	if value, ok := aac.mutation.Address(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: adhocaccount.FieldAddress,
+		})
+		_node.Address = value
+	}
+	if value, ok := aac.mutation.PrivateKey(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: adhocaccount.FieldPrivateKey,
+		})
+		_node.PrivateKey = value
+	}
+	if value, ok := aac.mutation.Work(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: adhocaccount.FieldWork,
+		})
+		_node.Work = value
+	}
+	if value, ok := aac.mutation.CreatedAt(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: adhocaccount.FieldCreatedAt,
+		})
+		_node.CreatedAt = value
+	}
+	if nodes := aac.mutation.WalletIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   adhocaccount.WalletTable,
+			Columns: []string{adhocaccount.WalletColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: wallet.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.WalletID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := aac.mutation.BlocksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   adhocaccount.BlocksTable,
+			Columns: []string{adhocaccount.BlocksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: block.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
@@ -138,6 +348,7 @@ func (aacb *AdhocAccountCreateBulk) Save(ctx context.Context) ([]*AdhocAccount, 
 	for i := range aacb.builders {
 		func(i int, root context.Context) {
 			builder := aacb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*AdhocAccountMutation)
 				if !ok {
@@ -164,10 +375,6 @@ func (aacb *AdhocAccountCreateBulk) Save(ctx context.Context) ([]*AdhocAccount, 
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

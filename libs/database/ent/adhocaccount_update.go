@@ -11,7 +11,10 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/adhocaccount"
+	"github.com/appditto/pippin_nano_wallet/libs/database/ent/block"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/predicate"
+	"github.com/appditto/pippin_nano_wallet/libs/database/ent/wallet"
+	"github.com/google/uuid"
 )
 
 // AdhocAccountUpdate is the builder for updating AdhocAccount entities.
@@ -27,9 +30,88 @@ func (aau *AdhocAccountUpdate) Where(ps ...predicate.AdhocAccount) *AdhocAccount
 	return aau
 }
 
+// SetWalletID sets the "wallet_id" field.
+func (aau *AdhocAccountUpdate) SetWalletID(u uuid.UUID) *AdhocAccountUpdate {
+	aau.mutation.SetWalletID(u)
+	return aau
+}
+
+// SetAddress sets the "address" field.
+func (aau *AdhocAccountUpdate) SetAddress(s string) *AdhocAccountUpdate {
+	aau.mutation.SetAddress(s)
+	return aau
+}
+
+// SetPrivateKey sets the "private_key" field.
+func (aau *AdhocAccountUpdate) SetPrivateKey(s string) *AdhocAccountUpdate {
+	aau.mutation.SetPrivateKey(s)
+	return aau
+}
+
+// SetWork sets the "work" field.
+func (aau *AdhocAccountUpdate) SetWork(b bool) *AdhocAccountUpdate {
+	aau.mutation.SetWork(b)
+	return aau
+}
+
+// SetNillableWork sets the "work" field if the given value is not nil.
+func (aau *AdhocAccountUpdate) SetNillableWork(b *bool) *AdhocAccountUpdate {
+	if b != nil {
+		aau.SetWork(*b)
+	}
+	return aau
+}
+
+// SetWallet sets the "wallet" edge to the Wallet entity.
+func (aau *AdhocAccountUpdate) SetWallet(w *Wallet) *AdhocAccountUpdate {
+	return aau.SetWalletID(w.ID)
+}
+
+// AddBlockIDs adds the "blocks" edge to the Block entity by IDs.
+func (aau *AdhocAccountUpdate) AddBlockIDs(ids ...uuid.UUID) *AdhocAccountUpdate {
+	aau.mutation.AddBlockIDs(ids...)
+	return aau
+}
+
+// AddBlocks adds the "blocks" edges to the Block entity.
+func (aau *AdhocAccountUpdate) AddBlocks(b ...*Block) *AdhocAccountUpdate {
+	ids := make([]uuid.UUID, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return aau.AddBlockIDs(ids...)
+}
+
 // Mutation returns the AdhocAccountMutation object of the builder.
 func (aau *AdhocAccountUpdate) Mutation() *AdhocAccountMutation {
 	return aau.mutation
+}
+
+// ClearWallet clears the "wallet" edge to the Wallet entity.
+func (aau *AdhocAccountUpdate) ClearWallet() *AdhocAccountUpdate {
+	aau.mutation.ClearWallet()
+	return aau
+}
+
+// ClearBlocks clears all "blocks" edges to the Block entity.
+func (aau *AdhocAccountUpdate) ClearBlocks() *AdhocAccountUpdate {
+	aau.mutation.ClearBlocks()
+	return aau
+}
+
+// RemoveBlockIDs removes the "blocks" edge to Block entities by IDs.
+func (aau *AdhocAccountUpdate) RemoveBlockIDs(ids ...uuid.UUID) *AdhocAccountUpdate {
+	aau.mutation.RemoveBlockIDs(ids...)
+	return aau
+}
+
+// RemoveBlocks removes "blocks" edges to Block entities.
+func (aau *AdhocAccountUpdate) RemoveBlocks(b ...*Block) *AdhocAccountUpdate {
+	ids := make([]uuid.UUID, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return aau.RemoveBlockIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -39,12 +121,18 @@ func (aau *AdhocAccountUpdate) Save(ctx context.Context) (int, error) {
 		affected int
 	)
 	if len(aau.hooks) == 0 {
+		if err = aau.check(); err != nil {
+			return 0, err
+		}
 		affected, err = aau.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*AdhocAccountMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = aau.check(); err != nil {
+				return 0, err
 			}
 			aau.mutation = mutation
 			affected, err = aau.sqlSave(ctx)
@@ -86,13 +174,31 @@ func (aau *AdhocAccountUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (aau *AdhocAccountUpdate) check() error {
+	if v, ok := aau.mutation.Address(); ok {
+		if err := adhocaccount.AddressValidator(v); err != nil {
+			return &ValidationError{Name: "address", err: fmt.Errorf(`ent: validator failed for field "AdhocAccount.address": %w`, err)}
+		}
+	}
+	if v, ok := aau.mutation.PrivateKey(); ok {
+		if err := adhocaccount.PrivateKeyValidator(v); err != nil {
+			return &ValidationError{Name: "private_key", err: fmt.Errorf(`ent: validator failed for field "AdhocAccount.private_key": %w`, err)}
+		}
+	}
+	if _, ok := aau.mutation.WalletID(); aau.mutation.WalletCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "AdhocAccount.wallet"`)
+	}
+	return nil
+}
+
 func (aau *AdhocAccountUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
 			Table:   adhocaccount.Table,
 			Columns: adhocaccount.Columns,
 			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
+				Type:   field.TypeUUID,
 				Column: adhocaccount.FieldID,
 			},
 		},
@@ -103,6 +209,116 @@ func (aau *AdhocAccountUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := aau.mutation.Address(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: adhocaccount.FieldAddress,
+		})
+	}
+	if value, ok := aau.mutation.PrivateKey(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: adhocaccount.FieldPrivateKey,
+		})
+	}
+	if value, ok := aau.mutation.Work(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: adhocaccount.FieldWork,
+		})
+	}
+	if aau.mutation.WalletCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   adhocaccount.WalletTable,
+			Columns: []string{adhocaccount.WalletColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: wallet.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := aau.mutation.WalletIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   adhocaccount.WalletTable,
+			Columns: []string{adhocaccount.WalletColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: wallet.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if aau.mutation.BlocksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   adhocaccount.BlocksTable,
+			Columns: []string{adhocaccount.BlocksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: block.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := aau.mutation.RemovedBlocksIDs(); len(nodes) > 0 && !aau.mutation.BlocksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   adhocaccount.BlocksTable,
+			Columns: []string{adhocaccount.BlocksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: block.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := aau.mutation.BlocksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   adhocaccount.BlocksTable,
+			Columns: []string{adhocaccount.BlocksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: block.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, aau.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -123,9 +339,88 @@ type AdhocAccountUpdateOne struct {
 	mutation *AdhocAccountMutation
 }
 
+// SetWalletID sets the "wallet_id" field.
+func (aauo *AdhocAccountUpdateOne) SetWalletID(u uuid.UUID) *AdhocAccountUpdateOne {
+	aauo.mutation.SetWalletID(u)
+	return aauo
+}
+
+// SetAddress sets the "address" field.
+func (aauo *AdhocAccountUpdateOne) SetAddress(s string) *AdhocAccountUpdateOne {
+	aauo.mutation.SetAddress(s)
+	return aauo
+}
+
+// SetPrivateKey sets the "private_key" field.
+func (aauo *AdhocAccountUpdateOne) SetPrivateKey(s string) *AdhocAccountUpdateOne {
+	aauo.mutation.SetPrivateKey(s)
+	return aauo
+}
+
+// SetWork sets the "work" field.
+func (aauo *AdhocAccountUpdateOne) SetWork(b bool) *AdhocAccountUpdateOne {
+	aauo.mutation.SetWork(b)
+	return aauo
+}
+
+// SetNillableWork sets the "work" field if the given value is not nil.
+func (aauo *AdhocAccountUpdateOne) SetNillableWork(b *bool) *AdhocAccountUpdateOne {
+	if b != nil {
+		aauo.SetWork(*b)
+	}
+	return aauo
+}
+
+// SetWallet sets the "wallet" edge to the Wallet entity.
+func (aauo *AdhocAccountUpdateOne) SetWallet(w *Wallet) *AdhocAccountUpdateOne {
+	return aauo.SetWalletID(w.ID)
+}
+
+// AddBlockIDs adds the "blocks" edge to the Block entity by IDs.
+func (aauo *AdhocAccountUpdateOne) AddBlockIDs(ids ...uuid.UUID) *AdhocAccountUpdateOne {
+	aauo.mutation.AddBlockIDs(ids...)
+	return aauo
+}
+
+// AddBlocks adds the "blocks" edges to the Block entity.
+func (aauo *AdhocAccountUpdateOne) AddBlocks(b ...*Block) *AdhocAccountUpdateOne {
+	ids := make([]uuid.UUID, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return aauo.AddBlockIDs(ids...)
+}
+
 // Mutation returns the AdhocAccountMutation object of the builder.
 func (aauo *AdhocAccountUpdateOne) Mutation() *AdhocAccountMutation {
 	return aauo.mutation
+}
+
+// ClearWallet clears the "wallet" edge to the Wallet entity.
+func (aauo *AdhocAccountUpdateOne) ClearWallet() *AdhocAccountUpdateOne {
+	aauo.mutation.ClearWallet()
+	return aauo
+}
+
+// ClearBlocks clears all "blocks" edges to the Block entity.
+func (aauo *AdhocAccountUpdateOne) ClearBlocks() *AdhocAccountUpdateOne {
+	aauo.mutation.ClearBlocks()
+	return aauo
+}
+
+// RemoveBlockIDs removes the "blocks" edge to Block entities by IDs.
+func (aauo *AdhocAccountUpdateOne) RemoveBlockIDs(ids ...uuid.UUID) *AdhocAccountUpdateOne {
+	aauo.mutation.RemoveBlockIDs(ids...)
+	return aauo
+}
+
+// RemoveBlocks removes "blocks" edges to Block entities.
+func (aauo *AdhocAccountUpdateOne) RemoveBlocks(b ...*Block) *AdhocAccountUpdateOne {
+	ids := make([]uuid.UUID, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return aauo.RemoveBlockIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -142,12 +437,18 @@ func (aauo *AdhocAccountUpdateOne) Save(ctx context.Context) (*AdhocAccount, err
 		node *AdhocAccount
 	)
 	if len(aauo.hooks) == 0 {
+		if err = aauo.check(); err != nil {
+			return nil, err
+		}
 		node, err = aauo.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*AdhocAccountMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = aauo.check(); err != nil {
+				return nil, err
 			}
 			aauo.mutation = mutation
 			node, err = aauo.sqlSave(ctx)
@@ -195,13 +496,31 @@ func (aauo *AdhocAccountUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (aauo *AdhocAccountUpdateOne) check() error {
+	if v, ok := aauo.mutation.Address(); ok {
+		if err := adhocaccount.AddressValidator(v); err != nil {
+			return &ValidationError{Name: "address", err: fmt.Errorf(`ent: validator failed for field "AdhocAccount.address": %w`, err)}
+		}
+	}
+	if v, ok := aauo.mutation.PrivateKey(); ok {
+		if err := adhocaccount.PrivateKeyValidator(v); err != nil {
+			return &ValidationError{Name: "private_key", err: fmt.Errorf(`ent: validator failed for field "AdhocAccount.private_key": %w`, err)}
+		}
+	}
+	if _, ok := aauo.mutation.WalletID(); aauo.mutation.WalletCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "AdhocAccount.wallet"`)
+	}
+	return nil
+}
+
 func (aauo *AdhocAccountUpdateOne) sqlSave(ctx context.Context) (_node *AdhocAccount, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
 			Table:   adhocaccount.Table,
 			Columns: adhocaccount.Columns,
 			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
+				Type:   field.TypeUUID,
 				Column: adhocaccount.FieldID,
 			},
 		},
@@ -229,6 +548,116 @@ func (aauo *AdhocAccountUpdateOne) sqlSave(ctx context.Context) (_node *AdhocAcc
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := aauo.mutation.Address(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: adhocaccount.FieldAddress,
+		})
+	}
+	if value, ok := aauo.mutation.PrivateKey(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: adhocaccount.FieldPrivateKey,
+		})
+	}
+	if value, ok := aauo.mutation.Work(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: adhocaccount.FieldWork,
+		})
+	}
+	if aauo.mutation.WalletCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   adhocaccount.WalletTable,
+			Columns: []string{adhocaccount.WalletColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: wallet.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := aauo.mutation.WalletIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   adhocaccount.WalletTable,
+			Columns: []string{adhocaccount.WalletColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: wallet.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if aauo.mutation.BlocksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   adhocaccount.BlocksTable,
+			Columns: []string{adhocaccount.BlocksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: block.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := aauo.mutation.RemovedBlocksIDs(); len(nodes) > 0 && !aauo.mutation.BlocksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   adhocaccount.BlocksTable,
+			Columns: []string{adhocaccount.BlocksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: block.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := aauo.mutation.BlocksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   adhocaccount.BlocksTable,
+			Columns: []string{adhocaccount.BlocksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: block.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &AdhocAccount{config: aauo.config}
 	_spec.Assign = _node.assignValues

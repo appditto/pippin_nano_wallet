@@ -10,19 +10,24 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
+	"github.com/appditto/pippin_nano_wallet/libs/database/ent/adhocaccount"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/block"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/predicate"
+	"github.com/google/uuid"
 )
 
 // BlockQuery is the builder for querying Block entities.
 type BlockQuery struct {
 	config
-	limit      *int
-	offset     *int
-	unique     *bool
-	order      []OrderFunc
-	fields     []string
-	predicates []predicate.Block
+	limit            *int
+	offset           *int
+	unique           *bool
+	order            []OrderFunc
+	fields           []string
+	predicates       []predicate.Block
+	withAccount      *AccountQuery
+	withAdhocAccount *AdhocAccountQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -59,6 +64,50 @@ func (bq *BlockQuery) Order(o ...OrderFunc) *BlockQuery {
 	return bq
 }
 
+// QueryAccount chains the current query on the "account" edge.
+func (bq *BlockQuery) QueryAccount() *AccountQuery {
+	query := &AccountQuery{config: bq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := bq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := bq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(block.Table, block.FieldID, selector),
+			sqlgraph.To(account.Table, account.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, block.AccountTable, block.AccountColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(bq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryAdhocAccount chains the current query on the "adhoc_account" edge.
+func (bq *BlockQuery) QueryAdhocAccount() *AdhocAccountQuery {
+	query := &AdhocAccountQuery{config: bq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := bq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := bq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(block.Table, block.FieldID, selector),
+			sqlgraph.To(adhocaccount.Table, adhocaccount.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, block.AdhocAccountTable, block.AdhocAccountColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(bq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Block entity from the query.
 // Returns a *NotFoundError when no Block was found.
 func (bq *BlockQuery) First(ctx context.Context) (*Block, error) {
@@ -83,8 +132,8 @@ func (bq *BlockQuery) FirstX(ctx context.Context) *Block {
 
 // FirstID returns the first Block ID from the query.
 // Returns a *NotFoundError when no Block ID was found.
-func (bq *BlockQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (bq *BlockQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = bq.Limit(1).IDs(ctx); err != nil {
 		return
 	}
@@ -96,7 +145,7 @@ func (bq *BlockQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (bq *BlockQuery) FirstIDX(ctx context.Context) int {
+func (bq *BlockQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := bq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -134,8 +183,8 @@ func (bq *BlockQuery) OnlyX(ctx context.Context) *Block {
 // OnlyID is like Only, but returns the only Block ID in the query.
 // Returns a *NotSingularError when more than one Block ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (bq *BlockQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (bq *BlockQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = bq.Limit(2).IDs(ctx); err != nil {
 		return
 	}
@@ -151,7 +200,7 @@ func (bq *BlockQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (bq *BlockQuery) OnlyIDX(ctx context.Context) int {
+func (bq *BlockQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := bq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -177,8 +226,8 @@ func (bq *BlockQuery) AllX(ctx context.Context) []*Block {
 }
 
 // IDs executes the query and returns a list of Block IDs.
-func (bq *BlockQuery) IDs(ctx context.Context) ([]int, error) {
-	var ids []int
+func (bq *BlockQuery) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	var ids []uuid.UUID
 	if err := bq.Select(block.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -186,7 +235,7 @@ func (bq *BlockQuery) IDs(ctx context.Context) ([]int, error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (bq *BlockQuery) IDsX(ctx context.Context) []int {
+func (bq *BlockQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := bq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -235,11 +284,13 @@ func (bq *BlockQuery) Clone() *BlockQuery {
 		return nil
 	}
 	return &BlockQuery{
-		config:     bq.config,
-		limit:      bq.limit,
-		offset:     bq.offset,
-		order:      append([]OrderFunc{}, bq.order...),
-		predicates: append([]predicate.Block{}, bq.predicates...),
+		config:           bq.config,
+		limit:            bq.limit,
+		offset:           bq.offset,
+		order:            append([]OrderFunc{}, bq.order...),
+		predicates:       append([]predicate.Block{}, bq.predicates...),
+		withAccount:      bq.withAccount.Clone(),
+		withAdhocAccount: bq.withAdhocAccount.Clone(),
 		// clone intermediate query.
 		sql:    bq.sql.Clone(),
 		path:   bq.path,
@@ -247,8 +298,42 @@ func (bq *BlockQuery) Clone() *BlockQuery {
 	}
 }
 
+// WithAccount tells the query-builder to eager-load the nodes that are connected to
+// the "account" edge. The optional arguments are used to configure the query builder of the edge.
+func (bq *BlockQuery) WithAccount(opts ...func(*AccountQuery)) *BlockQuery {
+	query := &AccountQuery{config: bq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	bq.withAccount = query
+	return bq
+}
+
+// WithAdhocAccount tells the query-builder to eager-load the nodes that are connected to
+// the "adhoc_account" edge. The optional arguments are used to configure the query builder of the edge.
+func (bq *BlockQuery) WithAdhocAccount(opts ...func(*AdhocAccountQuery)) *BlockQuery {
+	query := &AdhocAccountQuery{config: bq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	bq.withAdhocAccount = query
+	return bq
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
+//
+// Example:
+//
+//	var v []struct {
+//		AccountID uuid.UUID `json:"account_id,omitempty"`
+//		Count int `json:"count,omitempty"`
+//	}
+//
+//	client.Block.Query().
+//		GroupBy(block.FieldAccountID).
+//		Aggregate(ent.Count()).
+//		Scan(ctx, &v)
 func (bq *BlockQuery) GroupBy(field string, fields ...string) *BlockGroupBy {
 	grbuild := &BlockGroupBy{config: bq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -265,6 +350,16 @@ func (bq *BlockQuery) GroupBy(field string, fields ...string) *BlockGroupBy {
 
 // Select allows the selection one or more fields/columns for the given query,
 // instead of selecting all fields in the entity.
+//
+// Example:
+//
+//	var v []struct {
+//		AccountID uuid.UUID `json:"account_id,omitempty"`
+//	}
+//
+//	client.Block.Query().
+//		Select(block.FieldAccountID).
+//		Scan(ctx, &v)
 func (bq *BlockQuery) Select(fields ...string) *BlockSelect {
 	bq.fields = append(bq.fields, fields...)
 	selbuild := &BlockSelect{BlockQuery: bq}
@@ -291,8 +386,12 @@ func (bq *BlockQuery) prepareQuery(ctx context.Context) error {
 
 func (bq *BlockQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Block, error) {
 	var (
-		nodes = []*Block{}
-		_spec = bq.querySpec()
+		nodes       = []*Block{}
+		_spec       = bq.querySpec()
+		loadedTypes = [2]bool{
+			bq.withAccount != nil,
+			bq.withAdhocAccount != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
 		return (*Block).scanValues(nil, columns)
@@ -300,6 +399,7 @@ func (bq *BlockQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Block,
 	_spec.Assign = func(columns []string, values []interface{}) error {
 		node := &Block{config: bq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	for i := range hooks {
@@ -311,7 +411,72 @@ func (bq *BlockQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Block,
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := bq.withAccount; query != nil {
+		if err := bq.loadAccount(ctx, query, nodes, nil,
+			func(n *Block, e *Account) { n.Edges.Account = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := bq.withAdhocAccount; query != nil {
+		if err := bq.loadAdhocAccount(ctx, query, nodes, nil,
+			func(n *Block, e *AdhocAccount) { n.Edges.AdhocAccount = e }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
+}
+
+func (bq *BlockQuery) loadAccount(ctx context.Context, query *AccountQuery, nodes []*Block, init func(*Block), assign func(*Block, *Account)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Block)
+	for i := range nodes {
+		fk := nodes[i].AccountID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	query.Where(account.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "account_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (bq *BlockQuery) loadAdhocAccount(ctx context.Context, query *AdhocAccountQuery, nodes []*Block, init func(*Block), assign func(*Block, *AdhocAccount)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Block)
+	for i := range nodes {
+		fk := nodes[i].AdhocAccountID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	query.Where(adhocaccount.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "adhoc_account_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
 }
 
 func (bq *BlockQuery) sqlCount(ctx context.Context) (int, error) {
@@ -337,7 +502,7 @@ func (bq *BlockQuery) querySpec() *sqlgraph.QuerySpec {
 			Table:   block.Table,
 			Columns: block.Columns,
 			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
+				Type:   field.TypeUUID,
 				Column: block.FieldID,
 			},
 		},

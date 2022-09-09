@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"sync"
@@ -24,6 +25,13 @@ type redisManager struct {
 	Client *redis.Client
 	Locker *redislock.Client
 	Mock   bool
+}
+
+var ErrLockNotObtained = errors.New("couldn't obtain lock")
+
+// Retry every 100ms, for up-to 3x
+var LockRetryStrategy = redislock.Options{
+	RetryStrategy: redislock.LimitRetry(redislock.LinearBackoff(100*time.Millisecond), 3),
 }
 
 var singleton *redisManager

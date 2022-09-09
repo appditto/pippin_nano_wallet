@@ -26,6 +26,8 @@ func (AdhocAccount) Annotations() []schema.Annotation {
 // Fields of the AdhocAccount.
 func (AdhocAccount) Fields() []ent.Field {
 	return []ent.Field{
+		field.UUID("id", uuid.UUID{}).
+			Default(uuid.New),
 		field.UUID("wallet_id", uuid.UUID{}),
 		field.String("address").MaxLen(65),
 		field.String("private_key").MaxLen(128),
@@ -49,6 +51,6 @@ func (AdhocAccount) Edges() []ent.Edge {
 func (AdhocAccount) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("wallet_id"),
-		index.Fields("address", "account_index").Unique(),
+		index.Fields("wallet_id", "address", "private_key").Unique(),
 	}
 }

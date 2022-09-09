@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -11,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
+	"github.com/appditto/pippin_nano_wallet/libs/database/ent/block"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/predicate"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/wallet"
 	"github.com/google/uuid"
@@ -26,6 +28,7 @@ type AccountQuery struct {
 	fields     []string
 	predicates []predicate.Account
 	withWallet *WalletQuery
+	withBlocks *BlockQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -84,6 +87,28 @@ func (aq *AccountQuery) QueryWallet() *WalletQuery {
 	return query
 }
 
+// QueryBlocks chains the current query on the "blocks" edge.
+func (aq *AccountQuery) QueryBlocks() *BlockQuery {
+	query := &BlockQuery{config: aq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := aq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := aq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(account.Table, account.FieldID, selector),
+			sqlgraph.To(block.Table, block.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, account.BlocksTable, account.BlocksColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Account entity from the query.
 // Returns a *NotFoundError when no Account was found.
 func (aq *AccountQuery) First(ctx context.Context) (*Account, error) {
@@ -108,8 +133,8 @@ func (aq *AccountQuery) FirstX(ctx context.Context) *Account {
 
 // FirstID returns the first Account ID from the query.
 // Returns a *NotFoundError when no Account ID was found.
-func (aq *AccountQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (aq *AccountQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = aq.Limit(1).IDs(ctx); err != nil {
 		return
 	}
@@ -121,7 +146,7 @@ func (aq *AccountQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (aq *AccountQuery) FirstIDX(ctx context.Context) int {
+func (aq *AccountQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := aq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -159,8 +184,8 @@ func (aq *AccountQuery) OnlyX(ctx context.Context) *Account {
 // OnlyID is like Only, but returns the only Account ID in the query.
 // Returns a *NotSingularError when more than one Account ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (aq *AccountQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (aq *AccountQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = aq.Limit(2).IDs(ctx); err != nil {
 		return
 	}
@@ -176,7 +201,7 @@ func (aq *AccountQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (aq *AccountQuery) OnlyIDX(ctx context.Context) int {
+func (aq *AccountQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := aq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -202,8 +227,8 @@ func (aq *AccountQuery) AllX(ctx context.Context) []*Account {
 }
 
 // IDs executes the query and returns a list of Account IDs.
-func (aq *AccountQuery) IDs(ctx context.Context) ([]int, error) {
-	var ids []int
+func (aq *AccountQuery) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	var ids []uuid.UUID
 	if err := aq.Select(account.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -211,7 +236,7 @@ func (aq *AccountQuery) IDs(ctx context.Context) ([]int, error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (aq *AccountQuery) IDsX(ctx context.Context) []int {
+func (aq *AccountQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := aq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -266,6 +291,7 @@ func (aq *AccountQuery) Clone() *AccountQuery {
 		order:      append([]OrderFunc{}, aq.order...),
 		predicates: append([]predicate.Account{}, aq.predicates...),
 		withWallet: aq.withWallet.Clone(),
+		withBlocks: aq.withBlocks.Clone(),
 		// clone intermediate query.
 		sql:    aq.sql.Clone(),
 		path:   aq.path,
@@ -281,6 +307,17 @@ func (aq *AccountQuery) WithWallet(opts ...func(*WalletQuery)) *AccountQuery {
 		opt(query)
 	}
 	aq.withWallet = query
+	return aq
+}
+
+// WithBlocks tells the query-builder to eager-load the nodes that are connected to
+// the "blocks" edge. The optional arguments are used to configure the query builder of the edge.
+func (aq *AccountQuery) WithBlocks(opts ...func(*BlockQuery)) *AccountQuery {
+	query := &BlockQuery{config: aq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	aq.withBlocks = query
 	return aq
 }
 
@@ -352,8 +389,9 @@ func (aq *AccountQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Acco
 	var (
 		nodes       = []*Account{}
 		_spec       = aq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			aq.withWallet != nil,
+			aq.withBlocks != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
@@ -377,6 +415,13 @@ func (aq *AccountQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Acco
 	if query := aq.withWallet; query != nil {
 		if err := aq.loadWallet(ctx, query, nodes, nil,
 			func(n *Account, e *Wallet) { n.Edges.Wallet = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := aq.withBlocks; query != nil {
+		if err := aq.loadBlocks(ctx, query, nodes,
+			func(n *Account) { n.Edges.Blocks = []*Block{} },
+			func(n *Account, e *Block) { n.Edges.Blocks = append(n.Edges.Blocks, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -409,6 +454,33 @@ func (aq *AccountQuery) loadWallet(ctx context.Context, query *WalletQuery, node
 	}
 	return nil
 }
+func (aq *AccountQuery) loadBlocks(ctx context.Context, query *BlockQuery, nodes []*Account, init func(*Account), assign func(*Account, *Block)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Account)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.Where(predicate.Block(func(s *sql.Selector) {
+		s.Where(sql.InValues(account.BlocksColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.AccountID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "account_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 
 func (aq *AccountQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := aq.querySpec()
@@ -433,7 +505,7 @@ func (aq *AccountQuery) querySpec() *sqlgraph.QuerySpec {
 			Table:   account.Table,
 			Columns: account.Columns,
 			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
+				Type:   field.TypeUUID,
 				Column: account.FieldID,
 			},
 		},

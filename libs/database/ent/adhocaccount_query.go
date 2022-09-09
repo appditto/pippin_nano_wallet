@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -11,7 +12,10 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/adhocaccount"
+	"github.com/appditto/pippin_nano_wallet/libs/database/ent/block"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/predicate"
+	"github.com/appditto/pippin_nano_wallet/libs/database/ent/wallet"
+	"github.com/google/uuid"
 )
 
 // AdhocAccountQuery is the builder for querying AdhocAccount entities.
@@ -23,6 +27,8 @@ type AdhocAccountQuery struct {
 	order      []OrderFunc
 	fields     []string
 	predicates []predicate.AdhocAccount
+	withWallet *WalletQuery
+	withBlocks *BlockQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -59,6 +65,50 @@ func (aaq *AdhocAccountQuery) Order(o ...OrderFunc) *AdhocAccountQuery {
 	return aaq
 }
 
+// QueryWallet chains the current query on the "wallet" edge.
+func (aaq *AdhocAccountQuery) QueryWallet() *WalletQuery {
+	query := &WalletQuery{config: aaq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := aaq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := aaq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(adhocaccount.Table, adhocaccount.FieldID, selector),
+			sqlgraph.To(wallet.Table, wallet.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, adhocaccount.WalletTable, adhocaccount.WalletColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(aaq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryBlocks chains the current query on the "blocks" edge.
+func (aaq *AdhocAccountQuery) QueryBlocks() *BlockQuery {
+	query := &BlockQuery{config: aaq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := aaq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := aaq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(adhocaccount.Table, adhocaccount.FieldID, selector),
+			sqlgraph.To(block.Table, block.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, adhocaccount.BlocksTable, adhocaccount.BlocksColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(aaq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first AdhocAccount entity from the query.
 // Returns a *NotFoundError when no AdhocAccount was found.
 func (aaq *AdhocAccountQuery) First(ctx context.Context) (*AdhocAccount, error) {
@@ -83,8 +133,8 @@ func (aaq *AdhocAccountQuery) FirstX(ctx context.Context) *AdhocAccount {
 
 // FirstID returns the first AdhocAccount ID from the query.
 // Returns a *NotFoundError when no AdhocAccount ID was found.
-func (aaq *AdhocAccountQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (aaq *AdhocAccountQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = aaq.Limit(1).IDs(ctx); err != nil {
 		return
 	}
@@ -96,7 +146,7 @@ func (aaq *AdhocAccountQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (aaq *AdhocAccountQuery) FirstIDX(ctx context.Context) int {
+func (aaq *AdhocAccountQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := aaq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -134,8 +184,8 @@ func (aaq *AdhocAccountQuery) OnlyX(ctx context.Context) *AdhocAccount {
 // OnlyID is like Only, but returns the only AdhocAccount ID in the query.
 // Returns a *NotSingularError when more than one AdhocAccount ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (aaq *AdhocAccountQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (aaq *AdhocAccountQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = aaq.Limit(2).IDs(ctx); err != nil {
 		return
 	}
@@ -151,7 +201,7 @@ func (aaq *AdhocAccountQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (aaq *AdhocAccountQuery) OnlyIDX(ctx context.Context) int {
+func (aaq *AdhocAccountQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := aaq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -177,8 +227,8 @@ func (aaq *AdhocAccountQuery) AllX(ctx context.Context) []*AdhocAccount {
 }
 
 // IDs executes the query and returns a list of AdhocAccount IDs.
-func (aaq *AdhocAccountQuery) IDs(ctx context.Context) ([]int, error) {
-	var ids []int
+func (aaq *AdhocAccountQuery) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	var ids []uuid.UUID
 	if err := aaq.Select(adhocaccount.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -186,7 +236,7 @@ func (aaq *AdhocAccountQuery) IDs(ctx context.Context) ([]int, error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (aaq *AdhocAccountQuery) IDsX(ctx context.Context) []int {
+func (aaq *AdhocAccountQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := aaq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -240,6 +290,8 @@ func (aaq *AdhocAccountQuery) Clone() *AdhocAccountQuery {
 		offset:     aaq.offset,
 		order:      append([]OrderFunc{}, aaq.order...),
 		predicates: append([]predicate.AdhocAccount{}, aaq.predicates...),
+		withWallet: aaq.withWallet.Clone(),
+		withBlocks: aaq.withBlocks.Clone(),
 		// clone intermediate query.
 		sql:    aaq.sql.Clone(),
 		path:   aaq.path,
@@ -247,8 +299,42 @@ func (aaq *AdhocAccountQuery) Clone() *AdhocAccountQuery {
 	}
 }
 
+// WithWallet tells the query-builder to eager-load the nodes that are connected to
+// the "wallet" edge. The optional arguments are used to configure the query builder of the edge.
+func (aaq *AdhocAccountQuery) WithWallet(opts ...func(*WalletQuery)) *AdhocAccountQuery {
+	query := &WalletQuery{config: aaq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	aaq.withWallet = query
+	return aaq
+}
+
+// WithBlocks tells the query-builder to eager-load the nodes that are connected to
+// the "blocks" edge. The optional arguments are used to configure the query builder of the edge.
+func (aaq *AdhocAccountQuery) WithBlocks(opts ...func(*BlockQuery)) *AdhocAccountQuery {
+	query := &BlockQuery{config: aaq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	aaq.withBlocks = query
+	return aaq
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
+//
+// Example:
+//
+//	var v []struct {
+//		WalletID uuid.UUID `json:"wallet_id,omitempty"`
+//		Count int `json:"count,omitempty"`
+//	}
+//
+//	client.AdhocAccount.Query().
+//		GroupBy(adhocaccount.FieldWalletID).
+//		Aggregate(ent.Count()).
+//		Scan(ctx, &v)
 func (aaq *AdhocAccountQuery) GroupBy(field string, fields ...string) *AdhocAccountGroupBy {
 	grbuild := &AdhocAccountGroupBy{config: aaq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -265,6 +351,16 @@ func (aaq *AdhocAccountQuery) GroupBy(field string, fields ...string) *AdhocAcco
 
 // Select allows the selection one or more fields/columns for the given query,
 // instead of selecting all fields in the entity.
+//
+// Example:
+//
+//	var v []struct {
+//		WalletID uuid.UUID `json:"wallet_id,omitempty"`
+//	}
+//
+//	client.AdhocAccount.Query().
+//		Select(adhocaccount.FieldWalletID).
+//		Scan(ctx, &v)
 func (aaq *AdhocAccountQuery) Select(fields ...string) *AdhocAccountSelect {
 	aaq.fields = append(aaq.fields, fields...)
 	selbuild := &AdhocAccountSelect{AdhocAccountQuery: aaq}
@@ -291,8 +387,12 @@ func (aaq *AdhocAccountQuery) prepareQuery(ctx context.Context) error {
 
 func (aaq *AdhocAccountQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*AdhocAccount, error) {
 	var (
-		nodes = []*AdhocAccount{}
-		_spec = aaq.querySpec()
+		nodes       = []*AdhocAccount{}
+		_spec       = aaq.querySpec()
+		loadedTypes = [2]bool{
+			aaq.withWallet != nil,
+			aaq.withBlocks != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
 		return (*AdhocAccount).scanValues(nil, columns)
@@ -300,6 +400,7 @@ func (aaq *AdhocAccountQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([
 	_spec.Assign = func(columns []string, values []interface{}) error {
 		node := &AdhocAccount{config: aaq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	for i := range hooks {
@@ -311,7 +412,74 @@ func (aaq *AdhocAccountQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := aaq.withWallet; query != nil {
+		if err := aaq.loadWallet(ctx, query, nodes, nil,
+			func(n *AdhocAccount, e *Wallet) { n.Edges.Wallet = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := aaq.withBlocks; query != nil {
+		if err := aaq.loadBlocks(ctx, query, nodes,
+			func(n *AdhocAccount) { n.Edges.Blocks = []*Block{} },
+			func(n *AdhocAccount, e *Block) { n.Edges.Blocks = append(n.Edges.Blocks, e) }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
+}
+
+func (aaq *AdhocAccountQuery) loadWallet(ctx context.Context, query *WalletQuery, nodes []*AdhocAccount, init func(*AdhocAccount), assign func(*AdhocAccount, *Wallet)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*AdhocAccount)
+	for i := range nodes {
+		fk := nodes[i].WalletID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	query.Where(wallet.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "wallet_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (aaq *AdhocAccountQuery) loadBlocks(ctx context.Context, query *BlockQuery, nodes []*AdhocAccount, init func(*AdhocAccount), assign func(*AdhocAccount, *Block)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*AdhocAccount)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.Where(predicate.Block(func(s *sql.Selector) {
+		s.Where(sql.InValues(adhocaccount.BlocksColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.AdhocAccountID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "adhoc_account_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
 }
 
 func (aaq *AdhocAccountQuery) sqlCount(ctx context.Context) (int, error) {
@@ -337,7 +505,7 @@ func (aaq *AdhocAccountQuery) querySpec() *sqlgraph.QuerySpec {
 			Table:   adhocaccount.Table,
 			Columns: adhocaccount.Columns,
 			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
+				Type:   field.TypeUUID,
 				Column: adhocaccount.FieldID,
 			},
 		},

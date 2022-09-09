@@ -4,6 +4,8 @@ package account
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 const (
@@ -23,6 +25,8 @@ const (
 	FieldCreatedAt = "created_at"
 	// EdgeWallet holds the string denoting the wallet edge name in mutations.
 	EdgeWallet = "wallet"
+	// EdgeBlocks holds the string denoting the blocks edge name in mutations.
+	EdgeBlocks = "blocks"
 	// Table holds the table name of the account in the database.
 	Table = "accounts"
 	// WalletTable is the table that holds the wallet relation/edge.
@@ -32,6 +36,13 @@ const (
 	WalletInverseTable = "wallets"
 	// WalletColumn is the table column denoting the wallet relation/edge.
 	WalletColumn = "wallet_id"
+	// BlocksTable is the table that holds the blocks relation/edge.
+	BlocksTable = "blocks"
+	// BlocksInverseTable is the table name for the Block entity.
+	// It exists in this package in order to avoid circular dependency with the "block" package.
+	BlocksInverseTable = "blocks"
+	// BlocksColumn is the table column denoting the blocks relation/edge.
+	BlocksColumn = "account_id"
 )
 
 // Columns holds all SQL columns for account fields.
@@ -61,4 +72,6 @@ var (
 	DefaultWork bool
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
+	// DefaultID holds the default value on creation for the "id" field.
+	DefaultID func() uuid.UUID
 )

@@ -6,12 +6,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
+	"github.com/appditto/pippin_nano_wallet/libs/database/ent/block"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/predicate"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/wallet"
 	"github.com/google/uuid"
@@ -69,23 +69,24 @@ func (au *AccountUpdate) SetNillableWork(b *bool) *AccountUpdate {
 	return au
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (au *AccountUpdate) SetCreatedAt(t time.Time) *AccountUpdate {
-	au.mutation.SetCreatedAt(t)
-	return au
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (au *AccountUpdate) SetNillableCreatedAt(t *time.Time) *AccountUpdate {
-	if t != nil {
-		au.SetCreatedAt(*t)
-	}
-	return au
-}
-
 // SetWallet sets the "wallet" edge to the Wallet entity.
 func (au *AccountUpdate) SetWallet(w *Wallet) *AccountUpdate {
 	return au.SetWalletID(w.ID)
+}
+
+// AddBlockIDs adds the "blocks" edge to the Block entity by IDs.
+func (au *AccountUpdate) AddBlockIDs(ids ...uuid.UUID) *AccountUpdate {
+	au.mutation.AddBlockIDs(ids...)
+	return au
+}
+
+// AddBlocks adds the "blocks" edges to the Block entity.
+func (au *AccountUpdate) AddBlocks(b ...*Block) *AccountUpdate {
+	ids := make([]uuid.UUID, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return au.AddBlockIDs(ids...)
 }
 
 // Mutation returns the AccountMutation object of the builder.
@@ -97,6 +98,27 @@ func (au *AccountUpdate) Mutation() *AccountMutation {
 func (au *AccountUpdate) ClearWallet() *AccountUpdate {
 	au.mutation.ClearWallet()
 	return au
+}
+
+// ClearBlocks clears all "blocks" edges to the Block entity.
+func (au *AccountUpdate) ClearBlocks() *AccountUpdate {
+	au.mutation.ClearBlocks()
+	return au
+}
+
+// RemoveBlockIDs removes the "blocks" edge to Block entities by IDs.
+func (au *AccountUpdate) RemoveBlockIDs(ids ...uuid.UUID) *AccountUpdate {
+	au.mutation.RemoveBlockIDs(ids...)
+	return au
+}
+
+// RemoveBlocks removes "blocks" edges to Block entities.
+func (au *AccountUpdate) RemoveBlocks(b ...*Block) *AccountUpdate {
+	ids := make([]uuid.UUID, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return au.RemoveBlockIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -178,7 +200,7 @@ func (au *AccountUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Table:   account.Table,
 			Columns: account.Columns,
 			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
+				Type:   field.TypeUUID,
 				Column: account.FieldID,
 			},
 		},
@@ -218,13 +240,6 @@ func (au *AccountUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: account.FieldWork,
 		})
 	}
-	if value, ok := au.mutation.CreatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: account.FieldCreatedAt,
-		})
-	}
 	if au.mutation.WalletCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -252,6 +267,60 @@ func (au *AccountUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: wallet.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if au.mutation.BlocksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.BlocksTable,
+			Columns: []string{account.BlocksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: block.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.RemovedBlocksIDs(); len(nodes) > 0 && !au.mutation.BlocksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.BlocksTable,
+			Columns: []string{account.BlocksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: block.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.BlocksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.BlocksTable,
+			Columns: []string{account.BlocksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: block.FieldID,
 				},
 			},
 		}
@@ -318,23 +387,24 @@ func (auo *AccountUpdateOne) SetNillableWork(b *bool) *AccountUpdateOne {
 	return auo
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (auo *AccountUpdateOne) SetCreatedAt(t time.Time) *AccountUpdateOne {
-	auo.mutation.SetCreatedAt(t)
-	return auo
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (auo *AccountUpdateOne) SetNillableCreatedAt(t *time.Time) *AccountUpdateOne {
-	if t != nil {
-		auo.SetCreatedAt(*t)
-	}
-	return auo
-}
-
 // SetWallet sets the "wallet" edge to the Wallet entity.
 func (auo *AccountUpdateOne) SetWallet(w *Wallet) *AccountUpdateOne {
 	return auo.SetWalletID(w.ID)
+}
+
+// AddBlockIDs adds the "blocks" edge to the Block entity by IDs.
+func (auo *AccountUpdateOne) AddBlockIDs(ids ...uuid.UUID) *AccountUpdateOne {
+	auo.mutation.AddBlockIDs(ids...)
+	return auo
+}
+
+// AddBlocks adds the "blocks" edges to the Block entity.
+func (auo *AccountUpdateOne) AddBlocks(b ...*Block) *AccountUpdateOne {
+	ids := make([]uuid.UUID, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return auo.AddBlockIDs(ids...)
 }
 
 // Mutation returns the AccountMutation object of the builder.
@@ -346,6 +416,27 @@ func (auo *AccountUpdateOne) Mutation() *AccountMutation {
 func (auo *AccountUpdateOne) ClearWallet() *AccountUpdateOne {
 	auo.mutation.ClearWallet()
 	return auo
+}
+
+// ClearBlocks clears all "blocks" edges to the Block entity.
+func (auo *AccountUpdateOne) ClearBlocks() *AccountUpdateOne {
+	auo.mutation.ClearBlocks()
+	return auo
+}
+
+// RemoveBlockIDs removes the "blocks" edge to Block entities by IDs.
+func (auo *AccountUpdateOne) RemoveBlockIDs(ids ...uuid.UUID) *AccountUpdateOne {
+	auo.mutation.RemoveBlockIDs(ids...)
+	return auo
+}
+
+// RemoveBlocks removes "blocks" edges to Block entities.
+func (auo *AccountUpdateOne) RemoveBlocks(b ...*Block) *AccountUpdateOne {
+	ids := make([]uuid.UUID, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return auo.RemoveBlockIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -440,7 +531,7 @@ func (auo *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err e
 			Table:   account.Table,
 			Columns: account.Columns,
 			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
+				Type:   field.TypeUUID,
 				Column: account.FieldID,
 			},
 		},
@@ -497,13 +588,6 @@ func (auo *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err e
 			Column: account.FieldWork,
 		})
 	}
-	if value, ok := auo.mutation.CreatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: account.FieldCreatedAt,
-		})
-	}
 	if auo.mutation.WalletCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -531,6 +615,60 @@ func (auo *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err e
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: wallet.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if auo.mutation.BlocksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.BlocksTable,
+			Columns: []string{account.BlocksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: block.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.RemovedBlocksIDs(); len(nodes) > 0 && !auo.mutation.BlocksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.BlocksTable,
+			Columns: []string{account.BlocksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: block.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.BlocksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.BlocksTable,
+			Columns: []string{account.BlocksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: block.FieldID,
 				},
 			},
 		}

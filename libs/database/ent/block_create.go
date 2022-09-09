@@ -4,11 +4,16 @@ package ent
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
+	"github.com/appditto/pippin_nano_wallet/libs/database/ent/adhocaccount"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/block"
+	"github.com/google/uuid"
 )
 
 // BlockCreate is the builder for creating a Block entity.
@@ -16,6 +21,88 @@ type BlockCreate struct {
 	config
 	mutation *BlockMutation
 	hooks    []Hook
+}
+
+// SetAccountID sets the "account_id" field.
+func (bc *BlockCreate) SetAccountID(u uuid.UUID) *BlockCreate {
+	bc.mutation.SetAccountID(u)
+	return bc
+}
+
+// SetAdhocAccountID sets the "adhoc_account_id" field.
+func (bc *BlockCreate) SetAdhocAccountID(u uuid.UUID) *BlockCreate {
+	bc.mutation.SetAdhocAccountID(u)
+	return bc
+}
+
+// SetBlockHash sets the "block_hash" field.
+func (bc *BlockCreate) SetBlockHash(s string) *BlockCreate {
+	bc.mutation.SetBlockHash(s)
+	return bc
+}
+
+// SetBlock sets the "block" field.
+func (bc *BlockCreate) SetBlock(m map[string]interface{}) *BlockCreate {
+	bc.mutation.SetBlock(m)
+	return bc
+}
+
+// SetSendID sets the "send_id" field.
+func (bc *BlockCreate) SetSendID(s string) *BlockCreate {
+	bc.mutation.SetSendID(s)
+	return bc
+}
+
+// SetNillableSendID sets the "send_id" field if the given value is not nil.
+func (bc *BlockCreate) SetNillableSendID(s *string) *BlockCreate {
+	if s != nil {
+		bc.SetSendID(*s)
+	}
+	return bc
+}
+
+// SetSubtype sets the "subtype" field.
+func (bc *BlockCreate) SetSubtype(s string) *BlockCreate {
+	bc.mutation.SetSubtype(s)
+	return bc
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (bc *BlockCreate) SetCreatedAt(t time.Time) *BlockCreate {
+	bc.mutation.SetCreatedAt(t)
+	return bc
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (bc *BlockCreate) SetNillableCreatedAt(t *time.Time) *BlockCreate {
+	if t != nil {
+		bc.SetCreatedAt(*t)
+	}
+	return bc
+}
+
+// SetID sets the "id" field.
+func (bc *BlockCreate) SetID(u uuid.UUID) *BlockCreate {
+	bc.mutation.SetID(u)
+	return bc
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (bc *BlockCreate) SetNillableID(u *uuid.UUID) *BlockCreate {
+	if u != nil {
+		bc.SetID(*u)
+	}
+	return bc
+}
+
+// SetAccount sets the "account" edge to the Account entity.
+func (bc *BlockCreate) SetAccount(a *Account) *BlockCreate {
+	return bc.SetAccountID(a.ID)
+}
+
+// SetAdhocAccount sets the "adhoc_account" edge to the AdhocAccount entity.
+func (bc *BlockCreate) SetAdhocAccount(a *AdhocAccount) *BlockCreate {
+	return bc.SetAdhocAccountID(a.ID)
 }
 
 // Mutation returns the BlockMutation object of the builder.
@@ -29,6 +116,7 @@ func (bc *BlockCreate) Save(ctx context.Context) (*Block, error) {
 		err  error
 		node *Block
 	)
+	bc.defaults()
 	if len(bc.hooks) == 0 {
 		if err = bc.check(); err != nil {
 			return nil, err
@@ -92,8 +180,59 @@ func (bc *BlockCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (bc *BlockCreate) defaults() {
+	if _, ok := bc.mutation.CreatedAt(); !ok {
+		v := block.DefaultCreatedAt()
+		bc.mutation.SetCreatedAt(v)
+	}
+	if _, ok := bc.mutation.ID(); !ok {
+		v := block.DefaultID()
+		bc.mutation.SetID(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (bc *BlockCreate) check() error {
+	if _, ok := bc.mutation.AccountID(); !ok {
+		return &ValidationError{Name: "account_id", err: errors.New(`ent: missing required field "Block.account_id"`)}
+	}
+	if _, ok := bc.mutation.AdhocAccountID(); !ok {
+		return &ValidationError{Name: "adhoc_account_id", err: errors.New(`ent: missing required field "Block.adhoc_account_id"`)}
+	}
+	if _, ok := bc.mutation.BlockHash(); !ok {
+		return &ValidationError{Name: "block_hash", err: errors.New(`ent: missing required field "Block.block_hash"`)}
+	}
+	if v, ok := bc.mutation.BlockHash(); ok {
+		if err := block.BlockHashValidator(v); err != nil {
+			return &ValidationError{Name: "block_hash", err: fmt.Errorf(`ent: validator failed for field "Block.block_hash": %w`, err)}
+		}
+	}
+	if _, ok := bc.mutation.Block(); !ok {
+		return &ValidationError{Name: "block", err: errors.New(`ent: missing required field "Block.block"`)}
+	}
+	if v, ok := bc.mutation.SendID(); ok {
+		if err := block.SendIDValidator(v); err != nil {
+			return &ValidationError{Name: "send_id", err: fmt.Errorf(`ent: validator failed for field "Block.send_id": %w`, err)}
+		}
+	}
+	if _, ok := bc.mutation.Subtype(); !ok {
+		return &ValidationError{Name: "subtype", err: errors.New(`ent: missing required field "Block.subtype"`)}
+	}
+	if v, ok := bc.mutation.Subtype(); ok {
+		if err := block.SubtypeValidator(v); err != nil {
+			return &ValidationError{Name: "subtype", err: fmt.Errorf(`ent: validator failed for field "Block.subtype": %w`, err)}
+		}
+	}
+	if _, ok := bc.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Block.created_at"`)}
+	}
+	if _, ok := bc.mutation.AccountID(); !ok {
+		return &ValidationError{Name: "account", err: errors.New(`ent: missing required edge "Block.account"`)}
+	}
+	if _, ok := bc.mutation.AdhocAccountID(); !ok {
+		return &ValidationError{Name: "adhoc_account", err: errors.New(`ent: missing required edge "Block.adhoc_account"`)}
+	}
 	return nil
 }
 
@@ -105,8 +244,13 @@ func (bc *BlockCreate) sqlSave(ctx context.Context) (*Block, error) {
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
+		}
+	}
 	return _node, nil
 }
 
@@ -116,11 +260,95 @@ func (bc *BlockCreate) createSpec() (*Block, *sqlgraph.CreateSpec) {
 		_spec = &sqlgraph.CreateSpec{
 			Table: block.Table,
 			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
+				Type:   field.TypeUUID,
 				Column: block.FieldID,
 			},
 		}
 	)
+	if id, ok := bc.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = &id
+	}
+	if value, ok := bc.mutation.BlockHash(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: block.FieldBlockHash,
+		})
+		_node.BlockHash = value
+	}
+	if value, ok := bc.mutation.Block(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: block.FieldBlock,
+		})
+		_node.Block = value
+	}
+	if value, ok := bc.mutation.SendID(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: block.FieldSendID,
+		})
+		_node.SendID = &value
+	}
+	if value, ok := bc.mutation.Subtype(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: block.FieldSubtype,
+		})
+		_node.Subtype = value
+	}
+	if value, ok := bc.mutation.CreatedAt(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: block.FieldCreatedAt,
+		})
+		_node.CreatedAt = value
+	}
+	if nodes := bc.mutation.AccountIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   block.AccountTable,
+			Columns: []string{block.AccountColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: account.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.AccountID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := bc.mutation.AdhocAccountIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   block.AdhocAccountTable,
+			Columns: []string{block.AdhocAccountColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: adhocaccount.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.AdhocAccountID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
@@ -138,6 +366,7 @@ func (bcb *BlockCreateBulk) Save(ctx context.Context) ([]*Block, error) {
 	for i := range bcb.builders {
 		func(i int, root context.Context) {
 			builder := bcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*BlockMutation)
 				if !ok {
@@ -164,10 +393,6 @@ func (bcb *BlockCreateBulk) Save(ctx context.Context) ([]*Block, error) {
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

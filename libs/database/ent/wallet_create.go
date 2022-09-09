@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
+	"github.com/appditto/pippin_nano_wallet/libs/database/ent/adhocaccount"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/wallet"
 	"github.com/google/uuid"
 )
@@ -99,18 +100,33 @@ func (wc *WalletCreate) SetNillableID(u *uuid.UUID) *WalletCreate {
 }
 
 // AddAccountIDs adds the "accounts" edge to the Account entity by IDs.
-func (wc *WalletCreate) AddAccountIDs(ids ...int) *WalletCreate {
+func (wc *WalletCreate) AddAccountIDs(ids ...uuid.UUID) *WalletCreate {
 	wc.mutation.AddAccountIDs(ids...)
 	return wc
 }
 
 // AddAccounts adds the "accounts" edges to the Account entity.
 func (wc *WalletCreate) AddAccounts(a ...*Account) *WalletCreate {
-	ids := make([]int, len(a))
+	ids := make([]uuid.UUID, len(a))
 	for i := range a {
 		ids[i] = a[i].ID
 	}
 	return wc.AddAccountIDs(ids...)
+}
+
+// AddAdhocAccountIDs adds the "adhoc_accounts" edge to the AdhocAccount entity by IDs.
+func (wc *WalletCreate) AddAdhocAccountIDs(ids ...uuid.UUID) *WalletCreate {
+	wc.mutation.AddAdhocAccountIDs(ids...)
+	return wc
+}
+
+// AddAdhocAccounts adds the "adhoc_accounts" edges to the AdhocAccount entity.
+func (wc *WalletCreate) AddAdhocAccounts(a ...*AdhocAccount) *WalletCreate {
+	ids := make([]uuid.UUID, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return wc.AddAdhocAccountIDs(ids...)
 }
 
 // Mutation returns the WalletMutation object of the builder.
@@ -317,8 +333,27 @@ func (wc *WalletCreate) createSpec() (*Wallet, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
+					Type:   field.TypeUUID,
 					Column: account.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := wc.mutation.AdhocAccountsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   wallet.AdhocAccountsTable,
+			Columns: []string{wallet.AdhocAccountsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: adhocaccount.FieldID,
 				},
 			},
 		}

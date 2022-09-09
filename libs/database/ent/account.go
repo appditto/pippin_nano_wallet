@@ -17,7 +17,7 @@ import (
 type Account struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID int `json:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty"`
 	// WalletID holds the value of the "wallet_id" field.
 	WalletID uuid.UUID `json:"wallet_id,omitempty"`
 	// Address holds the value of the "address" field.
@@ -37,9 +37,11 @@ type Account struct {
 type AccountEdges struct {
 	// Wallet holds the value of the wallet edge.
 	Wallet *Wallet `json:"wallet,omitempty"`
+	// Blocks holds the value of the blocks edge.
+	Blocks []*Block `json:"blocks,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // WalletOrErr returns the Wallet value or an error if the edge
@@ -55,6 +57,15 @@ func (e AccountEdges) WalletOrErr() (*Wallet, error) {
 	return nil, &NotLoadedError{edge: "wallet"}
 }
 
+// BlocksOrErr returns the Blocks value or an error if the edge
+// was not loaded in eager-loading.
+func (e AccountEdges) BlocksOrErr() ([]*Block, error) {
+	if e.loadedTypes[1] {
+		return e.Blocks, nil
+	}
+	return nil, &NotLoadedError{edge: "blocks"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Account) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
@@ -62,13 +73,13 @@ func (*Account) scanValues(columns []string) ([]interface{}, error) {
 		switch columns[i] {
 		case account.FieldWork:
 			values[i] = new(sql.NullBool)
-		case account.FieldID, account.FieldAccountIndex:
+		case account.FieldAccountIndex:
 			values[i] = new(sql.NullInt64)
 		case account.FieldAddress:
 			values[i] = new(sql.NullString)
 		case account.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
-		case account.FieldWalletID:
+		case account.FieldID, account.FieldWalletID:
 			values[i] = new(uuid.UUID)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Account", columns[i])
@@ -86,11 +97,11 @@ func (a *Account) assignValues(columns []string, values []interface{}) error {
 	for i := range columns {
 		switch columns[i] {
 		case account.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value != nil {
+				a.ID = *value
 			}
-			a.ID = int(value.Int64)
 		case account.FieldWalletID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field wallet_id", values[i])
@@ -129,6 +140,11 @@ func (a *Account) assignValues(columns []string, values []interface{}) error {
 // QueryWallet queries the "wallet" edge of the Account entity.
 func (a *Account) QueryWallet() *WalletQuery {
 	return (&AccountClient{config: a.config}).QueryWallet(a)
+}
+
+// QueryBlocks queries the "blocks" edge of the Account entity.
+func (a *Account) QueryBlocks() *BlockQuery {
+	return (&AccountClient{config: a.config}).QueryBlocks(a)
 }
 
 // Update returns a builder for updating this Account.

@@ -4,7 +4,10 @@ go 1.19
 
 require k8s.io/klog/v2 v2.80.0
 
-require github.com/ajg/form v1.5.1 // indirect
+require (
+	github.com/ajg/form v1.5.1 // indirect
+	github.com/mitchellh/mapstructure v1.5.0 // indirect
+)
 
 require (
 	github.com/go-chi/chi/v5 v5.0.7

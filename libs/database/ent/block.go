@@ -3,18 +3,77 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
+	"github.com/appditto/pippin_nano_wallet/libs/database/ent/adhocaccount"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/block"
+	"github.com/google/uuid"
 )
 
 // Block is the model entity for the Block schema.
 type Block struct {
-	config
+	config `json:"-"`
 	// ID of the ent.
-	ID int `json:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty"`
+	// AccountID holds the value of the "account_id" field.
+	AccountID uuid.UUID `json:"account_id,omitempty"`
+	// AdhocAccountID holds the value of the "adhoc_account_id" field.
+	AdhocAccountID uuid.UUID `json:"adhoc_account_id,omitempty"`
+	// BlockHash holds the value of the "block_hash" field.
+	BlockHash string `json:"block_hash,omitempty"`
+	// Block holds the value of the "block" field.
+	Block map[string]interface{} `json:"block,omitempty"`
+	// SendID holds the value of the "send_id" field.
+	SendID *string `json:"send_id,omitempty"`
+	// Subtype holds the value of the "subtype" field.
+	Subtype string `json:"subtype,omitempty"`
+	// CreatedAt holds the value of the "created_at" field.
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the BlockQuery when eager-loading is set.
+	Edges BlockEdges `json:"edges"`
+}
+
+// BlockEdges holds the relations/edges for other nodes in the graph.
+type BlockEdges struct {
+	// Account holds the value of the account edge.
+	Account *Account `json:"account,omitempty"`
+	// AdhocAccount holds the value of the adhoc_account edge.
+	AdhocAccount *AdhocAccount `json:"adhoc_account,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [2]bool
+}
+
+// AccountOrErr returns the Account value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e BlockEdges) AccountOrErr() (*Account, error) {
+	if e.loadedTypes[0] {
+		if e.Account == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: account.Label}
+		}
+		return e.Account, nil
+	}
+	return nil, &NotLoadedError{edge: "account"}
+}
+
+// AdhocAccountOrErr returns the AdhocAccount value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e BlockEdges) AdhocAccountOrErr() (*AdhocAccount, error) {
+	if e.loadedTypes[1] {
+		if e.AdhocAccount == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: adhocaccount.Label}
+		}
+		return e.AdhocAccount, nil
+	}
+	return nil, &NotLoadedError{edge: "adhoc_account"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -22,8 +81,14 @@ func (*Block) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case block.FieldID:
-			values[i] = new(sql.NullInt64)
+		case block.FieldBlock:
+			values[i] = new([]byte)
+		case block.FieldBlockHash, block.FieldSendID, block.FieldSubtype:
+			values[i] = new(sql.NullString)
+		case block.FieldCreatedAt:
+			values[i] = new(sql.NullTime)
+		case block.FieldID, block.FieldAccountID, block.FieldAdhocAccountID:
+			values[i] = new(uuid.UUID)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Block", columns[i])
 		}
@@ -40,14 +105,69 @@ func (b *Block) assignValues(columns []string, values []interface{}) error {
 	for i := range columns {
 		switch columns[i] {
 		case block.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value != nil {
+				b.ID = *value
 			}
-			b.ID = int(value.Int64)
+		case block.FieldAccountID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field account_id", values[i])
+			} else if value != nil {
+				b.AccountID = *value
+			}
+		case block.FieldAdhocAccountID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field adhoc_account_id", values[i])
+			} else if value != nil {
+				b.AdhocAccountID = *value
+			}
+		case block.FieldBlockHash:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field block_hash", values[i])
+			} else if value.Valid {
+				b.BlockHash = value.String
+			}
+		case block.FieldBlock:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field block", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &b.Block); err != nil {
+					return fmt.Errorf("unmarshal field block: %w", err)
+				}
+			}
+		case block.FieldSendID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field send_id", values[i])
+			} else if value.Valid {
+				b.SendID = new(string)
+				*b.SendID = value.String
+			}
+		case block.FieldSubtype:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field subtype", values[i])
+			} else if value.Valid {
+				b.Subtype = value.String
+			}
+		case block.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
+			} else if value.Valid {
+				b.CreatedAt = value.Time
+			}
 		}
 	}
 	return nil
+}
+
+// QueryAccount queries the "account" edge of the Block entity.
+func (b *Block) QueryAccount() *AccountQuery {
+	return (&BlockClient{config: b.config}).QueryAccount(b)
+}
+
+// QueryAdhocAccount queries the "adhoc_account" edge of the Block entity.
+func (b *Block) QueryAdhocAccount() *AdhocAccountQuery {
+	return (&BlockClient{config: b.config}).QueryAdhocAccount(b)
 }
 
 // Update returns a builder for updating this Block.
@@ -72,7 +192,29 @@ func (b *Block) Unwrap() *Block {
 func (b *Block) String() string {
 	var builder strings.Builder
 	builder.WriteString("Block(")
-	builder.WriteString(fmt.Sprintf("id=%v", b.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", b.ID))
+	builder.WriteString("account_id=")
+	builder.WriteString(fmt.Sprintf("%v", b.AccountID))
+	builder.WriteString(", ")
+	builder.WriteString("adhoc_account_id=")
+	builder.WriteString(fmt.Sprintf("%v", b.AdhocAccountID))
+	builder.WriteString(", ")
+	builder.WriteString("block_hash=")
+	builder.WriteString(b.BlockHash)
+	builder.WriteString(", ")
+	builder.WriteString("block=")
+	builder.WriteString(fmt.Sprintf("%v", b.Block))
+	builder.WriteString(", ")
+	if v := b.SendID; v != nil {
+		builder.WriteString("send_id=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	builder.WriteString("subtype=")
+	builder.WriteString(b.Subtype)
+	builder.WriteString(", ")
+	builder.WriteString("created_at=")
+	builder.WriteString(b.CreatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

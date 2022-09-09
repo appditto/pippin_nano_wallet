@@ -27,6 +27,8 @@ func (Block) Annotations() []schema.Annotation {
 // Fields of the Block.
 func (Block) Fields() []ent.Field {
 	return []ent.Field{
+		field.UUID("id", uuid.UUID{}).
+			Default(uuid.New),
 		// account id from accounts
 		field.UUID("account_id", uuid.UUID{}),
 		field.UUID("adhoc_account_id", uuid.UUID{}),

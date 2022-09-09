@@ -25,6 +25,8 @@ const (
 	FieldCreatedAt = "created_at"
 	// EdgeAccounts holds the string denoting the accounts edge name in mutations.
 	EdgeAccounts = "accounts"
+	// EdgeAdhocAccounts holds the string denoting the adhoc_accounts edge name in mutations.
+	EdgeAdhocAccounts = "adhoc_accounts"
 	// Table holds the table name of the wallet in the database.
 	Table = "wallets"
 	// AccountsTable is the table that holds the accounts relation/edge.
@@ -34,6 +36,13 @@ const (
 	AccountsInverseTable = "accounts"
 	// AccountsColumn is the table column denoting the accounts relation/edge.
 	AccountsColumn = "wallet_id"
+	// AdhocAccountsTable is the table that holds the adhoc_accounts relation/edge.
+	AdhocAccountsTable = "adhoc_accounts"
+	// AdhocAccountsInverseTable is the table name for the AdhocAccount entity.
+	// It exists in this package in order to avoid circular dependency with the "adhocaccount" package.
+	AdhocAccountsInverseTable = "adhoc_accounts"
+	// AdhocAccountsColumn is the table column denoting the adhoc_accounts relation/edge.
+	AdhocAccountsColumn = "wallet_id"
 )
 
 // Columns holds all SQL columns for wallet fields.

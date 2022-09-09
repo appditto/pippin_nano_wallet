@@ -5,16 +5,65 @@ package ent
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/adhocaccount"
+	"github.com/appditto/pippin_nano_wallet/libs/database/ent/wallet"
+	"github.com/google/uuid"
 )
 
 // AdhocAccount is the model entity for the AdhocAccount schema.
 type AdhocAccount struct {
-	config
+	config `json:"-"`
 	// ID of the ent.
-	ID int `json:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty"`
+	// WalletID holds the value of the "wallet_id" field.
+	WalletID uuid.UUID `json:"wallet_id,omitempty"`
+	// Address holds the value of the "address" field.
+	Address string `json:"address,omitempty"`
+	// PrivateKey holds the value of the "private_key" field.
+	PrivateKey string `json:"private_key,omitempty"`
+	// Work holds the value of the "work" field.
+	Work bool `json:"work,omitempty"`
+	// CreatedAt holds the value of the "created_at" field.
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the AdhocAccountQuery when eager-loading is set.
+	Edges AdhocAccountEdges `json:"edges"`
+}
+
+// AdhocAccountEdges holds the relations/edges for other nodes in the graph.
+type AdhocAccountEdges struct {
+	// Wallet holds the value of the wallet edge.
+	Wallet *Wallet `json:"wallet,omitempty"`
+	// Blocks holds the value of the blocks edge.
+	Blocks []*Block `json:"blocks,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [2]bool
+}
+
+// WalletOrErr returns the Wallet value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e AdhocAccountEdges) WalletOrErr() (*Wallet, error) {
+	if e.loadedTypes[0] {
+		if e.Wallet == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: wallet.Label}
+		}
+		return e.Wallet, nil
+	}
+	return nil, &NotLoadedError{edge: "wallet"}
+}
+
+// BlocksOrErr returns the Blocks value or an error if the edge
+// was not loaded in eager-loading.
+func (e AdhocAccountEdges) BlocksOrErr() ([]*Block, error) {
+	if e.loadedTypes[1] {
+		return e.Blocks, nil
+	}
+	return nil, &NotLoadedError{edge: "blocks"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -22,8 +71,14 @@ func (*AdhocAccount) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case adhocaccount.FieldID:
-			values[i] = new(sql.NullInt64)
+		case adhocaccount.FieldWork:
+			values[i] = new(sql.NullBool)
+		case adhocaccount.FieldAddress, adhocaccount.FieldPrivateKey:
+			values[i] = new(sql.NullString)
+		case adhocaccount.FieldCreatedAt:
+			values[i] = new(sql.NullTime)
+		case adhocaccount.FieldID, adhocaccount.FieldWalletID:
+			values[i] = new(uuid.UUID)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type AdhocAccount", columns[i])
 		}
@@ -40,14 +95,54 @@ func (aa *AdhocAccount) assignValues(columns []string, values []interface{}) err
 	for i := range columns {
 		switch columns[i] {
 		case adhocaccount.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value != nil {
+				aa.ID = *value
 			}
-			aa.ID = int(value.Int64)
+		case adhocaccount.FieldWalletID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field wallet_id", values[i])
+			} else if value != nil {
+				aa.WalletID = *value
+			}
+		case adhocaccount.FieldAddress:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field address", values[i])
+			} else if value.Valid {
+				aa.Address = value.String
+			}
+		case adhocaccount.FieldPrivateKey:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field private_key", values[i])
+			} else if value.Valid {
+				aa.PrivateKey = value.String
+			}
+		case adhocaccount.FieldWork:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field work", values[i])
+			} else if value.Valid {
+				aa.Work = value.Bool
+			}
+		case adhocaccount.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
+			} else if value.Valid {
+				aa.CreatedAt = value.Time
+			}
 		}
 	}
 	return nil
+}
+
+// QueryWallet queries the "wallet" edge of the AdhocAccount entity.
+func (aa *AdhocAccount) QueryWallet() *WalletQuery {
+	return (&AdhocAccountClient{config: aa.config}).QueryWallet(aa)
+}
+
+// QueryBlocks queries the "blocks" edge of the AdhocAccount entity.
+func (aa *AdhocAccount) QueryBlocks() *BlockQuery {
+	return (&AdhocAccountClient{config: aa.config}).QueryBlocks(aa)
 }
 
 // Update returns a builder for updating this AdhocAccount.
@@ -72,7 +167,21 @@ func (aa *AdhocAccount) Unwrap() *AdhocAccount {
 func (aa *AdhocAccount) String() string {
 	var builder strings.Builder
 	builder.WriteString("AdhocAccount(")
-	builder.WriteString(fmt.Sprintf("id=%v", aa.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", aa.ID))
+	builder.WriteString("wallet_id=")
+	builder.WriteString(fmt.Sprintf("%v", aa.WalletID))
+	builder.WriteString(", ")
+	builder.WriteString("address=")
+	builder.WriteString(aa.Address)
+	builder.WriteString(", ")
+	builder.WriteString("private_key=")
+	builder.WriteString(aa.PrivateKey)
+	builder.WriteString(", ")
+	builder.WriteString("work=")
+	builder.WriteString(fmt.Sprintf("%v", aa.Work))
+	builder.WriteString(", ")
+	builder.WriteString("created_at=")
+	builder.WriteString(aa.CreatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

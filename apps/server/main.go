@@ -10,6 +10,7 @@ import (
 	"github.com/appditto/pippin_nano_wallet/apps/server/controller"
 	"github.com/appditto/pippin_nano_wallet/libs/config"
 	"github.com/appditto/pippin_nano_wallet/libs/database"
+	"github.com/appditto/pippin_nano_wallet/libs/wallet"
 	"github.com/go-chi/chi/v5"
 	"k8s.io/klog/v2"
 )
@@ -69,11 +70,18 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Setup nano wallet instance with DB, options, etc.
+	nanoWallet := wallet.NanoWallet{
+		DB:     entClient,
+		Ctx:    ctx,
+		Banano: conf.Wallet.Banano,
+	}
+
 	// Create app
 	app := chi.NewRouter()
 
 	// Setup controller
-	hc := controller.HttpController{}
+	hc := controller.HttpController{Wallet: &nanoWallet}
 
 	// HTTP Routes
 	app.Post("/", hc.HandleAction)

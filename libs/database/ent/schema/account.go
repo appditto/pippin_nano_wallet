@@ -27,6 +27,8 @@ func (Account) Annotations() []schema.Annotation {
 // Fields of the Account.
 func (Account) Fields() []ent.Field {
 	return []ent.Field{
+		field.UUID("id", uuid.UUID{}).
+			Default(uuid.New),
 		field.UUID("wallet_id", uuid.UUID{}),
 		field.String("address").MaxLen(65),
 		field.Int("account_index"),
@@ -51,6 +53,6 @@ func (Account) Edges() []ent.Edge {
 func (Account) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("wallet_id"),
-		index.Fields("address", "account_index").Unique(),
+		index.Fields("wallet_id", "address", "account_index").Unique(),
 	}
 }

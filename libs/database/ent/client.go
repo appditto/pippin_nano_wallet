@@ -185,7 +185,7 @@ func (c *AccountClient) UpdateOne(a *Account) *AccountUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *AccountClient) UpdateOneID(id int) *AccountUpdateOne {
+func (c *AccountClient) UpdateOneID(id uuid.UUID) *AccountUpdateOne {
 	mutation := newAccountMutation(c.config, OpUpdateOne, withAccountID(id))
 	return &AccountUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -202,7 +202,7 @@ func (c *AccountClient) DeleteOne(a *Account) *AccountDeleteOne {
 }
 
 // DeleteOne returns a builder for deleting the given entity by its id.
-func (c *AccountClient) DeleteOneID(id int) *AccountDeleteOne {
+func (c *AccountClient) DeleteOneID(id uuid.UUID) *AccountDeleteOne {
 	builder := c.Delete().Where(account.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -217,12 +217,12 @@ func (c *AccountClient) Query() *AccountQuery {
 }
 
 // Get returns a Account entity by its id.
-func (c *AccountClient) Get(ctx context.Context, id int) (*Account, error) {
+func (c *AccountClient) Get(ctx context.Context, id uuid.UUID) (*Account, error) {
 	return c.Query().Where(account.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *AccountClient) GetX(ctx context.Context, id int) *Account {
+func (c *AccountClient) GetX(ctx context.Context, id uuid.UUID) *Account {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -239,6 +239,22 @@ func (c *AccountClient) QueryWallet(a *Account) *WalletQuery {
 			sqlgraph.From(account.Table, account.FieldID, id),
 			sqlgraph.To(wallet.Table, wallet.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, account.WalletTable, account.WalletColumn),
+		)
+		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryBlocks queries the blocks edge of a Account.
+func (c *AccountClient) QueryBlocks(a *Account) *BlockQuery {
+	query := &BlockQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := a.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(account.Table, account.FieldID, id),
+			sqlgraph.To(block.Table, block.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, account.BlocksTable, account.BlocksColumn),
 		)
 		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
 		return fromV, nil
@@ -291,7 +307,7 @@ func (c *AdhocAccountClient) UpdateOne(aa *AdhocAccount) *AdhocAccountUpdateOne 
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *AdhocAccountClient) UpdateOneID(id int) *AdhocAccountUpdateOne {
+func (c *AdhocAccountClient) UpdateOneID(id uuid.UUID) *AdhocAccountUpdateOne {
 	mutation := newAdhocAccountMutation(c.config, OpUpdateOne, withAdhocAccountID(id))
 	return &AdhocAccountUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -308,7 +324,7 @@ func (c *AdhocAccountClient) DeleteOne(aa *AdhocAccount) *AdhocAccountDeleteOne 
 }
 
 // DeleteOne returns a builder for deleting the given entity by its id.
-func (c *AdhocAccountClient) DeleteOneID(id int) *AdhocAccountDeleteOne {
+func (c *AdhocAccountClient) DeleteOneID(id uuid.UUID) *AdhocAccountDeleteOne {
 	builder := c.Delete().Where(adhocaccount.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -323,17 +339,49 @@ func (c *AdhocAccountClient) Query() *AdhocAccountQuery {
 }
 
 // Get returns a AdhocAccount entity by its id.
-func (c *AdhocAccountClient) Get(ctx context.Context, id int) (*AdhocAccount, error) {
+func (c *AdhocAccountClient) Get(ctx context.Context, id uuid.UUID) (*AdhocAccount, error) {
 	return c.Query().Where(adhocaccount.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *AdhocAccountClient) GetX(ctx context.Context, id int) *AdhocAccount {
+func (c *AdhocAccountClient) GetX(ctx context.Context, id uuid.UUID) *AdhocAccount {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryWallet queries the wallet edge of a AdhocAccount.
+func (c *AdhocAccountClient) QueryWallet(aa *AdhocAccount) *WalletQuery {
+	query := &WalletQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := aa.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(adhocaccount.Table, adhocaccount.FieldID, id),
+			sqlgraph.To(wallet.Table, wallet.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, adhocaccount.WalletTable, adhocaccount.WalletColumn),
+		)
+		fromV = sqlgraph.Neighbors(aa.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryBlocks queries the blocks edge of a AdhocAccount.
+func (c *AdhocAccountClient) QueryBlocks(aa *AdhocAccount) *BlockQuery {
+	query := &BlockQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := aa.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(adhocaccount.Table, adhocaccount.FieldID, id),
+			sqlgraph.To(block.Table, block.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, adhocaccount.BlocksTable, adhocaccount.BlocksColumn),
+		)
+		fromV = sqlgraph.Neighbors(aa.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.
@@ -381,7 +429,7 @@ func (c *BlockClient) UpdateOne(b *Block) *BlockUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *BlockClient) UpdateOneID(id int) *BlockUpdateOne {
+func (c *BlockClient) UpdateOneID(id uuid.UUID) *BlockUpdateOne {
 	mutation := newBlockMutation(c.config, OpUpdateOne, withBlockID(id))
 	return &BlockUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -398,7 +446,7 @@ func (c *BlockClient) DeleteOne(b *Block) *BlockDeleteOne {
 }
 
 // DeleteOne returns a builder for deleting the given entity by its id.
-func (c *BlockClient) DeleteOneID(id int) *BlockDeleteOne {
+func (c *BlockClient) DeleteOneID(id uuid.UUID) *BlockDeleteOne {
 	builder := c.Delete().Where(block.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -413,17 +461,49 @@ func (c *BlockClient) Query() *BlockQuery {
 }
 
 // Get returns a Block entity by its id.
-func (c *BlockClient) Get(ctx context.Context, id int) (*Block, error) {
+func (c *BlockClient) Get(ctx context.Context, id uuid.UUID) (*Block, error) {
 	return c.Query().Where(block.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *BlockClient) GetX(ctx context.Context, id int) *Block {
+func (c *BlockClient) GetX(ctx context.Context, id uuid.UUID) *Block {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryAccount queries the account edge of a Block.
+func (c *BlockClient) QueryAccount(b *Block) *AccountQuery {
+	query := &AccountQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := b.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(block.Table, block.FieldID, id),
+			sqlgraph.To(account.Table, account.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, block.AccountTable, block.AccountColumn),
+		)
+		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAdhocAccount queries the adhoc_account edge of a Block.
+func (c *BlockClient) QueryAdhocAccount(b *Block) *AdhocAccountQuery {
+	query := &AdhocAccountQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := b.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(block.Table, block.FieldID, id),
+			sqlgraph.To(adhocaccount.Table, adhocaccount.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, block.AdhocAccountTable, block.AdhocAccountColumn),
+		)
+		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.
@@ -525,6 +605,22 @@ func (c *WalletClient) QueryAccounts(w *Wallet) *AccountQuery {
 			sqlgraph.From(wallet.Table, wallet.FieldID, id),
 			sqlgraph.To(account.Table, account.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, wallet.AccountsTable, wallet.AccountsColumn),
+		)
+		fromV = sqlgraph.Neighbors(w.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAdhocAccounts queries the adhoc_accounts edge of a Wallet.
+func (c *WalletClient) QueryAdhocAccounts(w *Wallet) *AdhocAccountQuery {
+	query := &AdhocAccountQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := w.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(wallet.Table, wallet.FieldID, id),
+			sqlgraph.To(adhocaccount.Table, adhocaccount.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, wallet.AdhocAccountsTable, wallet.AdhocAccountsColumn),
 		)
 		fromV = sqlgraph.Neighbors(w.driver.Dialect(), step)
 		return fromV, nil

@@ -140,7 +140,7 @@ func TestWalletAdd(t *testing.T) {
 }
 
 func TestWalletLocked(t *testing.T) {
-	newSeed, _ := utils.GenerateSeed(strings.NewReader("E11A48D701EA1F8A66A4EB587CDC8808D726FE75B325DF204F62CA2B43F9ADA1"))
+	newSeed, _ := utils.GenerateSeed(strings.NewReader("A11A48D701EA1F8A66A4EB587CDC8808D726FE75B325DF204F62CA2B43F9ADA1"))
 	wallet, _ := MockController.Wallet.WalletCreate(newSeed)
 	// Request JSON
 	reqBody := map[string]interface{}{

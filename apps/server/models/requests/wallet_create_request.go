@@ -1,6 +1,6 @@
 package requests
 
 type WalletCreateRequest struct {
-	Action string  `json:"action" mapstructure:"action"`
-	Seed   *string `json:"seed,omitempty" mapstructure:"seed,omitempty"`
+	BaseRequest `mapstructure:",squash"`
+	Seed        *string `json:"seed,omitempty" mapstructure:"seed,omitempty"`
 }

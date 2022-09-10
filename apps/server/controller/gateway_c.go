@@ -47,5 +47,8 @@ func (hc *HttpController) Gateway(w http.ResponseWriter, r *http.Request) {
 	case "account_list":
 		hc.HandleAccountList(&baseRequest, w, r)
 		return
+	case "password_change":
+		hc.HandlePasswordChange(&baseRequest, w, r)
+		return
 	}
 }

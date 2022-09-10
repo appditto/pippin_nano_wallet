@@ -129,6 +129,11 @@ func TestAccountCreate(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 2, acct.AccountIndex)
 	assert.Equal(t, "nano_1frwge7oebdn87jip7k3sa1uuyf4yxxjh8jg67i69r7smf7tddj1gr6yremf", acct.Address)
+
+	// Check that it fails if wallet is locked
+	MockWallet.EncryptWallet(wallet, "password")
+	_, err = MockWallet.AccountCreate(wallet)
+	assert.ErrorIs(t, ErrWalletLocked, err)
 }
 
 func TestAccountCreateBadInput(t *testing.T) {
@@ -169,6 +174,11 @@ func TestAdhocAccountCreate(t *testing.T) {
 	_, acct, err = MockWallet.AdhocAccountCreate(wallet, priv)
 	assert.Equal(t, "nano_3suihcm3txrfcnipecixeu7kcdm8jisyb1osy14j1r5na1c17g7kkbbu143o", acct.Address)
 	assert.Equal(t, 1, acct.AccountIndex)
+
+	// Check that it fails if wallet is locked
+	MockWallet.EncryptWallet(wallet, "password")
+	_, _, err = MockWallet.AdhocAccountCreate(wallet, priv)
+	assert.ErrorIs(t, ErrWalletLocked, err)
 }
 
 func TestAdhocAccountCreateBadInput(t *testing.T) {
@@ -210,6 +220,11 @@ func TestAccountsCreate(t *testing.T) {
 	assert.Equal(t, "nano_3gxjsq4b55fd6hmzroa7wgtmw7wy7nwjofspewzhdwdo5dck9sa85rnfujrn", accts[7].Address)
 	assert.Equal(t, "nano_3xoyiewop6gk4g8jaynkf7bhn5baciwtdppkkoprsbafmimcmaiywz6pjqt5", accts[8].Address)
 	assert.Equal(t, "nano_1pigk4bbfhpdg3u5b8sdhij8c78n66eap9478p4dhgamyqt7herco57z6ib7", accts[9].Address)
+
+	// Check that it fails if wallet is locked
+	MockWallet.EncryptWallet(wallet, "password")
+	_, err = MockWallet.AccountsCreate(wallet, 100)
+	assert.ErrorIs(t, ErrWalletLocked, err)
 }
 
 func TestAccountsCreateBadInput(t *testing.T) {
@@ -251,4 +266,9 @@ func TestAccountsList(t *testing.T) {
 	assert.Contains(t, accts, "nano_1xbhmnrt6x1ji4pf6u1m3fckxifxusbmpsp6nuyhhpnfj719ja8z4aubfmud")
 	assert.Contains(t, accts, "nano_13687htr3rp5wxfyxpjjzctydd46rca6cpm377ce9eccctpy5ht3zb79b444")
 	assert.Contains(t, accts, "nano_1bzpyc67m6hzhm8egshbnyseowohs11d7hkcw4ksz8guetsyegkx3r1ns6s4")
+
+	// Check that it fails if wallet is locked
+	MockWallet.EncryptWallet(wallet, "password")
+	_, err = MockWallet.AccountsList(wallet, 100)
+	assert.ErrorIs(t, ErrWalletLocked, err)
 }

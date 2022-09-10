@@ -193,6 +193,12 @@ func (w *NanoWallet) AdhocAccountCreate(wallet *ent.Wallet, privKey ed25519.Priv
 	}
 	defer lock.Release(w.Ctx)
 
+	// Determine if wallet is locked or not
+	_, err = GetDecryptedKeyFromStorage(wallet, "seed")
+	if err != nil {
+		return nil, nil, err
+	}
+
 	// Derive address
 	pub := privKey.Public().(ed25519.PublicKey)
 	address := utils.PubKeyToAddress(pub, w.Banano)

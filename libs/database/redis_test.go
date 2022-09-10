@@ -76,6 +76,10 @@ func TestHget(t *testing.T) {
 	val, err := GetRedisDB().Hget(h, k)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, v, val)
+
+	// Nonexistent key
+	_, err = GetRedisDB().Hget(h, "sdasdas")
+	assert.Equal(t, redis.Nil, err)
 }
 
 func TestHlen(t *testing.T) {

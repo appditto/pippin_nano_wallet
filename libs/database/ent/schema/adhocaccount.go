@@ -30,7 +30,8 @@ func (AdhocAccount) Fields() []ent.Field {
 			Default(uuid.New),
 		field.UUID("wallet_id", uuid.UUID{}),
 		field.String("address").MaxLen(65),
-		field.String("private_key").MaxLen(128),
+		// Large enough to store encrypted keys, which have more bits
+		field.String("private_key").MaxLen(512),
 		field.Bool("work").Default(true),
 		field.Time("created_at").Default(time.Now).Immutable(),
 	}

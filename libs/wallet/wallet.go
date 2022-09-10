@@ -13,6 +13,7 @@ import (
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/adhocaccount"
 	"github.com/appditto/pippin_nano_wallet/libs/utils"
 	"github.com/appditto/pippin_nano_wallet/libs/utils/ed25519"
+	"github.com/google/uuid"
 )
 
 type NanoWallet struct {
@@ -25,6 +26,23 @@ var ErrInvalidSeed = errors.New("invalid seed")
 var ErrInvalidWallet = errors.New("invalid wallet")
 var ErrInvalidPrivKey = errors.New("invalid private key")
 var ErrInvalidAccountCount = errors.New("invalid count")
+var ErrWalletNotFound = errors.New("wallet not found")
+
+// Retrieves wallet
+func (w *NanoWallet) GetWallet(walletID string) (*ent.Wallet, error) {
+	parsedUuid, err := uuid.Parse(walletID)
+	if err != nil {
+		return nil, ErrWalletNotFound
+	}
+	wallet, err := w.DB.Wallet.Get(w.Ctx, parsedUuid)
+	if ent.IsNotFound(err) {
+		return nil, ErrWalletNotFound
+	} else if err != nil {
+		return nil, err
+	}
+
+	return wallet, nil
+}
 
 // Creates a new wallet with provided seed
 func (w *NanoWallet) WalletCreate(seed string) (*ent.Wallet, error) {
@@ -78,6 +96,12 @@ func (w *NanoWallet) AccountCreate(wallet *ent.Wallet) (*ent.Account, error) {
 	}
 	defer lock.Release(w.Ctx)
 
+	// Get seed
+	seed, err := GetDecryptedKeyFromStorage(wallet, "seed")
+	if err != nil {
+		return nil, err
+	}
+
 	account, err := w.DB.Account.Query().Where(account.WalletID(wallet.ID)).Order(ent.Desc(account.FieldAccountIndex)).First(w.Ctx)
 
 	if err != nil {
@@ -85,7 +109,7 @@ func (w *NanoWallet) AccountCreate(wallet *ent.Wallet) (*ent.Account, error) {
 	}
 
 	// Derive next account
-	pub, _, err := utils.KeypairFromSeed(wallet.Seed, uint32(account.AccountIndex)+1)
+	pub, _, err := utils.KeypairFromSeed(seed, uint32(account.AccountIndex)+1)
 	if err != nil {
 		return nil, err
 	}
@@ -112,6 +136,12 @@ func (w *NanoWallet) AccountsCreate(wallet *ent.Wallet, count int) ([]*ent.Accou
 	}
 	defer lock.Release(w.Ctx)
 
+	// Get seed
+	seed, err := GetDecryptedKeyFromStorage(wallet, "seed")
+	if err != nil {
+		return nil, err
+	}
+
 	account, err := w.DB.Account.Query().Where(account.WalletID(wallet.ID)).Order(ent.Desc(account.FieldAccountIndex)).First(w.Ctx)
 
 	if err != nil {
@@ -124,7 +154,7 @@ func (w *NanoWallet) AccountsCreate(wallet *ent.Wallet, count int) ([]*ent.Accou
 	var accounts []*ent.Account
 	for i := 0; i < count; i++ {
 		// Derive next account
-		pub, _, err := utils.KeypairFromSeed(wallet.Seed, uint32(nextIndex))
+		pub, _, err := utils.KeypairFromSeed(seed, uint32(nextIndex))
 		if err != nil {
 			tx.Rollback()
 			return nil, err
@@ -147,6 +177,7 @@ func (w *NanoWallet) AccountsCreate(wallet *ent.Wallet, count int) ([]*ent.Accou
 }
 
 // Create an adhoc account. Returns adhocaccount or account if already exists
+// Already existing account may be adhoc or non-adhoc
 func (w *NanoWallet) AdhocAccountCreate(wallet *ent.Wallet, privKey ed25519.PrivateKey) (*ent.AdhocAccount, *ent.Account, error) {
 	// Input validations
 	if wallet == nil {
@@ -167,14 +198,20 @@ func (w *NanoWallet) AdhocAccountCreate(wallet *ent.Wallet, privKey ed25519.Priv
 	address := utils.PubKeyToAddress(pub, w.Banano)
 
 	// See if account already exists in either table
-	acct, err := w.DB.Account.Query().Where(account.Address(address)).First(w.Ctx)
+	acct, err := w.DB.Account.Query().Where(account.WalletID(wallet.ID), account.Address(address)).First(w.Ctx)
 	if err == nil {
 		return nil, acct, nil
+	} else if !ent.IsNotFound(err) {
+		// Some unknown error we didn't expect
+		return nil, nil, err
 	}
 	// Check adhoc accounts table
-	adhocAcct, err := w.DB.AdhocAccount.Query().Where(adhocaccount.Address(address)).First(w.Ctx)
+	adhocAcct, err := w.DB.AdhocAccount.Query().Where(adhocaccount.WalletID(wallet.ID), adhocaccount.Address(address)).First(w.Ctx)
 	if err == nil {
 		return adhocAcct, nil, nil
+	} else if !ent.IsNotFound(err) {
+		// Some unknown error we didn't expect
+		return nil, nil, err
 	}
 
 	// Create adhoc account

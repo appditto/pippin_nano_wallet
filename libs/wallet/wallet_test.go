@@ -11,19 +11,27 @@ import (
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
 	"github.com/appditto/pippin_nano_wallet/libs/utils"
 	"github.com/appditto/pippin_nano_wallet/libs/utils/ed25519"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
-var nanoWallet *NanoWallet
+var MockWallet *NanoWallet
 var bananoWallet *NanoWallet
 
-func init() {
+func TestMain(m *testing.M) {
+	os.Exit(testMainWrapper(m))
+}
+
+func testMainWrapper(m *testing.M) int {
+	os.Setenv("MOCK_REDIS", "true")
+	defer os.Unsetenv("MOCK_REDIS")
 	dbconn, _ := database.GetSqlDbConn(true)
 	client, _ := database.NewEntClient(dbconn)
+	defer client.Close()
 	if err := client.Schema.Create(context.TODO()); err != nil {
 		panic(err)
 	}
-	nanoWallet = &NanoWallet{
+	MockWallet = &NanoWallet{
 		DB:     client,
 		Ctx:    context.TODO(),
 		Banano: false,
@@ -33,20 +41,43 @@ func init() {
 		Ctx:    context.TODO(),
 		Banano: true,
 	}
+	return m.Run()
+}
+
+func TestGetWallet(t *testing.T) {
+	// Predictable seed
+	seed, _ := utils.GenerateSeed(strings.NewReader("55555540e07eee69abac049c2fdd4a3c4b50e4672a2fabdf1ae295f2b4f3040b"))
+
+	wallet, err := MockWallet.WalletCreate(seed)
+	assert.Nil(t, err)
+
+	assert.Equal(t, false, wallet.Encrypted)
+	assert.Equal(t, seed, wallet.Seed)
+
+	// Retrieve walelt
+	gotten, err := MockWallet.GetWallet(wallet.ID.String())
+	assert.Nil(t, err)
+	assert.Equal(t, gotten.ID, wallet.ID)
+
+	// Check not found error
+	_, err = MockWallet.GetWallet("invalid")
+	assert.ErrorIs(t, ErrWalletNotFound, err)
+	_, err = MockWallet.GetWallet(uuid.NewString())
+	assert.ErrorIs(t, ErrWalletNotFound, err)
 }
 
 func TestWalletCreate(t *testing.T) {
 	// Predictable seed
 	seed, _ := utils.GenerateSeed(strings.NewReader("8d729340e07eee69abac049c2fdd4a3c4b50e4672a2fabdf1ae295f2b4f3040b"))
 
-	wallet, err := nanoWallet.WalletCreate(seed)
+	wallet, err := MockWallet.WalletCreate(seed)
 	assert.Nil(t, err)
 
 	assert.Equal(t, false, wallet.Encrypted)
 	assert.Equal(t, seed, wallet.Seed)
 
 	// Ensure account is created
-	account, err := nanoWallet.DB.Account.Query().Where(account.WalletID(wallet.ID)).First(nanoWallet.Ctx)
+	account, err := MockWallet.DB.Account.Query().Where(account.WalletID(wallet.ID)).First(MockWallet.Ctx)
 	assert.Nil(t, err)
 	assert.Equal(t, "nano_1efa1gxbitary1urzix9h13nkzadtz71n3auyj7uztb8i4qbtipu8cxz61ee", account.Address)
 	assert.Equal(t, 0, account.AccountIndex)
@@ -73,30 +104,28 @@ func TestWalletCreateBanano(t *testing.T) {
 
 func TestWalletCreateBadInput(t *testing.T) {
 	// Empty seed
-	_, err := nanoWallet.WalletCreate("")
+	_, err := MockWallet.WalletCreate("")
 	assert.ErrorIs(t, ErrInvalidSeed, err)
 
 	// Invalid seed
-	_, err = nanoWallet.WalletCreate("invalid seed")
+	_, err = MockWallet.WalletCreate("invalid seed")
 	assert.ErrorIs(t, ErrInvalidSeed, err)
 }
 
 func TestAccountCreate(t *testing.T) {
-	os.Setenv("MOCK_REDIS", "true")
-	defer os.Unsetenv("MOCK_REDIS")
 	// Predictable seed
 	seed, _ := utils.GenerateSeed(strings.NewReader("5f729340e07eee69abac049c2fdd4a3c4b50e4672a2fabdf1ae295f2b4f3040c"))
 
-	wallet, err := nanoWallet.WalletCreate(seed)
+	wallet, err := MockWallet.WalletCreate(seed)
 	assert.Nil(t, err)
 
 	// Create a couple accounts and ensure they are sequential
-	acct, err := nanoWallet.AccountCreate(wallet)
+	acct, err := MockWallet.AccountCreate(wallet)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, acct.AccountIndex)
 	assert.Equal(t, "nano_3tdqk8ghsdfapzhrag5978izd19minorfmxergefkecdsbyxaw6og4fejs89", acct.Address)
 
-	acct, err = nanoWallet.AccountCreate(wallet)
+	acct, err = MockWallet.AccountCreate(wallet)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, acct.AccountIndex)
 	assert.Equal(t, "nano_1frwge7oebdn87jip7k3sa1uuyf4yxxjh8jg67i69r7smf7tddj1gr6yremf", acct.Address)
@@ -104,63 +133,61 @@ func TestAccountCreate(t *testing.T) {
 
 func TestAccountCreateBadInput(t *testing.T) {
 	// Empty seed
-	_, err := nanoWallet.AccountCreate(nil)
+	_, err := MockWallet.AccountCreate(nil)
 	assert.ErrorIs(t, ErrInvalidWallet, err)
 }
 
 func TestAdhocAccountCreate(t *testing.T) {
-	os.Setenv("MOCK_REDIS", "true")
-	defer os.Unsetenv("MOCK_REDIS")
 	// Predictable seed
 	seed, _ := utils.GenerateSeed(strings.NewReader("aa729340e07eee69abac049c2fdd4a3c4b50e4672a2fabdf1ae295f2b4f3040d"))
 
-	wallet, err := nanoWallet.WalletCreate(seed)
+	wallet, err := MockWallet.WalletCreate(seed)
 	assert.Nil(t, err)
 
 	// Create a couple accounts and ensure they are sequential
-	acct, err := nanoWallet.AccountCreate(wallet)
+	acct, err := MockWallet.AccountCreate(wallet)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, acct.AccountIndex)
 	assert.Equal(t, "nano_3suihcm3txrfcnipecixeu7kcdm8jisyb1osy14j1r5na1c17g7kkbbu143o", acct.Address)
 
 	_, priv, _ := ed25519.GenerateKey(strings.NewReader("1f729340e07eee69abac049c2fdd4a3c4b50e4672a2fabdf1ae295f2b4f3040d"))
-	adhocAcct, _, err := nanoWallet.AdhocAccountCreate(wallet, priv)
+	adhocAcct, _, err := MockWallet.AdhocAccountCreate(wallet, priv)
 	assert.Nil(t, err)
 	assert.Equal(t, "31663732393334306530376565653639616261633034396332666464346133632c9c941001f4236f487aac98848320ce746f7b809af76e5e795835ef30022424", adhocAcct.PrivateKey)
 	assert.Equal(t, "nano_1d6wkia15x35fx69od6rik3k3mmnfxxr38qqfsh9kp3oxwr16b36eztouu3a", adhocAcct.Address)
+	assert.Equal(t, wallet.ID, adhocAcct.WalletID)
 
 	// Test duplicate returns same account
-	adhocAcct, _, err = nanoWallet.AdhocAccountCreate(wallet, priv)
+	adhocAcct, _, err = MockWallet.AdhocAccountCreate(wallet, priv)
 	assert.Nil(t, err)
 	assert.Equal(t, "31663732393334306530376565653639616261633034396332666464346133632c9c941001f4236f487aac98848320ce746f7b809af76e5e795835ef30022424", adhocAcct.PrivateKey)
 	assert.Equal(t, "nano_1d6wkia15x35fx69od6rik3k3mmnfxxr38qqfsh9kp3oxwr16b36eztouu3a", adhocAcct.Address)
+	assert.Equal(t, wallet.ID, adhocAcct.WalletID)
 
 	// Test we get non-adhoc account if we are trying to re-create it
 	_, priv, _ = utils.KeypairFromSeed(seed, 1)
-	_, acct, err = nanoWallet.AdhocAccountCreate(wallet, priv)
+	_, acct, err = MockWallet.AdhocAccountCreate(wallet, priv)
 	assert.Equal(t, "nano_3suihcm3txrfcnipecixeu7kcdm8jisyb1osy14j1r5na1c17g7kkbbu143o", acct.Address)
 	assert.Equal(t, 1, acct.AccountIndex)
 }
 
 func TestAdhocAccountCreateBadInput(t *testing.T) {
-	_, _, err := nanoWallet.AdhocAccountCreate(nil, nil)
+	_, _, err := MockWallet.AdhocAccountCreate(nil, nil)
 	assert.ErrorIs(t, ErrInvalidWallet, err)
 	// Bad private key
-	_, _, err = nanoWallet.AdhocAccountCreate(&ent.Wallet{}, nil)
+	_, _, err = MockWallet.AdhocAccountCreate(&ent.Wallet{}, nil)
 	assert.ErrorIs(t, ErrInvalidPrivKey, err)
 }
 
 func TestAccountsCreate(t *testing.T) {
-	os.Setenv("MOCK_REDIS", "true")
-	defer os.Unsetenv("MOCK_REDIS")
 	// Predictable seed
 	seed, _ := utils.GenerateSeed(strings.NewReader("9f729340e07eee69abac049c2fdd4a3c4b50e4672a2fabdf1ae295f2b4f3040e"))
 
-	wallet, err := nanoWallet.WalletCreate(seed)
+	wallet, err := MockWallet.WalletCreate(seed)
 	assert.Nil(t, err)
 
 	// Create a couple accounts and ensure they are sequential
-	accts, err := nanoWallet.AccountsCreate(wallet, 10)
+	accts, err := MockWallet.AccountsCreate(wallet, 10)
 	assert.Nil(t, err)
 	assert.Len(t, accts, 10)
 	assert.Equal(t, 1, accts[0].AccountIndex)
@@ -186,8 +213,8 @@ func TestAccountsCreate(t *testing.T) {
 }
 
 func TestAccountsCreateBadInput(t *testing.T) {
-	_, err := nanoWallet.AccountsCreate(nil, 10)
+	_, err := MockWallet.AccountsCreate(nil, 10)
 	assert.ErrorIs(t, ErrInvalidWallet, err)
-	_, err = nanoWallet.AccountsCreate(&ent.Wallet{}, 0)
+	_, err = MockWallet.AccountsCreate(&ent.Wallet{}, 0)
 	assert.ErrorIs(t, ErrInvalidAccountCount, err)
 }

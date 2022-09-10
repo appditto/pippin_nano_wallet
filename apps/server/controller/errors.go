@@ -28,6 +28,24 @@ func ErrInvalidSeed(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, &InvalidSeedError)
 }
 
+var WalletNotFoundError = ErrorResponse{
+	Error: "wallet not found",
+}
+
+func ErrWalletNotFound(w http.ResponseWriter, r *http.Request) {
+	render.Status(r, http.StatusBadRequest)
+	render.JSON(w, r, &WalletNotFoundError)
+}
+
+var WalletLockedError = ErrorResponse{
+	Error: "wallet locked",
+}
+
+func ErrWalletLocked(w http.ResponseWriter, r *http.Request) {
+	render.Status(r, http.StatusBadRequest)
+	render.JSON(w, r, &WalletLockedError)
+}
+
 func ErrInternalServerError(w http.ResponseWriter, r *http.Request, errorText string) {
 	render.Status(r, http.StatusInternalServerError)
 	render.JSON(w, r, &ErrorResponse{

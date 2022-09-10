@@ -28,7 +28,8 @@ func (Wallet) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).
 			Default(uuid.New),
-		field.String("seed").MaxLen(128).Unique(),
+		// Large enough to store encrypted keys, which have more bits
+		field.String("seed").MaxLen(512).Unique(),
 		field.String("representative").MaxLen(65).Nillable().Optional(),
 		field.Bool("encrypted").Default(false),
 		field.Bool("work").Default(true),

@@ -21,7 +21,13 @@ import (
 
 var MockController *HttpController
 
-func init() {
+func TestMain(m *testing.M) {
+	os.Exit(testMainWrapper(m))
+}
+
+func testMainWrapper(m *testing.M) int {
+	os.Setenv("MOCK_REDIS", "true")
+	defer os.Unsetenv("MOCK_REDIS")
 	// We use an in-memory sqlite database for testing
 	ctx := context.Background()
 	dbconn, err := database.GetSqlDbConn(true)
@@ -30,6 +36,7 @@ func init() {
 		os.Exit(1)
 	}
 	entClient, err := database.NewEntClient(dbconn)
+	defer entClient.Close()
 	if err != nil {
 		klog.Fatalf("Failed to create ent client: %v", err)
 		os.Exit(1)
@@ -51,6 +58,7 @@ func init() {
 	MockController = &HttpController{
 		Wallet: &wallet,
 	}
+	return m.Run()
 }
 
 func TestBadJson(t *testing.T) {

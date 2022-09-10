@@ -48,7 +48,7 @@ var (
 	AdhocAccountsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "address", Type: field.TypeString, Size: 65},
-		{Name: "private_key", Type: field.TypeString, Size: 128},
+		{Name: "private_key", Type: field.TypeString, Size: 512},
 		{Name: "work", Type: field.TypeBool, Default: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "wallet_id", Type: field.TypeUUID},
@@ -135,7 +135,7 @@ var (
 	// WalletsColumns holds the columns for the "wallets" table.
 	WalletsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "seed", Type: field.TypeString, Unique: true, Size: 128},
+		{Name: "seed", Type: field.TypeString, Unique: true, Size: 512},
 		{Name: "representative", Type: field.TypeString, Nullable: true, Size: 65},
 		{Name: "encrypted", Type: field.TypeBool, Default: false},
 		{Name: "work", Type: field.TypeBool, Default: true},

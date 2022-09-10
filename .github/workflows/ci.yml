@@ -2,7 +2,7 @@ name: 💫 CI
 
 on:
   push:
-    branches: [go]
+    branches: [master]
 
 jobs:
   test:

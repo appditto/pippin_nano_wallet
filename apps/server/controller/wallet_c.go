@@ -115,3 +115,36 @@ func (hc *HttpController) HandleWalletAdd(request *map[string]interface{}, w htt
 	render.Status(r, http.StatusOK)
 	render.JSON(w, r, &resp)
 }
+
+// Handle wallet locked, returns whether or not wallet is locked
+func (hc *HttpController) HandleWalletLocked(request *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+	// mapstructure decode
+	var walletLockedRequest requests.WalletLockedRequest
+	if err := mapstructure.Decode(request, &walletLockedRequest); err != nil {
+		klog.Errorf("Error unmarshalling wallet_locked request %s", err)
+		ErrUnableToParseJson(w, r)
+		return
+	}
+
+	// See if wallet exists
+	dbWallet, err := hc.Wallet.GetWallet(walletLockedRequest.Wallet)
+	if errors.Is(err, wallet.ErrWalletNotFound) || errors.Is(err, wallet.ErrInvalidWallet) {
+		ErrWalletNotFound(w, r)
+		return
+	} else if err != nil {
+		ErrInternalServerError(w, r, err.Error())
+		return
+	}
+
+	// Check if wallet is locked
+	_, err = wallet.GetDecryptedKeyFromStorage(dbWallet, "seed")
+	var resp responses.WalletLockedResponse
+	if err != nil {
+		resp.Locked = "1"
+	} else {
+		resp.Locked = "0"
+	}
+
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, &resp)
+}

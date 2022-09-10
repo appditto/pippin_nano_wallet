@@ -56,5 +56,8 @@ func (hc *HttpController) Gateway(w http.ResponseWriter, r *http.Request) {
 	case "wallet_add":
 		hc.HandleWalletAdd(&baseRequest, w, r)
 		return
+	case "wallet_locked":
+		hc.HandleWalletLocked(&baseRequest, w, r)
+		return
 	}
 }

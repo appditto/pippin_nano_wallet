@@ -1,3 +1,9 @@
+# DEPRECATED/LEGACY PIPPIN
+
+This is the branch for the original version of Pippin (latest v2.1.2)
+
+While it's still available on docker hub and on pypi, version 3.0 was rewritten from scratch in GOLang and is superior in every way.
+
 <p align="left">  <img src="https://raw.githubusercontent.com/appditto/pippin_nano_wallet/master/assets/pippin_logo.svg?sanitize=true" alt="Pippin Wallet" width="256" height="50"> </p>
 
 [![PyPI](https://img.shields.io/pypi/v/pippin-wallet)](https://pypi.org/project/pippin-wallet/) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pippin-wallet) [![License](https://img.shields.io/github/license/bbedward/pippin_nano_wallet)](https://github.com/bbedward/pippin_nano_wallet/blob/master/LICENSE) [![CI](https://github.com/appditto/pippin_nano_wallet/workflows/CI/badge.svg)](https://github.com/appditto/pippin_nano_wallet/actions?query=workflow%3ACI)

@@ -64,6 +64,15 @@ func ErrInvalidKey(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, &InvalidKeyError)
 }
 
+var WalletNoPasswordError = ErrorResponse{
+	Error: "password not set",
+}
+
+func ErrNoWalletPassword(w http.ResponseWriter, r *http.Request) {
+	render.Status(r, http.StatusBadRequest)
+	render.JSON(w, r, &WalletNoPasswordError)
+}
+
 func ErrInternalServerError(w http.ResponseWriter, r *http.Request, errorText string) {
 	render.Status(r, http.StatusInternalServerError)
 	render.JSON(w, r, &ErrorResponse{

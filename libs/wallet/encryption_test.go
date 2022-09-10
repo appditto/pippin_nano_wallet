@@ -131,3 +131,35 @@ func TestUnlockWallet(t *testing.T) {
 	_, err = MockWallet.UnlockWallet(wallet, password)
 	assert.ErrorIs(t, ErrWalletNotLocked, err)
 }
+
+func TestLockWallet(t *testing.T) {
+	// Create a wallet
+	seed, err := utils.GenerateSeed(strings.NewReader("56565656540e07eee69abac049c2fdd4a3c4b50e4672a2fabdf1ae295f2b4f3040b"))
+	assert.Nil(t, err)
+
+	wallet, err := MockWallet.WalletCreate(seed)
+	assert.Nil(t, err)
+
+	// Encrypt the wallet
+	password := "mypassword"
+	encrypted, err := MockWallet.EncryptWallet(wallet, password)
+	assert.Nil(t, err)
+	assert.True(t, encrypted)
+
+	// Unlock with good password
+	unlocked, err := MockWallet.UnlockWallet(wallet, password)
+	assert.Nil(t, err)
+	assert.True(t, unlocked)
+
+	// Check that key exists
+	key, err := GetDecryptedKeyFromStorage(wallet, "seed")
+	assert.Nil(t, err)
+	assert.Equal(t, seed, key)
+
+	// Lock wallet
+	err = MockWallet.LockWallet(wallet)
+	assert.Nil(t, err)
+
+	key, err = GetDecryptedKeyFromStorage(wallet, "seed")
+	assert.ErrorIs(t, ErrWalletLocked, err)
+}

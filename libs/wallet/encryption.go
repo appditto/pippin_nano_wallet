@@ -122,6 +122,17 @@ func (w *NanoWallet) EncryptWallet(wallet *ent.Wallet, password string) (bool, e
 	return true, nil
 }
 
+func (w *NanoWallet) LockWallet(wallet *ent.Wallet) error {
+	if wallet == nil {
+		return ErrInvalidWallet
+	} else if !wallet.Encrypted {
+		return ErrWalletNotLocked
+	}
+
+	database.GetRedisDB().Del(wallet.ID.String())
+	return nil
+}
+
 func (w *NanoWallet) UnlockWallet(wallet *ent.Wallet, password string) (bool, error) {
 	if wallet == nil {
 		return false, ErrInvalidWallet

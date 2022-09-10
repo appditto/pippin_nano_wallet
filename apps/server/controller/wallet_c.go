@@ -1,12 +1,14 @@
 package controller
 
 import (
+	"encoding/hex"
 	"errors"
 	"net/http"
 
 	"github.com/appditto/pippin_nano_wallet/apps/server/models/requests"
 	"github.com/appditto/pippin_nano_wallet/apps/server/models/responses"
 	"github.com/appditto/pippin_nano_wallet/libs/utils"
+	"github.com/appditto/pippin_nano_wallet/libs/utils/ed25519"
 	"github.com/appditto/pippin_nano_wallet/libs/wallet"
 	"github.com/go-chi/render"
 	"github.com/mitchellh/mapstructure"
@@ -53,4 +55,63 @@ func (hc *HttpController) HandleWalletCreate(request *map[string]interface{}, w 
 	}
 	render.Status(r, http.StatusOK)
 	render.JSON(w, r, &walletCreateResponse)
+}
+
+// For adding adhoc keys to the wallet
+func (hc *HttpController) HandleWalletAdd(request *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+	// mapstructure decode
+	var walletAddRequest requests.WalletAddRequest
+	if err := mapstructure.Decode(request, &walletAddRequest); err != nil {
+		klog.Errorf("Error unmarshalling wallet_add request %s", err)
+		ErrUnableToParseJson(w, r)
+		return
+	}
+
+	// See if key is valid
+	valid := utils.Validate64HexHash(walletAddRequest.Key)
+	if !valid {
+		ErrInvalidKey(w, r)
+		return
+	}
+
+	// See if wallet exists
+	dbWallet, err := hc.Wallet.GetWallet(walletAddRequest.Wallet)
+	if errors.Is(err, wallet.ErrWalletNotFound) || errors.Is(err, wallet.ErrInvalidWallet) {
+		ErrWalletNotFound(w, r)
+		return
+	} else if err != nil {
+		ErrInternalServerError(w, r, err.Error())
+		return
+	}
+
+	// Add key to wallet
+	asHex, err := hex.DecodeString(walletAddRequest.Key)
+	if err != nil {
+		ErrInvalidKey(w, r)
+		return
+	}
+	priv, err := ed25519.NewKeyFromSeed(asHex)
+	if err != nil {
+		ErrInvalidKey(w, r)
+		return
+	}
+	acc, adhocAcc, err := hc.Wallet.AdhocAccountCreate(dbWallet, priv)
+	if errors.Is(err, wallet.ErrWalletLocked) {
+		ErrWalletLocked(w, r)
+		return
+	} else if err != nil || (acc == nil && adhocAcc == nil) {
+		ErrInternalServerError(w, r, err.Error())
+		return
+	}
+
+	// The adhoc account create will return the normal sequential account too if it already exists
+	var resp responses.WalletAddResponse
+	if adhocAcc != nil {
+		resp.Account = adhocAcc.Address
+	} else {
+		resp.Account = acc.Address
+	}
+
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, &resp)
 }

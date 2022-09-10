@@ -130,7 +130,7 @@ func TestKeyFromSeed(t *testing.T) {
 	seed := priv.Seed()
 	assert.Equal(t, 32, len(seed))
 
-	newPriv := NewKeyFromSeed(seed)
+	newPriv, _ := NewKeyFromSeed(seed)
 	assert.Equal(t, priv, newPriv)
 	assert.Equal(t, pub, newPriv.Public())
 }

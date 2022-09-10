@@ -97,16 +97,16 @@ func GenerateKey(rand io.Reader) (publicKey PublicKey, privateKey PrivateKey, er
 // len(seed) is not SeedSize. This function is provided for interoperability
 // with RFC 8032. RFC 8032's private keys correspond to seeds in this
 // package.
-func NewKeyFromSeed(seed []byte) PrivateKey {
+func NewKeyFromSeed(seed []byte) (PrivateKey, error) {
 	// Outline the function body so that the returned key can be stack-allocated.
 	privateKey := make([]byte, PrivateKeySize)
-	newKeyFromSeed(privateKey, seed)
-	return privateKey
+	err := newKeyFromSeed(privateKey, seed)
+	return privateKey, err
 }
 
-func newKeyFromSeed(privateKey, seed []byte) {
+func newKeyFromSeed(privateKey, seed []byte) error {
 	if l := len(seed); l != SeedSize {
-		panic("ed25519: bad seed length: " + strconv.Itoa(l))
+		return errors.New("ed25519: bad seed length: " + strconv.Itoa(l) + " want " + strconv.Itoa(SeedSize))
 	}
 
 	digest := blake2b.Sum512(seed)
@@ -123,6 +123,7 @@ func newKeyFromSeed(privateKey, seed []byte) {
 
 	copy(privateKey, seed)
 	copy(privateKey[32:], publicKeyBytes[:])
+	return nil
 }
 
 // Seed returns the private key seed corresponding to priv. It is provided for

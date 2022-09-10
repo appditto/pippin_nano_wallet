@@ -8,9 +8,11 @@ import (
 	"bytes"
 	"crypto"
 	"crypto/rand"
+	"strings"
 	"testing"
 
 	"github.com/appditto/pippin_nano_wallet/libs/utils/ed25519/edwards25519"
+	"github.com/stretchr/testify/assert"
 )
 
 type zeroReader struct{}
@@ -118,4 +120,17 @@ func BenchmarkVerification(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		Verify(pub, message, signature)
 	}
+}
+
+func TestKeyFromSeed(t *testing.T) {
+	pub, priv, err := GenerateKey(strings.NewReader("01234567890123456789012345678901213241242142141242432"))
+	assert.Nil(t, err)
+
+	// Get seed
+	seed := priv.Seed()
+	assert.Equal(t, 32, len(seed))
+
+	newPriv := NewKeyFromSeed(seed)
+	assert.Equal(t, priv, newPriv)
+	assert.Equal(t, pub, newPriv.Public())
 }

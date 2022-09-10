@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/appditto/pippin_nano_wallet/libs/utils"
@@ -112,6 +113,43 @@ func TestAccountsCreate(t *testing.T) {
 	assert.Equal(t, 2, len(accounts))
 	for _, account := range accounts {
 		_, err = utils.AddressToPub(account.(string))
+		assert.Nil(t, err)
+	}
+}
+
+func TestAccountList(t *testing.T) {
+	newSeed, _ := utils.GenerateSeed(strings.NewReader("f39a07504c76978f47e6630bb97e6fc169dd734d25ddcb323609a5699789b104"))
+	wallet, _ := MockController.Wallet.WalletCreate(newSeed)
+	// Create some accounts
+	MockController.Wallet.AccountsCreate(wallet, 3)
+
+	// Test API
+	reqBody := map[string]interface{}{
+		"action": "account_list",
+		"wallet": wallet.ID.String(),
+		"count":  2,
+	}
+	body, _ := json.Marshal(reqBody)
+	w := httptest.NewRecorder()
+	// Build request
+	req := httptest.NewRequest("POST", "/", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	MockController.Gateway(w, req)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var respJson map[string]interface{}
+	respBody, _ := io.ReadAll(resp.Body)
+	json.Unmarshal(respBody, &respJson)
+
+	// Make sure address is valid
+	assert.Contains(t, respJson, "accounts")
+	// Convert to slice
+	accounts := respJson["accounts"].([]interface{})
+	assert.Equal(t, 2, len(accounts))
+	for _, account := range accounts {
+		_, err := utils.AddressToPub(account.(string))
 		assert.Nil(t, err)
 	}
 }

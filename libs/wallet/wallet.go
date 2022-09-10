@@ -222,3 +222,39 @@ func (w *NanoWallet) AdhocAccountCreate(wallet *ent.Wallet, privKey ed25519.Priv
 
 	return adhocAcct, nil, nil
 }
+
+// Retrieve list of accounts on a wallet, if not locked
+func (w *NanoWallet) AccountsList(wallet *ent.Wallet, limit int) ([]string, error) {
+	if wallet == nil {
+		return nil, ErrInvalidWallet
+	}
+
+	// Determine if wallet is locked or not
+	_, err := GetDecryptedKeyFromStorage(wallet, "seed")
+	if err != nil {
+		return nil, err
+	}
+
+	// Get accounts
+	accounts, err := w.DB.Account.Query().Where(account.WalletID(wallet.ID)).Limit(limit).All(w.Ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get adhoc accounts
+	adhocAccounts, err := w.DB.AdhocAccount.Query().Where(adhocaccount.WalletID(wallet.ID)).Limit(limit).All(w.Ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Concatenate them together as an array of addresses
+	var addresses []string
+	for _, acct := range accounts {
+		addresses = append(addresses, acct.Address)
+	}
+	for _, acct := range adhocAccounts {
+		addresses = append(addresses, acct.Address)
+	}
+
+	return addresses, nil
+}

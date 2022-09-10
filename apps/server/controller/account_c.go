@@ -6,6 +6,7 @@ import (
 
 	"github.com/appditto/pippin_nano_wallet/apps/server/models/requests"
 	"github.com/appditto/pippin_nano_wallet/apps/server/models/responses"
+	"github.com/appditto/pippin_nano_wallet/libs/utils"
 	"github.com/appditto/pippin_nano_wallet/libs/wallet"
 	"github.com/go-chi/render"
 	"github.com/mitchellh/mapstructure"
@@ -38,7 +39,7 @@ func (hc *HttpController) HandleAccountCreate(rawRequest *map[string]interface{}
 
 	// Create the account
 	newAccount, err := hc.Wallet.AccountCreate(dbWallet)
-	if errors.Is(err, wallet.ErrWalletLocked) {
+	if errors.Is(err, wallet.ErrWalletLocked) || errors.Is(err, wallet.ErrInvalidWallet) {
 		ErrWalletLocked(w, r)
 	} else if err != nil {
 		ErrInternalServerError(w, r, err.Error())
@@ -74,14 +75,15 @@ func (hc *HttpController) HandleAccountsCreate(rawRequest *map[string]interface{
 		return
 	}
 
-	if accountsCreateRequest.Count < 1 {
+	count, err := utils.ToInt(accountsCreateRequest.Count)
+	if err != nil || count < 1 {
 		ErrUnableToParseJson(w, r)
 		return
 	}
 
 	// Create the accounts
-	newAccounts, err := hc.Wallet.AccountsCreate(dbWallet, accountsCreateRequest.Count)
-	if errors.Is(err, wallet.ErrWalletLocked) {
+	newAccounts, err := hc.Wallet.AccountsCreate(dbWallet, count)
+	if errors.Is(err, wallet.ErrWalletLocked) || errors.Is(err, wallet.ErrInvalidWallet) {
 		ErrWalletLocked(w, r)
 	} else if err != nil {
 		ErrInternalServerError(w, r, err.Error())
@@ -96,6 +98,58 @@ func (hc *HttpController) HandleAccountsCreate(rawRequest *map[string]interface{
 
 	resp := responses.AccountsCreateResponse{
 		Accounts: addresses,
+	}
+
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, &resp)
+}
+
+// Handle accounts_list
+func (hc *HttpController) HandleAccountList(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+	var accountListRequest requests.AccountListRequest
+	if err := mapstructure.Decode(rawRequest, &accountListRequest); err != nil {
+		klog.Errorf("Error unmarshalling account_list request %s", err)
+		ErrUnableToParseJson(w, r)
+		return
+	}
+
+	var count int
+	var err error
+	if accountListRequest.Count == nil {
+		count = 1000
+	} else {
+		count, err = utils.ToInt(*accountListRequest.Count)
+		if err != nil || count < 1 {
+			ErrUnableToParseJson(w, r)
+			return
+		}
+		if count < 1 {
+			count = 1
+		}
+	}
+
+	// See if wallet exists
+	dbWallet, err := hc.Wallet.GetWallet(accountListRequest.Wallet)
+	if errors.Is(err, wallet.ErrWalletNotFound) || errors.Is(err, wallet.ErrInvalidWallet) {
+		ErrWalletNotFound(w, r)
+		return
+	} else if err != nil {
+		ErrInternalServerError(w, r, err.Error())
+		return
+	}
+
+	// Accounts list
+	accounts, err := hc.Wallet.AccountsList(dbWallet, count)
+	if errors.Is(err, wallet.ErrWalletLocked) {
+		ErrWalletLocked(w, r)
+		return
+	} else if err != nil {
+		ErrInternalServerError(w, r, err.Error())
+		return
+	}
+
+	resp := responses.AccountsListResponse{
+		Accounts: accounts,
 	}
 
 	render.Status(r, http.StatusOK)

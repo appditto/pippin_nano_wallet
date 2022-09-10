@@ -2,5 +2,6 @@ package requests
 
 type AccountsCreateRequest struct {
 	AccountCreateRequest `mapstructure:",squash"`
-	Count                int `json:"count" mapstructure:"count"`
+	// Make it an interface so it can be an int or a string
+	Count interface{} `json:"count" mapstructure:"count"`
 }

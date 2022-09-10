@@ -44,5 +44,8 @@ func (hc *HttpController) Gateway(w http.ResponseWriter, r *http.Request) {
 	case "accounts_create":
 		hc.HandleAccountsCreate(&baseRequest, w, r)
 		return
+	case "account_list":
+		hc.HandleAccountList(&baseRequest, w, r)
+		return
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/appditto/pippin_nano_wallet/libs/utils"
 	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,7 +15,16 @@ func TestDecodeAccountsCreateRequest(t *testing.T) {
 	json.Unmarshal([]byte(encoded), &decoded)
 	assert.Equal(t, "accounts_create", decoded.Action)
 	assert.Equal(t, "1234", decoded.Wallet)
-	assert.Equal(t, 10, decoded.Count)
+	count, _ := utils.ToInt(decoded.Count)
+	assert.Equal(t, 10, count)
+
+	encoded = `{"action":"accounts_create","wallet":"1234","count":"10"}`
+	json.Unmarshal([]byte(encoded), &decoded)
+	assert.Equal(t, "accounts_create", decoded.Action)
+	assert.Equal(t, "1234", decoded.Wallet)
+	count, err := utils.ToInt(decoded.Count)
+	assert.Nil(t, err)
+	assert.Equal(t, 10, count)
 }
 
 func TestMapStructureDecodeAccountsCreateRequest(t *testing.T) {
@@ -27,5 +37,6 @@ func TestMapStructureDecodeAccountsCreateRequest(t *testing.T) {
 	mapstructure.Decode(request, &decoded)
 	assert.Equal(t, "accounts_create", decoded.Action)
 	assert.Equal(t, "1234", decoded.Wallet)
-	assert.Equal(t, 10, decoded.Count)
+	count, _ := utils.ToInt(decoded.Count)
+	assert.Equal(t, 10, count)
 }

@@ -21,7 +21,7 @@ func TestWalletCreateWithoutSeed(t *testing.T) {
 	// Build request
 	req := httptest.NewRequest("POST", "/", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	MockController.HandleWalletCreate(&reqBody, w, req)
+	MockController.Gateway(w, req)
 	resp := w.Result()
 	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)
@@ -47,7 +47,7 @@ func TestWalletCreateWithInvalidSeed(t *testing.T) {
 	// Build request
 	req := httptest.NewRequest("POST", "/", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	MockController.HandleWalletCreate(&reqBody, w, req)
+	MockController.Gateway(w, req)
 	resp := w.Result()
 	defer resp.Body.Close()
 	assert.Equal(t, 400, resp.StatusCode)
@@ -70,7 +70,7 @@ func TestWalletCreateWithValidSeed(t *testing.T) {
 	// Build request
 	req := httptest.NewRequest("POST", "/", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	MockController.HandleWalletCreate(&reqBody, w, req)
+	MockController.Gateway(w, req)
 	resp := w.Result()
 	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)

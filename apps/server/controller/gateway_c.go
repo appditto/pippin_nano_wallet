@@ -71,5 +71,8 @@ func (hc *HttpController) Gateway(w http.ResponseWriter, r *http.Request) {
 	case "wallet_frontiers":
 		hc.HandleWalletFrontiers(&baseRequest, w, r)
 		return
+	case "wallet_pending":
+		hc.HandleWalletPending(&baseRequest, w, r)
+		return
 	}
 }

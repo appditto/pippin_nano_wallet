@@ -42,7 +42,7 @@ func (client *RPCClient) MakeRequest(request interface{}) ([]byte, error) {
 }
 
 func (client *RPCClient) MakeAccountsBalancesRequest(accounts []string) (*responses.AccountsBalancesResponse, error) {
-	request := requests.AccountsBalancesRequest{
+	request := requests.AccountsRequest{
 		BaseRequest: requests.BaseRequest{
 			Action: "accounts_balances",
 		},
@@ -68,7 +68,7 @@ func (client *RPCClient) MakeAccountsBalancesRequest(accounts []string) (*respon
 }
 
 func (client *RPCClient) MakeAccountsFrontiersRequest(accounts []string) (*responses.AccountsFrontiersResponse, error) {
-	request := requests.AccountsFrontiersRequest{
+	request := requests.AccountsRequest{
 		BaseRequest: requests.BaseRequest{
 			Action: "accounts_frontiers",
 		},
@@ -88,6 +88,32 @@ func (client *RPCClient) MakeAccountsFrontiersRequest(accounts []string) (*respo
 	// Check that it'
 	if resp.Frontiers == nil {
 		return nil, errors.New("No frontiers returned")
+	}
+
+	return &resp, nil
+}
+
+func (client *RPCClient) MakeAccountsPendingRequest(accounts []string) (*responses.AccountsPendingResponse, error) {
+	request := requests.AccountsRequest{
+		BaseRequest: requests.BaseRequest{
+			Action: "accounts_pending",
+		},
+		Accounts: accounts,
+	}
+	response, err := client.MakeRequest(request)
+	if err != nil {
+		klog.Errorf("Error making request %s", err)
+		return nil, err
+	}
+	var resp responses.AccountsPendingResponse
+	err = json.Unmarshal(response, &resp)
+	if err != nil {
+		klog.Errorf("Error unmarshalling response %s", err)
+		return nil, err
+	}
+	// Check that it'
+	if resp.Blocks == nil {
+		return nil, errors.New("No blocks returned")
 	}
 
 	return &resp, nil

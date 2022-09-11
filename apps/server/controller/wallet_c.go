@@ -257,3 +257,34 @@ func (hc *HttpController) HandleWalletFrontiers(rawRequest *map[string]interface
 	render.Status(r, http.StatusOK)
 	render.JSON(w, r, resp)
 }
+
+func (hc *HttpController) HandleWalletPending(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+	request := hc.DecodeBaseRequest(rawRequest, w, r)
+	if request == nil {
+		return
+	}
+
+	// See if wallet exists
+	dbWallet := hc.WalletExists(request.Wallet, w, r)
+	if dbWallet == nil {
+		return
+	}
+
+	// Get accounts on wallet
+	accounts, err := hc.Wallet.AccountsList(dbWallet, math.MaxInt)
+	if err != nil {
+		ErrInternalServerError(w, r, err.Error())
+		return
+	}
+
+	// Get RPC balances
+	resp, err := hc.RpcClient.MakeAccountsPendingRequest(accounts)
+	if err != nil {
+		ErrInternalServerError(w, r, err.Error())
+		return
+	}
+
+	// Return balances
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, resp)
+}

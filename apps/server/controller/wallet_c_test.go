@@ -192,7 +192,7 @@ func TestWalletLocked(t *testing.T) {
 }
 
 func TestWalletLock(t *testing.T) {
-	newSeed, _ := utils.GenerateSeed(strings.NewReader("9d9e1ede8170a7ef7fee2e28990dbc78c150b705ede136c4ab39dec349c38f42"))
+	newSeed, _ := utils.GenerateSeed(strings.NewReader("ca439f7f9e6a3e2e0291b71391d2a097e6ba9912e5402588ddebf339fe46b270"))
 	wallet, _ := MockController.Wallet.WalletCreate(newSeed)
 	// Request JSON
 	reqBody := map[string]interface{}{
@@ -241,7 +241,7 @@ func TestWalletLock(t *testing.T) {
 }
 
 func TestWalletDestroy(t *testing.T) {
-	newSeed, _ := utils.GenerateSeed(strings.NewReader("9d9e1ede8170a7ef7fee2e28990dbc78c150b705ede136c4ab39dec349c38f42"))
+	newSeed, _ := utils.GenerateSeed(strings.NewReader("43cededf4d2bacaa096bfe0251519d2adedc31aa1a417073c5a23f30e74b3ed7"))
 	wallet, _ := MockController.Wallet.WalletCreate(newSeed)
 	// lock walet
 	MockController.Wallet.EncryptWallet(wallet, "password")
@@ -305,7 +305,7 @@ func TestWalletBalances(t *testing.T) {
 			Body: mocks.AccountsBalancesResponse,
 		}, nil
 	}
-	newSeed, _ := utils.GenerateSeed(strings.NewReader("9d9e1ede8170a7ef7fee2e28990dbc78c150b705ede136c4ab39dec349c38f42"))
+	newSeed, _ := utils.GenerateSeed(strings.NewReader("b0ec8a9edddc58abba90656853a27cb9968f0ba48b432c04eb0f2e9143d1e34c"))
 	wallet, _ := MockController.Wallet.WalletCreate(newSeed)
 	// Request JSON
 	reqBody := map[string]interface{}{

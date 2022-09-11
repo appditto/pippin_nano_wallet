@@ -1,5 +1,5 @@
 package responses
 
-type AccountsListResponse struct {
+type AccountsResponse struct {
 	Accounts []string `json:"accounts" mapstructure:"accounts"`
 }

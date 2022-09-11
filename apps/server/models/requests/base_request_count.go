@@ -1,7 +1,7 @@
 package requests
 
-type AccountListRequest struct {
+// This is a common signature for most requests, the base + count
+type BaseRequestWithCount struct {
 	BaseRequest `mapstructure:",squash"`
-	Wallet      string       `json:"wallet" mapstructure:"wallet"`
 	Count       *interface{} `json:"count,omitempty" mapstructure:"count,omitempty"`
 }

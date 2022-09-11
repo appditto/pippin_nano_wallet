@@ -66,3 +66,29 @@ func (client *RPCClient) MakeAccountsBalancesRequest(accounts []string) (*respon
 
 	return &resp, nil
 }
+
+func (client *RPCClient) MakeAccountsFrontiersRequest(accounts []string) (*responses.AccountsFrontiersResponse, error) {
+	request := requests.AccountsFrontiersRequest{
+		BaseRequest: requests.BaseRequest{
+			Action: "accounts_frontiers",
+		},
+		Accounts: accounts,
+	}
+	response, err := client.MakeRequest(request)
+	if err != nil {
+		klog.Errorf("Error making request %s", err)
+		return nil, err
+	}
+	var resp responses.AccountsFrontiersResponse
+	err = json.Unmarshal(response, &resp)
+	if err != nil {
+		klog.Errorf("Error unmarshalling response %s", err)
+		return nil, err
+	}
+	// Check that it'
+	if resp.Frontiers == nil {
+		return nil, errors.New("No frontiers returned")
+	}
+
+	return &resp, nil
+}

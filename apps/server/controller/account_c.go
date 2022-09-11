@@ -4,13 +4,9 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/appditto/pippin_nano_wallet/apps/server/models/requests"
 	"github.com/appditto/pippin_nano_wallet/apps/server/models/responses"
-	"github.com/appditto/pippin_nano_wallet/libs/utils"
 	"github.com/appditto/pippin_nano_wallet/libs/wallet"
 	"github.com/go-chi/render"
-	"github.com/mitchellh/mapstructure"
-	"k8s.io/klog/v2"
 )
 
 // Account handlers, reserved for the handlers that directly interact with the account_ actions
@@ -18,22 +14,14 @@ import (
 // Create a new account in sequence for given wallet
 // ! TODO - we don't support setting a specific index like the node does, not sure the best way around that with how we handle our sequencing
 func (hc *HttpController) HandleAccountCreate(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-	var accountCreateRequest requests.AccountCreateRequest
-	if err := mapstructure.Decode(rawRequest, &accountCreateRequest); err != nil {
-		klog.Errorf("Error unmarshalling account_create request %s", err)
-		ErrUnableToParseJson(w, r)
-		return
-	} else if accountCreateRequest.Wallet == "" {
-		ErrUnableToParseJson(w, r)
+	request := hc.DecodeBaseRequest(rawRequest, w, r)
+	if request == nil {
 		return
 	}
 
-	dbWallet, err := hc.Wallet.GetWallet(accountCreateRequest.Wallet)
-	if errors.Is(err, wallet.ErrWalletNotFound) {
-		ErrWalletNotFound(w, r)
-		return
-	} else if err != nil {
-		ErrInternalServerError(w, r, err.Error())
+	// See if wallet exists
+	dbWallet := hc.WalletExists(request.Wallet, w, r)
+	if dbWallet == nil {
 		return
 	}
 
@@ -46,7 +34,7 @@ func (hc *HttpController) HandleAccountCreate(rawRequest *map[string]interface{}
 		return
 	}
 
-	resp := responses.AccountCreateResponse{
+	resp := responses.AccountResponse{
 		Account: newAccount.Address,
 	}
 
@@ -56,28 +44,18 @@ func (hc *HttpController) HandleAccountCreate(rawRequest *map[string]interface{}
 
 // Handle bulk account create based on count param
 func (hc *HttpController) HandleAccountsCreate(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-	var accountsCreateRequest requests.AccountsCreateRequest
-	if err := mapstructure.Decode(rawRequest, &accountsCreateRequest); err != nil {
-		klog.Errorf("Error unmarshalling account_create request %s", err)
-		ErrUnableToParseJson(w, r)
+	request, count := hc.DecodeBaseRequestWithCount(rawRequest, w, r)
+	if request == nil {
 		return
-	} else if accountsCreateRequest.Wallet == "" {
+	} else if count == 0 {
+		// Not acceptable count
 		ErrUnableToParseJson(w, r)
 		return
 	}
 
-	dbWallet, err := hc.Wallet.GetWallet(accountsCreateRequest.Wallet)
-	if errors.Is(err, wallet.ErrWalletNotFound) {
-		ErrWalletNotFound(w, r)
-		return
-	} else if err != nil {
-		ErrInternalServerError(w, r, err.Error())
-		return
-	}
-
-	count, err := utils.ToInt(accountsCreateRequest.Count)
-	if err != nil || count < 1 {
-		ErrUnableToParseJson(w, r)
+	// See if wallet exists
+	dbWallet := hc.WalletExists(request.Wallet, w, r)
+	if dbWallet == nil {
 		return
 	}
 
@@ -96,7 +74,7 @@ func (hc *HttpController) HandleAccountsCreate(rawRequest *map[string]interface{
 		addresses[i] = account.Address
 	}
 
-	resp := responses.AccountsCreateResponse{
+	resp := responses.AccountsResponse{
 		Accounts: addresses,
 	}
 
@@ -106,30 +84,16 @@ func (hc *HttpController) HandleAccountsCreate(rawRequest *map[string]interface{
 
 // Handle accounts_list
 func (hc *HttpController) HandleAccountList(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-	var accountListRequest requests.AccountListRequest
-	if err := mapstructure.Decode(rawRequest, &accountListRequest); err != nil {
-		klog.Errorf("Error unmarshalling account_list request %s", err)
-		ErrUnableToParseJson(w, r)
+	request, count := hc.DecodeBaseRequestWithCount(rawRequest, w, r)
+	if request == nil {
 		return
-	}
-
-	var count int
-	var err error
-	if accountListRequest.Count == nil {
+	} else if count == 0 {
+		// Default 1000
 		count = 1000
-	} else {
-		count, err = utils.ToInt(*accountListRequest.Count)
-		if err != nil || count < 1 {
-			ErrUnableToParseJson(w, r)
-			return
-		}
-		if count < 1 {
-			count = 1
-		}
 	}
 
 	// See if wallet exists
-	dbWallet := hc.WalletExists(accountListRequest.Wallet, w, r)
+	dbWallet := hc.WalletExists(request.Wallet, w, r)
 	if dbWallet == nil {
 		return
 	}
@@ -144,7 +108,7 @@ func (hc *HttpController) HandleAccountList(rawRequest *map[string]interface{}, 
 		return
 	}
 
-	resp := responses.AccountsListResponse{
+	resp := responses.AccountsResponse{
 		Accounts: accounts,
 	}
 

@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestEncodeAccountsListResponse(t *testing.T) {
-	response := AccountsListResponse{
+func TestEncodeAccountsResponse(t *testing.T) {
+	response := AccountsResponse{
 		Accounts: []string{"account", "account2"},
 	}
 	encoded, err := json.Marshal(response)

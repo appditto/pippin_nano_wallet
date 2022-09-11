@@ -102,7 +102,7 @@ func (hc *HttpController) HandleWalletAdd(request *map[string]interface{}, w htt
 	}
 
 	// The adhoc account create will return the normal sequential account too if it already exists
-	var resp responses.WalletAddResponse
+	var resp responses.AccountResponse
 	if adhocAcc != nil {
 		resp.Account = adhocAcc.Address
 	} else {
@@ -114,17 +114,14 @@ func (hc *HttpController) HandleWalletAdd(request *map[string]interface{}, w htt
 }
 
 // Handle wallet locked, returns whether or not wallet is locked
-func (hc *HttpController) HandleWalletLocked(request *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-	// mapstructure decode
-	var walletLockedRequest requests.WalletLockedRequest
-	if err := mapstructure.Decode(request, &walletLockedRequest); err != nil {
-		klog.Errorf("Error unmarshalling wallet_locked request %s", err)
-		ErrUnableToParseJson(w, r)
+func (hc *HttpController) HandleWalletLocked(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+	request := hc.DecodeBaseRequest(rawRequest, w, r)
+	if request == nil {
 		return
 	}
 
 	// See if wallet exists
-	dbWallet := hc.WalletExists(walletLockedRequest.Wallet, w, r)
+	dbWallet := hc.WalletExists(request.Wallet, w, r)
 	if dbWallet == nil {
 		return
 	}
@@ -142,24 +139,22 @@ func (hc *HttpController) HandleWalletLocked(request *map[string]interface{}, w 
 	render.JSON(w, r, &resp)
 }
 
-func (hc *HttpController) HandleWalletLock(request *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+func (hc *HttpController) HandleWalletLock(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 	// mapstructure decode
-	var walletLockRequest requests.WalletLockRequest
-	if err := mapstructure.Decode(request, &walletLockRequest); err != nil {
-		klog.Errorf("Error unmarshalling wallet_lock request %s", err)
-		ErrUnableToParseJson(w, r)
+	request := hc.DecodeBaseRequest(rawRequest, w, r)
+	if request == nil {
 		return
 	}
 
 	// See if wallet exists
-	dbWallet := hc.WalletExists(walletLockRequest.Wallet, w, r)
+	dbWallet := hc.WalletExists(request.Wallet, w, r)
 	if dbWallet == nil {
 		return
 	}
 
 	// Lock wallet
 	err := hc.Wallet.LockWallet(dbWallet)
-	var resp = responses.WalletLockResponse{
+	var resp = responses.WalletLockedResponse{
 		Locked: "1",
 	}
 	if errors.Is(err, wallet.ErrWalletNotLocked) {
@@ -174,15 +169,13 @@ func (hc *HttpController) HandleWalletLock(request *map[string]interface{}, w ht
 }
 
 func (hc *HttpController) HandleWalletDestroy(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-	var walletDestroyRequest requests.WalletDestroyRequest
-	if err := mapstructure.Decode(rawRequest, &walletDestroyRequest); err != nil {
-		klog.Errorf("Error unmarshalling wallet_destroy request %s", err)
-		ErrUnableToParseJson(w, r)
+	request := hc.DecodeBaseRequest(rawRequest, w, r)
+	if request == nil {
 		return
 	}
 
 	// See if wallet exists
-	dbWallet := hc.WalletExists(walletDestroyRequest.Wallet, w, r)
+	dbWallet := hc.WalletExists(request.Wallet, w, r)
 	if dbWallet == nil {
 		return
 	}
@@ -203,17 +196,14 @@ func (hc *HttpController) HandleWalletDestroy(rawRequest *map[string]interface{}
 	render.JSON(w, r, &resp)
 }
 
-func (hc *HttpController) HandleWalletBalances(request *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-	// mapstructure decode
-	var walletBalancesRequest requests.WalletBalancesRequest
-	if err := mapstructure.Decode(request, &walletBalancesRequest); err != nil {
-		klog.Errorf("Error unmarshalling wallet_balances request %s", err)
-		ErrUnableToParseJson(w, r)
+func (hc *HttpController) HandleWalletBalances(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+	request := hc.DecodeBaseRequest(rawRequest, w, r)
+	if request == nil {
 		return
 	}
 
 	// See if wallet exists
-	dbWallet := hc.WalletExists(walletBalancesRequest.Wallet, w, r)
+	dbWallet := hc.WalletExists(request.Wallet, w, r)
 	if dbWallet == nil {
 		return
 	}
@@ -227,6 +217,37 @@ func (hc *HttpController) HandleWalletBalances(request *map[string]interface{}, 
 
 	// Get RPC balances
 	resp, err := hc.RpcClient.MakeAccountsBalancesRequest(accounts)
+	if err != nil {
+		ErrInternalServerError(w, r, err.Error())
+		return
+	}
+
+	// Return balances
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, resp)
+}
+
+func (hc *HttpController) HandleWalletFrontiers(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+	request := hc.DecodeBaseRequest(rawRequest, w, r)
+	if request == nil {
+		return
+	}
+
+	// See if wallet exists
+	dbWallet := hc.WalletExists(request.Wallet, w, r)
+	if dbWallet == nil {
+		return
+	}
+
+	// Get accounts on wallet
+	accounts, err := hc.Wallet.AccountsList(dbWallet, math.MaxInt)
+	if err != nil {
+		ErrInternalServerError(w, r, err.Error())
+		return
+	}
+
+	// Get RPC balances
+	resp, err := hc.RpcClient.MakeAccountsFrontiersRequest(accounts)
 	if err != nil {
 		ErrInternalServerError(w, r, err.Error())
 		return

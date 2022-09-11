@@ -7,11 +7,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestEncodeWalletAddResponse(t *testing.T) {
-	response := WalletAddResponse{
-		Account: "acc",
+func TestEncodeAccountResponse(t *testing.T) {
+	response := AccountResponse{
+		Account: "account",
 	}
 	encoded, err := json.Marshal(response)
 	assert.Nil(t, err)
-	assert.Equal(t, "{\"account\":\"acc\"}", string(encoded))
+	assert.Equal(t, "{\"account\":\"account\"}", string(encoded))
 }

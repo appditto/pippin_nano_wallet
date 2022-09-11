@@ -68,5 +68,8 @@ func (hc *HttpController) Gateway(w http.ResponseWriter, r *http.Request) {
 	case "wallet_balances":
 		hc.HandleWalletBalances(&baseRequest, w, r)
 		return
+	case "wallet_frontiers":
+		hc.HandleWalletFrontiers(&baseRequest, w, r)
+		return
 	}
 }

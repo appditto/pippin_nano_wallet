@@ -1,5 +1,5 @@
 package responses
 
-type AccountCreateResponse struct {
+type AccountResponse struct {
 	Account string `json:"account" mapstructure:"account"`
 }

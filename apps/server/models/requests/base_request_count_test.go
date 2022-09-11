@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDecodeAccountListRequest(t *testing.T) {
+func TestDecodeBaseWithCountRequest(t *testing.T) {
 	encoded := `{"action":"account_list","wallet":"1234"}`
-	var decoded AccountListRequest
+	var decoded BaseRequestWithCount
 	json.Unmarshal([]byte(encoded), &decoded)
 	assert.Equal(t, "account_list", decoded.Action)
 	assert.Equal(t, "1234", decoded.Wallet)
@@ -25,13 +25,13 @@ func TestDecodeAccountListRequest(t *testing.T) {
 	assert.Equal(t, 10, count)
 }
 
-func TestMapStructureDecodeAccountListRequest(t *testing.T) {
+func TestMapStructureDecodeWalletBaseWithCountRequest(t *testing.T) {
 	request := map[string]interface{}{
 		"action": "account_list",
 		"wallet": "1234",
 		"count":  "1",
 	}
-	var decoded AccountListRequest
+	var decoded BaseRequestWithCount
 	mapstructure.Decode(request, &decoded)
 	assert.Equal(t, "account_list", decoded.Action)
 	assert.Equal(t, "1234", decoded.Wallet)

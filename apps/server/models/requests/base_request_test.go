@@ -9,18 +9,20 @@ import (
 )
 
 func TestDecodeBaseRequest(t *testing.T) {
-	encoded := "{\"action\":\"action\"}"
-	var request BaseRequest
-	err := json.Unmarshal([]byte(encoded), &request)
-	assert.Nil(t, err)
-	assert.Equal(t, "action", request.Action)
+	encoded := `{"action":"account_create","wallet":"1234"}`
+	var decoded BaseRequest
+	json.Unmarshal([]byte(encoded), &decoded)
+	assert.Equal(t, "account_create", decoded.Action)
+	assert.Equal(t, "1234", decoded.Wallet)
 }
 
 func TestMapStructureDecodeBaseRequest(t *testing.T) {
 	request := map[string]interface{}{
-		"action": "action",
+		"action": "account_create",
+		"wallet": "1234",
 	}
 	var decoded BaseRequest
 	mapstructure.Decode(request, &decoded)
-	assert.Equal(t, "action", decoded.Action)
+	assert.Equal(t, "account_create", decoded.Action)
+	assert.Equal(t, "1234", decoded.Wallet)
 }

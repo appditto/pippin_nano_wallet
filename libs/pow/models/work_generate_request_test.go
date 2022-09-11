@@ -11,8 +11,10 @@ import (
 func TestEncodeWorkGenerateRequest(t *testing.T) {
 	encoded := `{"action":"work_generate","hash":"abc","difficulty":"def"}`
 	req := WorkGenerateRequest{
-		Action:     "work_generate",
-		Hash:       "abc",
+		WorkBaseRequest: WorkBaseRequest{
+			Action: "work_generate",
+			Hash:   "abc",
+		},
 		Difficulty: "def",
 	}
 	encodedActual, _ := json.Marshal(&req)

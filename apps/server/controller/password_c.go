@@ -21,12 +21,8 @@ func (hc *HttpController) HandlePasswordChange(rawRequest *map[string]interface{
 	}
 
 	// See if wallet exists
-	dbWallet, err := hc.Wallet.GetWallet(passwordChangeRequest.Wallet)
-	if errors.Is(err, wallet.ErrWalletNotFound) || errors.Is(err, wallet.ErrInvalidWallet) {
-		ErrWalletNotFound(w, r)
-		return
-	} else if err != nil {
-		ErrInternalServerError(w, r, err.Error())
+	dbWallet := hc.WalletExists(passwordChangeRequest.Wallet, w, r)
+	if dbWallet == nil {
 		return
 	}
 
@@ -53,12 +49,8 @@ func (hc *HttpController) HandlePasswordEnter(rawRequest *map[string]interface{}
 	}
 
 	// See if wallet exists
-	dbWallet, err := hc.Wallet.GetWallet(passwordEnterRequest.Wallet)
-	if errors.Is(err, wallet.ErrWalletNotFound) || errors.Is(err, wallet.ErrInvalidWallet) {
-		ErrWalletNotFound(w, r)
-		return
-	} else if err != nil {
-		ErrInternalServerError(w, r, err.Error())
+	dbWallet := hc.WalletExists(passwordEnterRequest.Wallet, w, r)
+	if dbWallet == nil {
 		return
 	}
 

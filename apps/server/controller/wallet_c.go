@@ -75,12 +75,8 @@ func (hc *HttpController) HandleWalletAdd(request *map[string]interface{}, w htt
 	}
 
 	// See if wallet exists
-	dbWallet, err := hc.Wallet.GetWallet(walletAddRequest.Wallet)
-	if errors.Is(err, wallet.ErrWalletNotFound) || errors.Is(err, wallet.ErrInvalidWallet) {
-		ErrWalletNotFound(w, r)
-		return
-	} else if err != nil {
-		ErrInternalServerError(w, r, err.Error())
+	dbWallet := hc.WalletExists(walletAddRequest.Wallet, w, r)
+	if dbWallet == nil {
 		return
 	}
 
@@ -127,17 +123,13 @@ func (hc *HttpController) HandleWalletLocked(request *map[string]interface{}, w 
 	}
 
 	// See if wallet exists
-	dbWallet, err := hc.Wallet.GetWallet(walletLockedRequest.Wallet)
-	if errors.Is(err, wallet.ErrWalletNotFound) || errors.Is(err, wallet.ErrInvalidWallet) {
-		ErrWalletNotFound(w, r)
-		return
-	} else if err != nil {
-		ErrInternalServerError(w, r, err.Error())
+	dbWallet := hc.WalletExists(walletLockedRequest.Wallet, w, r)
+	if dbWallet == nil {
 		return
 	}
 
 	// Check if wallet is locked
-	_, err = wallet.GetDecryptedKeyFromStorage(dbWallet, "seed")
+	_, err := wallet.GetDecryptedKeyFromStorage(dbWallet, "seed")
 	var resp responses.WalletLockedResponse
 	if err != nil {
 		resp.Locked = "1"
@@ -159,17 +151,13 @@ func (hc *HttpController) HandleWalletLock(request *map[string]interface{}, w ht
 	}
 
 	// See if wallet exists
-	dbWallet, err := hc.Wallet.GetWallet(walletLockRequest.Wallet)
-	if errors.Is(err, wallet.ErrWalletNotFound) || errors.Is(err, wallet.ErrInvalidWallet) {
-		ErrWalletNotFound(w, r)
-		return
-	} else if err != nil {
-		ErrInternalServerError(w, r, err.Error())
+	dbWallet := hc.WalletExists(walletLockRequest.Wallet, w, r)
+	if dbWallet == nil {
 		return
 	}
 
 	// Lock wallet
-	err = hc.Wallet.LockWallet(dbWallet)
+	err := hc.Wallet.LockWallet(dbWallet)
 	var resp = responses.WalletLockResponse{
 		Locked: "1",
 	}
@@ -193,17 +181,13 @@ func (hc *HttpController) HandleWalletDestroy(rawRequest *map[string]interface{}
 	}
 
 	// See if wallet exists
-	dbWallet, err := hc.Wallet.GetWallet(walletDestroyRequest.Wallet)
-	if errors.Is(err, wallet.ErrWalletNotFound) || errors.Is(err, wallet.ErrInvalidWallet) {
-		ErrWalletNotFound(w, r)
-		return
-	} else if err != nil {
-		ErrInternalServerError(w, r, err.Error())
+	dbWallet := hc.WalletExists(walletDestroyRequest.Wallet, w, r)
+	if dbWallet == nil {
 		return
 	}
 
 	// Destroy list
-	err = hc.Wallet.WalletDestroy(dbWallet)
+	err := hc.Wallet.WalletDestroy(dbWallet)
 	var resp = responses.WalletDestroyResponse{
 		Destroyed: "1",
 	}

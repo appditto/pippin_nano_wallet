@@ -129,12 +129,8 @@ func (hc *HttpController) HandleAccountList(rawRequest *map[string]interface{}, 
 	}
 
 	// See if wallet exists
-	dbWallet, err := hc.Wallet.GetWallet(accountListRequest.Wallet)
-	if errors.Is(err, wallet.ErrWalletNotFound) || errors.Is(err, wallet.ErrInvalidWallet) {
-		ErrWalletNotFound(w, r)
-		return
-	} else if err != nil {
-		ErrInternalServerError(w, r, err.Error())
+	dbWallet := hc.WalletExists(accountListRequest.Wallet, w, r)
+	if dbWallet == nil {
 		return
 	}
 

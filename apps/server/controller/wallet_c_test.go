@@ -236,3 +236,57 @@ func TestWalletLock(t *testing.T) {
 	assert.Contains(t, respJson, "locked")
 	assert.Equal(t, "1", respJson["locked"].(string))
 }
+
+func TestWalletDestroy(t *testing.T) {
+	newSeed, _ := utils.GenerateSeed(strings.NewReader("9d9e1ede8170a7ef7fee2e28990dbc78c150b705ede136c4ab39dec349c38f42"))
+	wallet, _ := MockController.Wallet.WalletCreate(newSeed)
+	// lock walet
+	MockController.Wallet.EncryptWallet(wallet, "password")
+	// Request JSON
+	reqBody := map[string]interface{}{
+		"action": "wallet_destroy",
+		"wallet": wallet.ID.String(),
+	}
+	body, _ := json.Marshal(reqBody)
+	w := httptest.NewRecorder()
+	// Build request
+	req := httptest.NewRequest("POST", "/", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	MockController.Gateway(w, req)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, 400, resp.StatusCode)
+
+	var respJson map[string]interface{}
+	respBody, _ := io.ReadAll(resp.Body)
+	json.Unmarshal(respBody, &respJson)
+
+	assert.Contains(t, respJson, "error")
+	assert.Equal(t, "wallet locked", respJson["error"].(string))
+
+	// unlock wallet
+	MockController.Wallet.UnlockWallet(wallet, "password")
+	reqBody = map[string]interface{}{
+		"action": "wallet_destroy",
+		"wallet": wallet.ID.String(),
+	}
+	body, _ = json.Marshal(reqBody)
+	w = httptest.NewRecorder()
+	// Build request
+	req = httptest.NewRequest("POST", "/", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	MockController.Gateway(w, req)
+	resp = w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, 200, resp.StatusCode)
+
+	respBody, _ = io.ReadAll(resp.Body)
+	json.Unmarshal(respBody, &respJson)
+
+	assert.Contains(t, respJson, "destroyed")
+	assert.Equal(t, "1", respJson["destroyed"].(string))
+
+	// check if wallet is destroyed
+	_, err := MockController.Wallet.GetWallet(wallet.ID.String())
+	assert.NotNil(t, err)
+}

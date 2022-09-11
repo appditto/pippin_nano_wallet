@@ -183,3 +183,37 @@ func (hc *HttpController) HandleWalletLock(request *map[string]interface{}, w ht
 	render.Status(r, http.StatusOK)
 	render.JSON(w, r, &resp)
 }
+
+func (hc *HttpController) HandleWalletDestroy(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+	var walletDestroyRequest requests.WalletDestroyRequest
+	if err := mapstructure.Decode(rawRequest, &walletDestroyRequest); err != nil {
+		klog.Errorf("Error unmarshalling wallet_destroy request %s", err)
+		ErrUnableToParseJson(w, r)
+		return
+	}
+
+	// See if wallet exists
+	dbWallet, err := hc.Wallet.GetWallet(walletDestroyRequest.Wallet)
+	if errors.Is(err, wallet.ErrWalletNotFound) || errors.Is(err, wallet.ErrInvalidWallet) {
+		ErrWalletNotFound(w, r)
+		return
+	} else if err != nil {
+		ErrInternalServerError(w, r, err.Error())
+		return
+	}
+
+	// Destroy list
+	err = hc.Wallet.WalletDestroy(dbWallet)
+	var resp = responses.WalletDestroyResponse{
+		Destroyed: "1",
+	}
+	if errors.Is(err, wallet.ErrWalletLocked) {
+		ErrWalletLocked(w, r)
+		return
+	} else if err != nil {
+		resp.Destroyed = "0"
+	}
+
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, &resp)
+}

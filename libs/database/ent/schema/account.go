@@ -45,7 +45,10 @@ func (Account) Edges() []ent.Edge {
 			Field("wallet_id").
 			Required().
 			Unique(),
-		edge.To("blocks", Block.Type),
+		edge.To("blocks", Block.Type).
+			Annotations(entsql.Annotation{
+				OnDelete: entsql.Cascade,
+			}),
 	}
 }
 

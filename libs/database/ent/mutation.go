@@ -1554,7 +1554,7 @@ func (m *BlockMutation) AccountID() (r uuid.UUID, exists bool) {
 // OldAccountID returns the old "account_id" field's value of the Block entity.
 // If the Block object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BlockMutation) OldAccountID(ctx context.Context) (v uuid.UUID, err error) {
+func (m *BlockMutation) OldAccountID(ctx context.Context) (v *uuid.UUID, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldAccountID is only allowed on UpdateOne operations")
 	}
@@ -1568,9 +1568,22 @@ func (m *BlockMutation) OldAccountID(ctx context.Context) (v uuid.UUID, err erro
 	return oldValue.AccountID, nil
 }
 
+// ClearAccountID clears the value of the "account_id" field.
+func (m *BlockMutation) ClearAccountID() {
+	m.account = nil
+	m.clearedFields[block.FieldAccountID] = struct{}{}
+}
+
+// AccountIDCleared returns if the "account_id" field was cleared in this mutation.
+func (m *BlockMutation) AccountIDCleared() bool {
+	_, ok := m.clearedFields[block.FieldAccountID]
+	return ok
+}
+
 // ResetAccountID resets all changes to the "account_id" field.
 func (m *BlockMutation) ResetAccountID() {
 	m.account = nil
+	delete(m.clearedFields, block.FieldAccountID)
 }
 
 // SetAdhocAccountID sets the "adhoc_account_id" field.
@@ -1590,7 +1603,7 @@ func (m *BlockMutation) AdhocAccountID() (r uuid.UUID, exists bool) {
 // OldAdhocAccountID returns the old "adhoc_account_id" field's value of the Block entity.
 // If the Block object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BlockMutation) OldAdhocAccountID(ctx context.Context) (v uuid.UUID, err error) {
+func (m *BlockMutation) OldAdhocAccountID(ctx context.Context) (v *uuid.UUID, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldAdhocAccountID is only allowed on UpdateOne operations")
 	}
@@ -1604,9 +1617,22 @@ func (m *BlockMutation) OldAdhocAccountID(ctx context.Context) (v uuid.UUID, err
 	return oldValue.AdhocAccountID, nil
 }
 
+// ClearAdhocAccountID clears the value of the "adhoc_account_id" field.
+func (m *BlockMutation) ClearAdhocAccountID() {
+	m.adhoc_account = nil
+	m.clearedFields[block.FieldAdhocAccountID] = struct{}{}
+}
+
+// AdhocAccountIDCleared returns if the "adhoc_account_id" field was cleared in this mutation.
+func (m *BlockMutation) AdhocAccountIDCleared() bool {
+	_, ok := m.clearedFields[block.FieldAdhocAccountID]
+	return ok
+}
+
 // ResetAdhocAccountID resets all changes to the "adhoc_account_id" field.
 func (m *BlockMutation) ResetAdhocAccountID() {
 	m.adhoc_account = nil
+	delete(m.clearedFields, block.FieldAdhocAccountID)
 }
 
 // SetBlockHash sets the "block_hash" field.
@@ -1809,7 +1835,7 @@ func (m *BlockMutation) ClearAccount() {
 
 // AccountCleared reports if the "account" edge to the Account entity was cleared.
 func (m *BlockMutation) AccountCleared() bool {
-	return m.clearedaccount
+	return m.AccountIDCleared() || m.clearedaccount
 }
 
 // AccountIDs returns the "account" edge IDs in the mutation.
@@ -1835,7 +1861,7 @@ func (m *BlockMutation) ClearAdhocAccount() {
 
 // AdhocAccountCleared reports if the "adhoc_account" edge to the AdhocAccount entity was cleared.
 func (m *BlockMutation) AdhocAccountCleared() bool {
-	return m.clearedadhoc_account
+	return m.AdhocAccountIDCleared() || m.clearedadhoc_account
 }
 
 // AdhocAccountIDs returns the "adhoc_account" edge IDs in the mutation.
@@ -2028,6 +2054,12 @@ func (m *BlockMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *BlockMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(block.FieldAccountID) {
+		fields = append(fields, block.FieldAccountID)
+	}
+	if m.FieldCleared(block.FieldAdhocAccountID) {
+		fields = append(fields, block.FieldAdhocAccountID)
+	}
 	if m.FieldCleared(block.FieldSendID) {
 		fields = append(fields, block.FieldSendID)
 	}
@@ -2045,6 +2077,12 @@ func (m *BlockMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *BlockMutation) ClearField(name string) error {
 	switch name {
+	case block.FieldAccountID:
+		m.ClearAccountID()
+		return nil
+	case block.FieldAdhocAccountID:
+		m.ClearAdhocAccountID()
+		return nil
 	case block.FieldSendID:
 		m.ClearSendID()
 		return nil

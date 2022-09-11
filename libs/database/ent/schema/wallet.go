@@ -40,7 +40,13 @@ func (Wallet) Fields() []ent.Field {
 // Edges of the Wallet.
 func (Wallet) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("accounts", Account.Type),
-		edge.To("adhoc_accounts", AdhocAccount.Type),
+		edge.To("accounts", Account.Type).
+			Annotations(entsql.Annotation{
+				OnDelete: entsql.Cascade,
+			}),
+		edge.To("adhoc_accounts", AdhocAccount.Type).
+			Annotations(entsql.Annotation{
+				OnDelete: entsql.Cascade,
+			}),
 	}
 }

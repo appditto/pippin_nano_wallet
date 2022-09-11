@@ -430,7 +430,10 @@ func (bq *BlockQuery) loadAccount(ctx context.Context, query *AccountQuery, node
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*Block)
 	for i := range nodes {
-		fk := nodes[i].AccountID
+		if nodes[i].AccountID == nil {
+			continue
+		}
+		fk := *nodes[i].AccountID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -456,7 +459,10 @@ func (bq *BlockQuery) loadAdhocAccount(ctx context.Context, query *AdhocAccountQ
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*Block)
 	for i := range nodes {
-		fk := nodes[i].AdhocAccountID
+		if nodes[i].AdhocAccountID == nil {
+			continue
+		}
+		fk := *nodes[i].AdhocAccountID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}

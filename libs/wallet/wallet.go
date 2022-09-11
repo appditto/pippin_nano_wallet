@@ -264,3 +264,23 @@ func (w *NanoWallet) AccountsList(wallet *ent.Wallet, limit int) ([]string, erro
 
 	return addresses, nil
 }
+
+func (w *NanoWallet) WalletDestroy(wallet *ent.Wallet) error {
+	if wallet == nil {
+		return ErrInvalidWallet
+	}
+
+	// Determine if wallet is locked or not
+	_, err := GetDecryptedKeyFromStorage(wallet, "seed")
+	if err != nil {
+		return err
+	}
+
+	// Delete wallet
+	err = w.DB.Wallet.DeleteOne(wallet).Exec(w.Ctx)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

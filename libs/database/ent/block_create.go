@@ -29,9 +29,25 @@ func (bc *BlockCreate) SetAccountID(u uuid.UUID) *BlockCreate {
 	return bc
 }
 
+// SetNillableAccountID sets the "account_id" field if the given value is not nil.
+func (bc *BlockCreate) SetNillableAccountID(u *uuid.UUID) *BlockCreate {
+	if u != nil {
+		bc.SetAccountID(*u)
+	}
+	return bc
+}
+
 // SetAdhocAccountID sets the "adhoc_account_id" field.
 func (bc *BlockCreate) SetAdhocAccountID(u uuid.UUID) *BlockCreate {
 	bc.mutation.SetAdhocAccountID(u)
+	return bc
+}
+
+// SetNillableAdhocAccountID sets the "adhoc_account_id" field if the given value is not nil.
+func (bc *BlockCreate) SetNillableAdhocAccountID(u *uuid.UUID) *BlockCreate {
+	if u != nil {
+		bc.SetAdhocAccountID(*u)
+	}
 	return bc
 }
 
@@ -194,12 +210,6 @@ func (bc *BlockCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (bc *BlockCreate) check() error {
-	if _, ok := bc.mutation.AccountID(); !ok {
-		return &ValidationError{Name: "account_id", err: errors.New(`ent: missing required field "Block.account_id"`)}
-	}
-	if _, ok := bc.mutation.AdhocAccountID(); !ok {
-		return &ValidationError{Name: "adhoc_account_id", err: errors.New(`ent: missing required field "Block.adhoc_account_id"`)}
-	}
 	if _, ok := bc.mutation.BlockHash(); !ok {
 		return &ValidationError{Name: "block_hash", err: errors.New(`ent: missing required field "Block.block_hash"`)}
 	}
@@ -226,12 +236,6 @@ func (bc *BlockCreate) check() error {
 	}
 	if _, ok := bc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Block.created_at"`)}
-	}
-	if _, ok := bc.mutation.AccountID(); !ok {
-		return &ValidationError{Name: "account", err: errors.New(`ent: missing required edge "Block.account"`)}
-	}
-	if _, ok := bc.mutation.AdhocAccountID(); !ok {
-		return &ValidationError{Name: "adhoc_account", err: errors.New(`ent: missing required edge "Block.adhoc_account"`)}
 	}
 	return nil
 }
@@ -326,7 +330,7 @@ func (bc *BlockCreate) createSpec() (*Block, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.AccountID = nodes[0]
+		_node.AccountID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := bc.mutation.AdhocAccountIDs(); len(nodes) > 0 {
@@ -346,7 +350,7 @@ func (bc *BlockCreate) createSpec() (*Block, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.AdhocAccountID = nodes[0]
+		_node.AdhocAccountID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

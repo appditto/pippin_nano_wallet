@@ -30,8 +30,8 @@ func (Block) Fields() []ent.Field {
 		field.UUID("id", uuid.UUID{}).
 			Default(uuid.New),
 		// account id from accounts
-		field.UUID("account_id", uuid.UUID{}),
-		field.UUID("adhoc_account_id", uuid.UUID{}),
+		field.UUID("account_id", uuid.UUID{}).Nillable().Optional(),
+		field.UUID("adhoc_account_id", uuid.UUID{}).Nillable().Optional(),
 		field.String("block_hash").MaxLen(64).Unique().Immutable(),
 		// TODO use a proper struct, not map[string]interface{}
 		field.JSON("block", map[string]interface{}{}).Immutable(),
@@ -47,12 +47,10 @@ func (Block) Edges() []ent.Edge {
 		edge.From("account", Account.Type).
 			Ref("blocks").
 			Field("account_id").
-			Required().
 			Unique(),
 		edge.From("adhoc_account", AdhocAccount.Type).
 			Ref("blocks").
 			Field("adhoc_account_id").
-			Required().
 			Unique(),
 	}
 }
@@ -60,9 +58,7 @@ func (Block) Edges() []ent.Edge {
 // Indexes of the Block.
 func (Block) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("account_id"),
-		index.Fields("adhoc_account_id"),
-		index.Fields("send_id"),
+		index.Fields("adhoc_account_id", "send_id").Unique(),
 		index.Fields("account_id", "send_id").Unique(),
 	}
 }

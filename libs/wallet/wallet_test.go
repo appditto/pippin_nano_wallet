@@ -272,3 +272,36 @@ func TestAccountsList(t *testing.T) {
 	_, err = MockWallet.AccountsList(wallet, 100)
 	assert.ErrorIs(t, ErrWalletLocked, err)
 }
+
+func TestWalletDestroy(t *testing.T) {
+	// Create a test wallet
+	seed, _ := utils.GenerateSeed(strings.NewReader("783c75f57c76937b2bab1e0ada730d1386bacfa06258ddebfcc976b36c0e5549"))
+	wallet, err := MockWallet.WalletCreate(seed)
+	assert.Nil(t, err)
+
+	// Create relationships to ensure cascade delete works
+
+	// Create some accounts
+	_, err = MockWallet.AccountsCreate(wallet, 10)
+	assert.Nil(t, err)
+
+	// Create adhoc accounts
+	_, priv, _ := utils.KeypairFromSeed(seed, 100)
+	acc, _, err := MockWallet.AdhocAccountCreate(wallet, priv)
+	assert.Nil(t, err)
+
+	// Create a block object
+	_, err = MockWallet.DB.Block.Create().SetAdhocAccount(acc).SetBlock(map[string]interface{}{
+		"block": "hello",
+	}).SetBlockHash("abc").SetSubtype("change").Save(MockWallet.Ctx)
+	assert.Nil(t, err)
+
+	err = MockWallet.WalletDestroy(wallet)
+	assert.Nil(t, err)
+
+	err = MockWallet.WalletDestroy(nil)
+	assert.ErrorIs(t, ErrInvalidWallet, err)
+
+	err = MockWallet.WalletDestroy(&ent.Wallet{})
+	assert.NotNil(t, err)
+}

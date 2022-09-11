@@ -36,9 +36,37 @@ func (bu *BlockUpdate) SetAccountID(u uuid.UUID) *BlockUpdate {
 	return bu
 }
 
+// SetNillableAccountID sets the "account_id" field if the given value is not nil.
+func (bu *BlockUpdate) SetNillableAccountID(u *uuid.UUID) *BlockUpdate {
+	if u != nil {
+		bu.SetAccountID(*u)
+	}
+	return bu
+}
+
+// ClearAccountID clears the value of the "account_id" field.
+func (bu *BlockUpdate) ClearAccountID() *BlockUpdate {
+	bu.mutation.ClearAccountID()
+	return bu
+}
+
 // SetAdhocAccountID sets the "adhoc_account_id" field.
 func (bu *BlockUpdate) SetAdhocAccountID(u uuid.UUID) *BlockUpdate {
 	bu.mutation.SetAdhocAccountID(u)
+	return bu
+}
+
+// SetNillableAdhocAccountID sets the "adhoc_account_id" field if the given value is not nil.
+func (bu *BlockUpdate) SetNillableAdhocAccountID(u *uuid.UUID) *BlockUpdate {
+	if u != nil {
+		bu.SetAdhocAccountID(*u)
+	}
+	return bu
+}
+
+// ClearAdhocAccountID clears the value of the "adhoc_account_id" field.
+func (bu *BlockUpdate) ClearAdhocAccountID() *BlockUpdate {
+	bu.mutation.ClearAdhocAccountID()
 	return bu
 }
 
@@ -141,12 +169,6 @@ func (bu *BlockUpdate) check() error {
 		if err := block.SubtypeValidator(v); err != nil {
 			return &ValidationError{Name: "subtype", err: fmt.Errorf(`ent: validator failed for field "Block.subtype": %w`, err)}
 		}
-	}
-	if _, ok := bu.mutation.AccountID(); bu.mutation.AccountCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Block.account"`)
-	}
-	if _, ok := bu.mutation.AdhocAccountID(); bu.mutation.AdhocAccountCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Block.adhoc_account"`)
 	}
 	return nil
 }
@@ -277,9 +299,37 @@ func (buo *BlockUpdateOne) SetAccountID(u uuid.UUID) *BlockUpdateOne {
 	return buo
 }
 
+// SetNillableAccountID sets the "account_id" field if the given value is not nil.
+func (buo *BlockUpdateOne) SetNillableAccountID(u *uuid.UUID) *BlockUpdateOne {
+	if u != nil {
+		buo.SetAccountID(*u)
+	}
+	return buo
+}
+
+// ClearAccountID clears the value of the "account_id" field.
+func (buo *BlockUpdateOne) ClearAccountID() *BlockUpdateOne {
+	buo.mutation.ClearAccountID()
+	return buo
+}
+
 // SetAdhocAccountID sets the "adhoc_account_id" field.
 func (buo *BlockUpdateOne) SetAdhocAccountID(u uuid.UUID) *BlockUpdateOne {
 	buo.mutation.SetAdhocAccountID(u)
+	return buo
+}
+
+// SetNillableAdhocAccountID sets the "adhoc_account_id" field if the given value is not nil.
+func (buo *BlockUpdateOne) SetNillableAdhocAccountID(u *uuid.UUID) *BlockUpdateOne {
+	if u != nil {
+		buo.SetAdhocAccountID(*u)
+	}
+	return buo
+}
+
+// ClearAdhocAccountID clears the value of the "adhoc_account_id" field.
+func (buo *BlockUpdateOne) ClearAdhocAccountID() *BlockUpdateOne {
+	buo.mutation.ClearAdhocAccountID()
 	return buo
 }
 
@@ -395,12 +445,6 @@ func (buo *BlockUpdateOne) check() error {
 		if err := block.SubtypeValidator(v); err != nil {
 			return &ValidationError{Name: "subtype", err: fmt.Errorf(`ent: validator failed for field "Block.subtype": %w`, err)}
 		}
-	}
-	if _, ok := buo.mutation.AccountID(); buo.mutation.AccountCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Block.account"`)
-	}
-	if _, ok := buo.mutation.AdhocAccountID(); buo.mutation.AdhocAccountCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Block.adhoc_account"`)
 	}
 	return nil
 }

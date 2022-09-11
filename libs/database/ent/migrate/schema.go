@@ -28,7 +28,7 @@ var (
 				Symbol:     "accounts_wallets_accounts",
 				Columns:    []*schema.Column{AccountsColumns[5]},
 				RefColumns: []*schema.Column{WalletsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
@@ -63,7 +63,7 @@ var (
 				Symbol:     "adhoc_accounts_wallets_adhoc_accounts",
 				Columns:    []*schema.Column{AdhocAccountsColumns[5]},
 				RefColumns: []*schema.Column{WalletsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
@@ -87,8 +87,8 @@ var (
 		{Name: "send_id", Type: field.TypeString, Nullable: true, Size: 64},
 		{Name: "subtype", Type: field.TypeString, Size: 10},
 		{Name: "created_at", Type: field.TypeTime},
-		{Name: "account_id", Type: field.TypeUUID},
-		{Name: "adhoc_account_id", Type: field.TypeUUID},
+		{Name: "account_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "adhoc_account_id", Type: field.TypeUUID, Nullable: true},
 	}
 	// BlocksTable holds the schema information for the "blocks" table.
 	BlocksTable = &schema.Table{
@@ -100,30 +100,20 @@ var (
 				Symbol:     "blocks_accounts_blocks",
 				Columns:    []*schema.Column{BlocksColumns[6]},
 				RefColumns: []*schema.Column{AccountsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "blocks_adhoc_accounts_blocks",
 				Columns:    []*schema.Column{BlocksColumns[7]},
 				RefColumns: []*schema.Column{AdhocAccountsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "block_account_id",
-				Unique:  false,
-				Columns: []*schema.Column{BlocksColumns[6]},
-			},
-			{
-				Name:    "block_adhoc_account_id",
-				Unique:  false,
-				Columns: []*schema.Column{BlocksColumns[7]},
-			},
-			{
-				Name:    "block_send_id",
-				Unique:  false,
-				Columns: []*schema.Column{BlocksColumns[3]},
+				Name:    "block_adhoc_account_id_send_id",
+				Unique:  true,
+				Columns: []*schema.Column{BlocksColumns[7], BlocksColumns[3]},
 			},
 			{
 				Name:    "block_account_id_send_id",

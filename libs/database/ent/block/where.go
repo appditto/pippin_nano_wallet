@@ -160,6 +160,20 @@ func AccountIDNotIn(vs ...uuid.UUID) predicate.Block {
 	})
 }
 
+// AccountIDIsNil applies the IsNil predicate on the "account_id" field.
+func AccountIDIsNil() predicate.Block {
+	return predicate.Block(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldAccountID)))
+	})
+}
+
+// AccountIDNotNil applies the NotNil predicate on the "account_id" field.
+func AccountIDNotNil() predicate.Block {
+	return predicate.Block(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldAccountID)))
+	})
+}
+
 // AdhocAccountIDEQ applies the EQ predicate on the "adhoc_account_id" field.
 func AdhocAccountIDEQ(v uuid.UUID) predicate.Block {
 	return predicate.Block(func(s *sql.Selector) {
@@ -193,6 +207,20 @@ func AdhocAccountIDNotIn(vs ...uuid.UUID) predicate.Block {
 	}
 	return predicate.Block(func(s *sql.Selector) {
 		s.Where(sql.NotIn(s.C(FieldAdhocAccountID), v...))
+	})
+}
+
+// AdhocAccountIDIsNil applies the IsNil predicate on the "adhoc_account_id" field.
+func AdhocAccountIDIsNil() predicate.Block {
+	return predicate.Block(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldAdhocAccountID)))
+	})
+}
+
+// AdhocAccountIDNotNil applies the NotNil predicate on the "adhoc_account_id" field.
+func AdhocAccountIDNotNil() predicate.Block {
+	return predicate.Block(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldAdhocAccountID)))
 	})
 }
 

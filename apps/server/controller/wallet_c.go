@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/hex"
 	"errors"
+	"math"
 	"net/http"
 
 	"github.com/appditto/pippin_nano_wallet/apps/server/models/requests"
@@ -200,4 +201,38 @@ func (hc *HttpController) HandleWalletDestroy(rawRequest *map[string]interface{}
 
 	render.Status(r, http.StatusOK)
 	render.JSON(w, r, &resp)
+}
+
+func (hc *HttpController) HandleWalletBalances(request *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+	// mapstructure decode
+	var walletBalancesRequest requests.WalletBalancesRequest
+	if err := mapstructure.Decode(request, &walletBalancesRequest); err != nil {
+		klog.Errorf("Error unmarshalling wallet_balances request %s", err)
+		ErrUnableToParseJson(w, r)
+		return
+	}
+
+	// See if wallet exists
+	dbWallet := hc.WalletExists(walletBalancesRequest.Wallet, w, r)
+	if dbWallet == nil {
+		return
+	}
+
+	// Get accounts on wallet
+	accounts, err := hc.Wallet.AccountsList(dbWallet, math.MaxInt)
+	if err != nil {
+		ErrInternalServerError(w, r, err.Error())
+		return
+	}
+
+	// Get RPC balances
+	resp, err := hc.RpcClient.MakeAccountsBalancesRequest(accounts)
+	if err != nil {
+		ErrInternalServerError(w, r, err.Error())
+		return
+	}
+
+	// Return balances
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, resp)
 }

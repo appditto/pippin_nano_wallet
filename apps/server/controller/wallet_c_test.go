@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/appditto/pippin_nano_wallet/libs/rpc/mocks"
+	rpcresp "github.com/appditto/pippin_nano_wallet/libs/rpc/models/responses"
 	"github.com/appditto/pippin_nano_wallet/libs/utils"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -289,4 +292,43 @@ func TestWalletDestroy(t *testing.T) {
 	// check if wallet is destroyed
 	_, err := MockController.Wallet.GetWallet(wallet.ID.String())
 	assert.NotNil(t, err)
+}
+
+func TestWalletBalances(t *testing.T) {
+	// mock rpc response
+	mocks.GetDoFunc = func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: 200,
+			Header: http.Header{
+				"Content-Type": []string{"application/json"},
+			},
+			Body: mocks.AccountsBalancesResponse,
+		}, nil
+	}
+	newSeed, _ := utils.GenerateSeed(strings.NewReader("9d9e1ede8170a7ef7fee2e28990dbc78c150b705ede136c4ab39dec349c38f42"))
+	wallet, _ := MockController.Wallet.WalletCreate(newSeed)
+	// Request JSON
+	reqBody := map[string]interface{}{
+		"action": "wallet_balances",
+		"wallet": wallet.ID.String(),
+	}
+	body, _ := json.Marshal(reqBody)
+	w := httptest.NewRecorder()
+	// Build request
+	req := httptest.NewRequest("POST", "/", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	MockController.Gateway(w, req)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var respJson rpcresp.AccountsBalancesResponse
+	respBody, _ := io.ReadAll(resp.Body)
+	json.Unmarshal(respBody, &respJson)
+
+	balances := *respJson.Balances
+	assert.Len(t, balances, 1)
+	assert.Equal(t, "11999999999999999918751838129509869131", balances["nano_1gyeqc6u5j3oaxbe5qy1hyz3q745a318kh8h9ocnpan7fuxnq85cxqboapu5"].Balance)
+	assert.Equal(t, "0", balances["nano_1gyeqc6u5j3oaxbe5qy1hyz3q745a318kh8h9ocnpan7fuxnq85cxqboapu5"].Pending)
+	assert.Equal(t, "0", balances["nano_1gyeqc6u5j3oaxbe5qy1hyz3q745a318kh8h9ocnpan7fuxnq85cxqboapu5"].Receivable)
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/appditto/pippin_nano_wallet/apps/server/controller"
 	"github.com/appditto/pippin_nano_wallet/libs/config"
 	"github.com/appditto/pippin_nano_wallet/libs/database"
+	rpc "github.com/appditto/pippin_nano_wallet/libs/rpc"
 	"github.com/appditto/pippin_nano_wallet/libs/wallet"
 	"github.com/go-chi/chi/v5"
 	"k8s.io/klog/v2"
@@ -77,11 +78,16 @@ func main() {
 		Banano: conf.Wallet.Banano,
 	}
 
+	// Setup RPC handlers
+	rpcClient := rpc.RPCClient{
+		Url: conf.Server.NodeRpcUrl,
+	}
+
 	// Create app
 	app := chi.NewRouter()
 
 	// Setup controller
-	hc := controller.HttpController{Wallet: &nanoWallet}
+	hc := controller.HttpController{Wallet: &nanoWallet, RpcClient: &rpcClient}
 
 	// HTTP Routes
 	app.Post("/", hc.Gateway)

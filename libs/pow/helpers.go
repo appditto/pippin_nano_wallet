@@ -30,6 +30,13 @@ func DifficultyToString(difficulty uint64) string {
 	return strconv.FormatUint(difficulty, 16)
 }
 
+func MultiplierFromDifficulty(difficulty uint64) int {
+	if difficulty == 0 {
+		return 1
+	}
+	return int(baseDifficulty / (baseMaxUint64 - difficulty))
+}
+
 func IsWorkValid(previous string, difficultyMultiplier int, w string) bool {
 	difficult := DifficultyFromMultiplier(difficultyMultiplier)
 	previousEnc, err := hex.DecodeString(previous)

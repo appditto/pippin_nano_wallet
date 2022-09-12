@@ -17,8 +17,8 @@ const (
 
 type BpowClient struct {
 	client graphql.Client
+	url    string
 }
-
 type authedTransport struct {
 	wrapped http.RoundTripper
 	token   string
@@ -34,14 +34,22 @@ func NewBpowClient(url string, token string) *BpowClient {
 	gqlClient = graphql.NewClient(url, &http.Client{Transport: &authedTransport{wrapped: http.DefaultTransport, token: token}})
 	return &BpowClient{
 		client: gqlClient,
+		url:    url,
 	}
 }
 
-func (c *BpowClient) WorkGenerate(ctx context.Context, hash string, difficultyMultipler int) (string, error) {
-	resp, err := workGenerate(ctx, c.client, WorkGenerateInput{
+func (c *BpowClient) WorkGenerate(ctx context.Context, hash string, difficultyMultipler int, blockAward bool, bpowKey string) (string, error) {
+	var gqlClient graphql.Client
+	if bpowKey != "" {
+		gqlClient = graphql.NewClient(c.url, &http.Client{Transport: &authedTransport{wrapped: http.DefaultTransport, token: bpowKey}})
+	} else {
+		gqlClient = c.client
+	}
+
+	resp, err := workGenerate(ctx, gqlClient, WorkGenerateInput{
 		Hash:                 hash,
 		DifficultyMultiplier: difficultyMultipler,
-		BlockAward:           false,
+		BlockAward:           blockAward,
 	})
 
 	if err != nil {

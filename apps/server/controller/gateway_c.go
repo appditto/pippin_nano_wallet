@@ -74,5 +74,8 @@ func (hc *HttpController) Gateway(w http.ResponseWriter, r *http.Request) {
 	case "wallet_pending":
 		hc.HandleWalletPending(&baseRequest, w, r)
 		return
+	case "work_generate":
+		hc.HandleWorkGenerate(&baseRequest, w, r)
+		return
 	}
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/appditto/pippin_nano_wallet/apps/server/controller"
 	"github.com/appditto/pippin_nano_wallet/libs/config"
 	"github.com/appditto/pippin_nano_wallet/libs/database"
+	"github.com/appditto/pippin_nano_wallet/libs/pow"
 	rpc "github.com/appditto/pippin_nano_wallet/libs/rpc"
 	"github.com/appditto/pippin_nano_wallet/libs/wallet"
 	"github.com/go-chi/chi/v5"
@@ -83,11 +84,14 @@ func main() {
 		Url: conf.Server.NodeRpcUrl,
 	}
 
+	// Setup pow client
+	pow := pow.NewPippinPow(conf.Wallet.WorkPeers)
+
 	// Create app
 	app := chi.NewRouter()
 
 	// Setup controller
-	hc := controller.HttpController{Wallet: &nanoWallet, RpcClient: &rpcClient}
+	hc := controller.HttpController{Wallet: &nanoWallet, RpcClient: &rpcClient, PowClient: pow}
 
 	// HTTP Routes
 	app.Post("/", hc.Gateway)

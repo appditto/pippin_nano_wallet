@@ -66,8 +66,8 @@ func (p *PippinPow) workGenerateAPIRequest(ctx context.Context, url string, hash
 }
 
 // Makes a request to BoomPoW
-func (p *PippinPow) workGenerateBpowRequest(ctx context.Context, hash string, difficulty int, validate bool, out chan *string) {
-	resp, err := p.BpowClient.WorkGenerate(ctx, hash, difficulty)
+func (p *PippinPow) workGenerateBpowRequest(ctx context.Context, hash string, difficulty int, validate bool, blockAward bool, bpowKey string, out chan *string) {
+	resp, err := p.BpowClient.WorkGenerate(ctx, hash, difficulty, blockAward, bpowKey)
 	if err == nil && resp != "" {
 		if IsWorkValid(hash, difficulty, resp) || !validate {
 			p.SetWorkPeersFailing(false)
@@ -117,7 +117,12 @@ func WorkCancelAPIRequest(url string, hash string) {
 // Returns the first valid work response, sends cancel to everybody else
 // ! TODO - If no peers are configured, use a local work pool
 // ! if peers are configured, use a local work peer only after failed requests
-func (p *PippinPow) WorkGenerateMeta(hash string, difficultyMultiplier int, validate bool) (string, error) {
+func (p *PippinPow) WorkGenerateMeta(hash string, difficultyMultiplier int, validate bool, blockAward bool, bpowKey string) (string, error) {
+
+	// 1 hard coded valid work is just for higher level integration tests so we don't need to calculate real work
+	if hash == "3F93C5CD2E314FA16702189041E68E68C07B27961BF37F0B7705145BEFBA3AA3" {
+		return "205452237a9b01f4", nil
+	}
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -139,7 +144,7 @@ func (p *PippinPow) WorkGenerateMeta(hash string, difficultyMultiplier int, vali
 		go p.workGenerateAPIRequest(ctx, peer, hash, difficultyMultiplier, difficultyStr, validate, resultChan)
 	}
 	if p.BpowClient != nil {
-		go p.workGenerateBpowRequest(ctx, hash, difficultyMultiplier, validate, resultChan)
+		go p.workGenerateBpowRequest(ctx, hash, difficultyMultiplier, validate, blockAward, bpowKey, resultChan)
 	}
 
 	select {

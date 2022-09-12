@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/appditto/pippin_nano_wallet/libs/database"
+	"github.com/appditto/pippin_nano_wallet/libs/pow"
 	"github.com/appditto/pippin_nano_wallet/libs/rpc"
 	"github.com/appditto/pippin_nano_wallet/libs/rpc/mocks"
 	"github.com/appditto/pippin_nano_wallet/libs/wallet"
@@ -64,6 +65,7 @@ func testMainWrapper(m *testing.M) int {
 		RpcClient: &rpc.RPCClient{
 			Url: "http://localhost:123456",
 		},
+		PowClient: pow.NewPippinPow([]string{}),
 	}
 	return m.Run()
 }

@@ -27,7 +27,15 @@ func TestMain(m *testing.M) {
 			w.WriteHeader(400)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
+		if r.Header.Get("Authorization") == "overriden" {
+			w.Header().Add("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"data": map[string]interface{}{
+					"workGenerate": "newworkfromboompow",
+				},
+			})
+			return
+		}
 		w.Header().Add("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"data": map[string]interface{}{
@@ -68,6 +76,15 @@ func TestWorkGenerateMeta(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 
+	httpmock.RegisterResponder("POST", "http://boompowurl.notreal.com/graphql",
+		func(req *http.Request) (*http.Response, error) {
+			resp, err := httpmock.NewJsonResponse(200, map[string]interface{}{
+				"work": "abcd1234",
+			})
+			return resp, err
+		},
+	)
+
 	httpmock.RegisterResponder("POST", "https://workerurl1.com",
 		func(req *http.Request) (*http.Response, error) {
 			resp, err := httpmock.NewJsonResponse(200, map[string]interface{}{
@@ -88,7 +105,7 @@ func TestWorkGenerateMeta(t *testing.T) {
 		},
 	)
 
-	result, err := PPow.WorkGenerateMeta("abc", 1, false)
+	result, err := PPow.WorkGenerateMeta("abc", 1, false, true, "")
 	assert.Nil(t, err)
 	assert.Equal(t, "abcd1234", result)
 
@@ -113,7 +130,7 @@ func TestWorkGenerateMeta(t *testing.T) {
 		},
 	)
 
-	result, err = PPow.WorkGenerateMeta("abcdef", 1, false)
+	result, err = PPow.WorkGenerateMeta("abcdef", 1, false, true, "")
 	assert.Nil(t, err)
 	assert.Equal(t, "5555", result)
 
@@ -136,7 +153,7 @@ func TestWorkGenerateMeta(t *testing.T) {
 		},
 	)
 
-	result, err = PPow.WorkGenerateMeta("abcdef", 1, false)
+	result, err = PPow.WorkGenerateMeta("abcdef", 1, false, true, "")
 	assert.Nil(t, err)
 	assert.Equal(t, "8888", result)
 
@@ -161,13 +178,13 @@ func TestWorkGenerateMeta(t *testing.T) {
 		},
 	)
 
-	result, err = PPow.WorkGenerateMeta("abcdef", 1, false)
+	result, err = PPow.WorkGenerateMeta("abcdef", 1, false, true, "")
 	assert.NotNil(t, err)
 	assert.ErrorContains(t, err, "Unable to generate work")
 
 	// BoomPoW only one that works with this request
 
-	result, err = PPow.WorkGenerateMeta("boompowaccepted", 1, false)
+	result, err = PPow.WorkGenerateMeta("boompowaccepted", 1, false, true, "")
 	assert.Nil(t, err)
 	assert.Equal(t, "boompowwork", result)
 
@@ -176,7 +193,7 @@ func TestWorkGenerateMeta(t *testing.T) {
 		WorkPeers: []string{},
 	}
 
-	result, err = ppow.WorkGenerateMeta("09263b65752d05ce4df5aeed849ffc2be5bf47026abb4fa5879359ae571ba9c8", 1, true)
+	result, err = ppow.WorkGenerateMeta("09263b65752d05ce4df5aeed849ffc2be5bf47026abb4fa5879359ae571ba9c8", 1, true, true, "")
 	assert.Nil(t, err)
 	assert.Len(t, result, 16)
 }

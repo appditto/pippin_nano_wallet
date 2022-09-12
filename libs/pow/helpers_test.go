@@ -55,3 +55,9 @@ func TestWorkToString(t *testing.T) {
 	work := nanopow.NewWork([]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	assert.Equal(t, "0102030405060708", WorkToString(work))
 }
+
+func TestMultiplierFromDifficulty(t *testing.T) {
+	assert.Equal(t, 1, MultiplierFromDifficulty(uint64(0)))
+	assert.Equal(t, 1, MultiplierFromDifficulty(uint64(0xfffffe0000000000)))
+	assert.Equal(t, 64, MultiplierFromDifficulty(uint64(0xfffffff800000000)))
+}

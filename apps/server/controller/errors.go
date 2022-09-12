@@ -73,6 +73,24 @@ func ErrNoWalletPassword(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, &WalletNoPasswordError)
 }
 
+var InvalidHashError = ErrorResponse{
+	Error: "Invalid hash",
+}
+
+func ErrInvalidHash(w http.ResponseWriter, r *http.Request) {
+	render.Status(r, http.StatusBadRequest)
+	render.JSON(w, r, &InvalidHashError)
+}
+
+var WorkFailedError = ErrorResponse{
+	Error: "Failed to generate work",
+}
+
+func ErrWorkFailed(w http.ResponseWriter, r *http.Request) {
+	render.Status(r, http.StatusInternalServerError)
+	render.JSON(w, r, &WorkFailedError)
+}
+
 func ErrInternalServerError(w http.ResponseWriter, r *http.Request, errorText string) {
 	render.Status(r, http.StatusInternalServerError)
 	render.JSON(w, r, &ErrorResponse{

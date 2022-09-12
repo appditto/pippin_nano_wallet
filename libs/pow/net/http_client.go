@@ -23,7 +23,8 @@ func MakeRequest(ctx context.Context, url string, request interface{}) ([]byte, 
 	}
 	httpRequest.Header.Add("Content-Type", "application/json")
 	httpRequest.WithContext(ctx)
-	resp, err := Client.Do(httpRequest)
+	client := &http.Client{}
+	resp, err := client.Do(httpRequest)
 	if err != nil {
 		klog.Errorf("Error making RPC request %s", err)
 		return nil, err

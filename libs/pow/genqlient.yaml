@@ -1,0 +1,6 @@
+# Default genqlient config; for full documentation see:
+# https://github.com/Khan/genqlient/blob/main/docs/genqlient.yaml
+schema: ./boompow/boompow.schema.graphql
+operations:
+  - ./boompow/genqlient.graphql
+generated: ./boompow/generated.go

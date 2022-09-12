@@ -1,11 +1,10 @@
-FROM golang:1.19-alpine
+FROM golang:1.19-bullseye
 
 ARG ZSH_IN_DOCKER_VERSION=1.1.2
 
-
 # Install useful tools
-RUN apk --no-cache upgrade && \
-  apk --no-cache add ca-certificates curl gnupg jq bash tar openssl util-linux nano zsh-syntax-highlighting less procps lsof postgresql-client alpine-sdk
+RUN apt-get update && apt-get install -y apt-transport-https ca-certificates curl gnupg nano zsh-syntax-highlighting less build-essential ocl-icd-opencl-dev && \
+  rm -rf /var/lib/apt/lists/*
 
 # Install zsh-in-docker
 RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v${ZSH_IN_DOCKER_VERSION}/zsh-in-docker.sh)" -- \
@@ -16,7 +15,7 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
   -p history \
   -p https://github.com/zsh-users/zsh-autosuggestions \
   -p https://github.com/zsh-users/zsh-completions
-RUN echo "source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" >> /root/.zshrc
+RUN echo "source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" >> /root/.zshrc
 
 # Working directory inside container
 WORKDIR /app
@@ -32,5 +31,8 @@ RUN go install github.com/go-delve/delve/cmd/dlv@latest && \
   chmod +x install.sh && \
   ./install.sh -b /usr/local/bin v1.49.0 && \
   rm -f install.sh
+
+ENV CGO_ENABLED=1
+ENV LC_ALL=C
 
 CMD [ "/bin/zsh", "-c" ]

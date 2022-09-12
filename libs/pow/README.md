@@ -10,10 +10,10 @@ There are 3 mechanisms for requesting work within this module.
 
 These mechanisms can all be invoked separately, or by Pippin's mechanism (`WorkGenerateMeta` function).
 
-Pippin's behavior is to.
+`WorkGenerateMeta` will
 
 1) Execute concurrent goroutines requesting from BoomPoW and all configured work servers.
 2) When first result comes back, cancel all pending goroutines and send work_cancel to all work servers.
-3) If all APIs fail, then invoke local PoW
+3) If API fails, we generate PoW locally and set a flag `WorkFailing`, then subsequent requests will use local PoW along with the peers until the peers are working again
 
 APIs are preferred, if no APIs are configured then local work generation  will be the primary mechanism.

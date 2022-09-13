@@ -1,10 +1,8 @@
 package pow
 
 import (
-	"io"
 	"net/http"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -62,8 +60,7 @@ func TestWorkGenerateMeta(t *testing.T) {
 				})
 				return resp, err
 			}
-			body, _ := io.ReadAll(req.Body)
-			if strings.Contains("boompowaccepted", string(body)) {
+			if req.Header.Get("Authorization") == "1234" {
 				resp, err := httpmock.NewJsonResponse(200, map[string]interface{}{
 					"data": map[string]interface{}{
 						"workGenerate": "boompowwork",
@@ -99,7 +96,7 @@ func TestWorkGenerateMeta(t *testing.T) {
 		},
 	)
 
-	result, err := PPow.WorkGenerateMeta("abc", 1, false, true, "")
+	result, err := PPow.WorkGenerateMeta("abc", 1, false, true, "bad")
 	assert.Nil(t, err)
 	assert.Equal(t, "abcd1234", result)
 
@@ -124,7 +121,7 @@ func TestWorkGenerateMeta(t *testing.T) {
 		},
 	)
 
-	result, err = PPow.WorkGenerateMeta("abcdef", 1, false, true, "")
+	result, err = PPow.WorkGenerateMeta("abcdef", 1, false, true, "bad")
 	assert.Nil(t, err)
 	assert.Equal(t, "5555", result)
 
@@ -147,7 +144,7 @@ func TestWorkGenerateMeta(t *testing.T) {
 		},
 	)
 
-	result, err = PPow.WorkGenerateMeta("abcdef", 1, false, true, "")
+	result, err = PPow.WorkGenerateMeta("abcdef", 1, false, true, "bad")
 	assert.Nil(t, err)
 	assert.Equal(t, "8888", result)
 
@@ -172,7 +169,7 @@ func TestWorkGenerateMeta(t *testing.T) {
 		},
 	)
 
-	result, err = PPow.WorkGenerateMeta("abcdef", 1, false, true, "")
+	result, err = PPow.WorkGenerateMeta("abcdef", 1, false, true, "bad")
 	assert.NotNil(t, err)
 	assert.ErrorContains(t, err, "Unable to generate work")
 

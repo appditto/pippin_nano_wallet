@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"math"
+	"math/big"
 	"net/http"
 
 	"github.com/appditto/pippin_nano_wallet/apps/server/models/requests"
@@ -287,4 +288,72 @@ func (hc *HttpController) HandleWalletPending(rawRequest *map[string]interface{}
 	// Return balances
 	render.Status(r, http.StatusOK)
 	render.JSON(w, r, resp)
+}
+
+func (hc *HttpController) HandleWalletInfo(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+	request := hc.DecodeBaseRequest(rawRequest, w, r)
+	if request == nil {
+		return
+	}
+
+	// See if wallet exists
+	dbWallet := hc.WalletExists(request.Wallet, w, r)
+	if dbWallet == nil {
+		return
+	}
+
+	// Get accounts on wallet
+	accounts, err := hc.Wallet.AccountsList(dbWallet, math.MaxInt)
+	if err != nil {
+		ErrInternalServerError(w, r, err.Error())
+		return
+	}
+
+	// Get RPC balances
+	resp, err := hc.RpcClient.MakeAccountsBalancesRequest(accounts)
+	if err != nil {
+		ErrInternalServerError(w, r, err.Error())
+		return
+	}
+
+	balance := big.NewInt(0)
+	pendingBalance := big.NewInt(0)
+
+	// for k, v in balance_json['balances'].items():
+	// balance += int(v['balance'])
+	// pending_bal += int(v['pending'])
+	for _, v := range *resp.Balances {
+		// Balance to bigint
+		balanceBigInt, ok := new(big.Int).SetString(v.Balance, 10)
+		if !ok {
+			ErrInternalServerError(w, r, "Could not parse balance")
+			return
+		}
+		balance = balance.Add(balance, balanceBigInt)
+		pendingBigInt, ok := new(big.Int).SetString(v.Pending, 10)
+		if !ok {
+			ErrInternalServerError(w, r, "Could not parse balance")
+			return
+		}
+		pendingBalance = pendingBalance.Add(pendingBalance, pendingBigInt)
+	}
+
+	// Retrieve wallet info from database
+	walletInfo, err := hc.Wallet.WalletInfo(dbWallet)
+	if err != nil {
+		ErrInternalServerError(w, r, err.Error())
+		return
+	}
+
+	// Return balances
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, &responses.WalletInfoResponse{
+		Balance:            balance.String(),
+		Pending:            pendingBalance.String(),
+		Receivable:         pendingBalance.String(),
+		AccountsCount:      walletInfo.AccountsCount,
+		AdhocCount:         walletInfo.AdhocCount,
+		DeterministicCount: walletInfo.DeterministicCount,
+		DeterministicIndex: walletInfo.DeterministicIndex,
+	})
 }

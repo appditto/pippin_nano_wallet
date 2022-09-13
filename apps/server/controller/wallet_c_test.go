@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/appditto/pippin_nano_wallet/apps/server/models/responses"
 	"github.com/appditto/pippin_nano_wallet/libs/rpc/mocks"
 	rpcresp "github.com/appditto/pippin_nano_wallet/libs/rpc/models/responses"
 	"github.com/appditto/pippin_nano_wallet/libs/utils"
@@ -406,4 +407,47 @@ func TestWalletPending(t *testing.T) {
 	assert.Len(t, blocks, 2)
 	assert.Equal(t, "4C1FEEF0BEA7F50BE35489A1233FE002B212DEA554B55B1B470D78BD8F210C74", blocks["nano_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3"][0])
 	assert.Equal(t, "142A538F36833D1CC78B94E11C766F75818F8B940771335C6C1B8AB880C5BB1D", blocks["nano_1111111111111111111111111111111111111111111111111117353trpda"][0])
+}
+
+func TestWalletInfo(t *testing.T) {
+	// mock rpc response
+	mocks.GetDoFunc = func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: 200,
+			Header: http.Header{
+				"Content-Type": []string{"application/json"},
+			},
+			Body: mocks.AccountsBalancesResponse,
+		}, nil
+	}
+	newSeed, _ := utils.GenerateSeed(strings.NewReader("34c77ad1c1fbf4fd026c7c8c80069c0e84c636fcd9f0e4f14a69dacf1f9d67d0"))
+	wallet, _ := MockController.Wallet.WalletCreate(newSeed)
+	// Create some accounts
+	MockController.Wallet.AccountsCreate(wallet, 2)
+	// Request JSON
+	reqBody := map[string]interface{}{
+		"action": "wallet_info",
+		"wallet": wallet.ID.String(),
+	}
+	body, _ := json.Marshal(reqBody)
+	w := httptest.NewRecorder()
+	// Build request
+	req := httptest.NewRequest("POST", "/", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	MockController.Gateway(w, req)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var respJson responses.WalletInfoResponse
+	respBody, _ := io.ReadAll(resp.Body)
+	json.Unmarshal(respBody, &respJson)
+
+	assert.Equal(t, 3, respJson.AccountsCount)
+	assert.Equal(t, 0, respJson.AdhocCount)
+	assert.Equal(t, 3, respJson.DeterministicCount)
+	assert.Equal(t, 2, respJson.DeterministicIndex)
+	assert.Equal(t, "11999999999999999918751838129509869131", respJson.Balance)
+	assert.Equal(t, "0", respJson.Pending)
+	assert.Equal(t, "0", respJson.Receivable)
 }

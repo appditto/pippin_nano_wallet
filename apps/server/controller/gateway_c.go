@@ -77,5 +77,8 @@ func (hc *HttpController) Gateway(w http.ResponseWriter, r *http.Request) {
 	case "work_generate":
 		hc.HandleWorkGenerate(&baseRequest, w, r)
 		return
+	case "wallet_info":
+		hc.HandleWalletInfo(&baseRequest, w, r)
+		return
 	}
 }

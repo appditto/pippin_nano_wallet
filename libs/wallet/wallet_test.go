@@ -305,3 +305,29 @@ func TestWalletDestroy(t *testing.T) {
 	err = MockWallet.WalletDestroy(&ent.Wallet{})
 	assert.NotNil(t, err)
 }
+
+func TestWalletInfo(t *testing.T) {
+	// Create a test wallet
+	seed, _ := utils.GenerateSeed(strings.NewReader("43ae06048b189e8a15da9765d8ce21edbf2d34eb7b1b7fb928e028e3fb416d53"))
+	wallet, err := MockWallet.WalletCreate(seed)
+	assert.Nil(t, err)
+
+	// Create relationships to ensure cascade delete works
+
+	// Create some accounts
+	_, err = MockWallet.AccountsCreate(wallet, 10)
+	assert.Nil(t, err)
+
+	// Create adhoc accounts
+	_, priv, _ := utils.KeypairFromSeed(seed, 100)
+	_, _, err = MockWallet.AdhocAccountCreate(wallet, priv)
+	assert.Nil(t, err)
+
+	info, err := MockWallet.WalletInfo(wallet)
+	assert.Nil(t, err)
+
+	assert.Equal(t, info.AccountsCount, 12)
+	assert.Equal(t, info.AdhocCount, 1)
+	assert.Equal(t, info.DeterministicCount, 11)
+	assert.Equal(t, info.DeterministicIndex, 10)
+}

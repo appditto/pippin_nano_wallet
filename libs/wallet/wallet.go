@@ -13,6 +13,7 @@ import (
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/adhocaccount"
 	"github.com/appditto/pippin_nano_wallet/libs/utils"
 	"github.com/appditto/pippin_nano_wallet/libs/utils/ed25519"
+	"github.com/appditto/pippin_nano_wallet/libs/wallet/models"
 	"github.com/google/uuid"
 )
 
@@ -283,4 +284,50 @@ func (w *NanoWallet) WalletDestroy(wallet *ent.Wallet) error {
 	}
 
 	return nil
+}
+
+func (w *NanoWallet) WalletInfo(wallet *ent.Wallet) (*models.WalletInfo, error) {
+	if wallet == nil {
+		return nil, ErrInvalidWallet
+	}
+
+	// Obtain a lock, prevent concurrent calls
+	lock, err := database.GetRedisDB().Locker.Obtain(w.Ctx, fmt.Sprintf("wallet:%s", wallet.ID.String()), time.Second*10, &database.LockRetryStrategy)
+	if err != nil {
+		return nil, database.ErrLockNotObtained
+	}
+	defer lock.Release(w.Ctx)
+
+	// Get seed
+	_, err = GetDecryptedKeyFromStorage(wallet, "seed")
+	if err != nil {
+		return nil, err
+	}
+
+	curAccount, err := w.DB.Account.Query().Where(account.WalletID(wallet.ID)).Order(ent.Desc(account.FieldAccountIndex)).First(w.Ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	currentIndex := curAccount.AccountIndex
+
+	// Get all accounts on wallet
+	accounts, err := w.DB.Account.Query().Where(account.WalletID(wallet.ID)).Count(w.Ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get all adhoc accounts on wallet
+	adhocAccounts, err := w.DB.AdhocAccount.Query().Where(adhocaccount.WalletID(wallet.ID)).Count(w.Ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.WalletInfo{
+		AccountsCount:      accounts + adhocAccounts,
+		AdhocCount:         adhocAccounts,
+		DeterministicCount: accounts,
+		DeterministicIndex: currentIndex,
+	}, nil
 }

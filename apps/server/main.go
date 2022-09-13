@@ -12,6 +12,7 @@ import (
 	"github.com/appditto/pippin_nano_wallet/libs/database"
 	"github.com/appditto/pippin_nano_wallet/libs/pow"
 	rpc "github.com/appditto/pippin_nano_wallet/libs/rpc"
+	"github.com/appditto/pippin_nano_wallet/libs/utils"
 	"github.com/appditto/pippin_nano_wallet/libs/wallet"
 	"github.com/go-chi/chi/v5"
 	"k8s.io/klog/v2"
@@ -85,7 +86,7 @@ func main() {
 	}
 
 	// Setup pow client
-	pow := pow.NewPippinPow(conf.Wallet.WorkPeers)
+	pow := pow.NewPippinPow(conf.Wallet.WorkPeers, utils.GetEnv("BPOW_KEY", ""), utils.GetEnv("BPOW_URL", ""))
 
 	// Create app
 	app := chi.NewRouter()

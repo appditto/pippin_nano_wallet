@@ -65,7 +65,7 @@ func testMainWrapper(m *testing.M) int {
 		RpcClient: &rpc.RPCClient{
 			Url: "http://localhost:123456",
 		},
-		PowClient: pow.NewPippinPow([]string{}),
+		PowClient: pow.NewPippinPow([]string{}, "", ""),
 	}
 	return m.Run()
 }

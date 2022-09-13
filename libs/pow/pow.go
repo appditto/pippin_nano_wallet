@@ -8,19 +8,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/appditto/pippin_nano_wallet/libs/pow/boompow"
 	"github.com/appditto/pippin_nano_wallet/libs/pow/net"
 	"github.com/appditto/pippin_nano_wallet/libs/utils"
 	"github.com/bbedward/nanopow"
 	"k8s.io/klog/v2"
 )
 
-const BOOMPOW_URL = "https://boompow.banano.cc/graphql"
-
 type PippinPow struct {
 	WorkPeers        []string
-	BpowClient       *boompow.BpowClient
 	workPeersFailing bool
+	bpowKey          string
+	bpowUrl          string
 	mutex            sync.Mutex
 }
 
@@ -37,22 +35,22 @@ func (p *PippinPow) SetWorkPeersFailing(failing bool) {
 }
 
 // workPeers is an array of URLs to send work_generate requests to
-func NewPippinPow(workPeers []string) *PippinPow {
-	var bpowClient *boompow.BpowClient
-	if utils.GetEnv("BPOW_KEY", "") != "" {
-		bpowClient = boompow.NewBpowClient(utils.GetEnv("BPOW_URL", BOOMPOW_URL), utils.GetEnv("BPOW_KEY", ""))
+// bpowKey and bpowUrl are optional, bpowUrl will default to boompow.banano.cc/graphql
+func NewPippinPow(workPeers []string, bpowKey string, bpowUrl string) *PippinPow {
+	if bpowUrl == "" {
+		bpowUrl = "https://boompow.banano.cc/graphql"
 	}
 	return &PippinPow{
-		BpowClient: bpowClient,
-		WorkPeers:  workPeers,
+		WorkPeers: workPeers,
 		// If peers are failing we will generate local pow no matter what
 		workPeersFailing: false,
+		bpowUrl:          bpowUrl,
+		bpowKey:          bpowKey,
 	}
 }
 
 // Makes a request to configured array of work peers
 func (p *PippinPow) workGenerateAPIRequest(ctx context.Context, url string, hash string, difficultyMultiplier int, difficulty string, validate bool, out chan *string) {
-	fmt.Printf("Making work_generate request to %s\n", url)
 	resp, err := net.MakeWorkGenerateRequest(ctx, url, hash, difficulty)
 	if err == nil && resp.Work != "" {
 		// Validate work
@@ -67,8 +65,9 @@ func (p *PippinPow) workGenerateAPIRequest(ctx context.Context, url string, hash
 
 // Makes a request to BoomPoW
 func (p *PippinPow) workGenerateBpowRequest(ctx context.Context, hash string, difficulty int, validate bool, blockAward bool, bpowKey string, out chan *string) {
-	resp, err := p.BpowClient.WorkGenerate(ctx, hash, difficulty, blockAward, bpowKey)
+	resp, err := net.MakeBoompowWorkGenerateRequest(ctx, p.bpowUrl, bpowKey, hash, difficulty, blockAward)
 	if err == nil && resp != "" {
+		// Validate work
 		if IsWorkValid(hash, difficulty, resp) || !validate {
 			p.SetWorkPeersFailing(false)
 			WriteChannelSafe(out, resp)
@@ -113,10 +112,11 @@ func WorkCancelAPIRequest(url string, hash string) {
 	net.MakeWorkCancelRequest(context.Background(), url, hash)
 }
 
+// The main entry point for Pippin WorkGenerate
 // Invokes work_generate requests to every peer simultaneously including BoomPoW, depending on configuration
 // Returns the first valid work response, sends cancel to everybody else
-// ! TODO - If no peers are configured, use a local work pool
-// ! if peers are configured, use a local work peer only after failed requests
+// If no peers or boompow configured, uses local PoW
+// If all peers fail, will use local PoW until peers are responsive again
 func (p *PippinPow) WorkGenerateMeta(hash string, difficultyMultiplier int, validate bool, blockAward bool, bpowKey string) (string, error) {
 
 	// 1 hard coded valid work is just for higher level integration tests so we don't need to calculate real work
@@ -135,7 +135,7 @@ func (p *PippinPow) WorkGenerateMeta(hash string, difficultyMultiplier int, vali
 	difficultyStr := DifficultyToString(difficultyUint)
 	runningLocally := false
 
-	if (len(p.WorkPeers) < 1 && p.BpowClient == nil) || p.WorkPeersFailing() {
+	if (len(p.WorkPeers) < 1 && p.bpowKey == "" && bpowKey == "") || p.WorkPeersFailing() {
 		// Local pow
 		runningLocally = true
 		go p.workGenerateLocal(ctx, hash, difficultyMultiplier, validate, resultChan)
@@ -143,8 +143,14 @@ func (p *PippinPow) WorkGenerateMeta(hash string, difficultyMultiplier int, vali
 	for _, peer := range p.WorkPeers {
 		go p.workGenerateAPIRequest(ctx, peer, hash, difficultyMultiplier, difficultyStr, validate, resultChan)
 	}
-	if p.BpowClient != nil {
-		go p.workGenerateBpowRequest(ctx, hash, difficultyMultiplier, validate, blockAward, bpowKey, resultChan)
+	if p.bpowUrl != "" {
+		key := bpowKey
+		if key == "" && p.bpowKey != "" {
+			key = p.bpowKey
+		}
+		if key != "" {
+			go p.workGenerateBpowRequest(ctx, hash, difficultyMultiplier, validate, blockAward, key, resultChan)
+		}
 	}
 
 	select {

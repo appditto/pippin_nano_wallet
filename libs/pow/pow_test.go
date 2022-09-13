@@ -1,15 +1,14 @@
 package pow
 
 import (
-	"encoding/json"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/appditto/pippin_nano_wallet/libs/utils"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 )
@@ -19,32 +18,7 @@ var PPow *PippinPow
 func TestMain(m *testing.M) {
 	os.Setenv("BPOW_KEY", "1234")
 	defer os.Unsetenv("BPOW_KEY")
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		bodyBytes, _ := io.ReadAll(r.Body)
-		bodyString := string(bodyBytes)
-		if !strings.Contains(bodyString, "boompowaccepted") {
-			w.WriteHeader(400)
-			return
-		}
-		if r.Header.Get("Authorization") == "overriden" {
-			w.Header().Add("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]interface{}{
-				"data": map[string]interface{}{
-					"workGenerate": "newworkfromboompow",
-				},
-			})
-			return
-		}
-		w.Header().Add("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"data": map[string]interface{}{
-				"workGenerate": "boompowwork",
-			},
-		})
-	}))
-	defer server.Close()
-	os.Setenv("BPOW_URL", server.URL)
+	os.Setenv("BPOW_URL", "/fakeboompow")
 	defer os.Unsetenv("BPOW_URL")
 
 	os.Exit(testMainWrapper(m))
@@ -56,6 +30,8 @@ func testMainWrapper(m *testing.M) int {
 			"https://workerurl1.com",
 			"https://workerurl2.com",
 		},
+		utils.GetEnv("BPOW_KEY", ""),
+		utils.GetEnv("BPOW_URL", ""),
 	)
 	return m.Run()
 }
@@ -76,10 +52,28 @@ func TestWorkGenerateMeta(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 
-	httpmock.RegisterResponder("POST", "http://boompowurl.notreal.com/graphql",
+	httpmock.RegisterResponder("POST", "/fakeboompow",
 		func(req *http.Request) (*http.Response, error) {
+			if req.Header.Get("Authorization") == "overridden" {
+				resp, err := httpmock.NewJsonResponse(200, map[string]interface{}{
+					"data": map[string]interface{}{
+						"workGenerate": "customkey",
+					},
+				})
+				return resp, err
+			}
+			body, _ := io.ReadAll(req.Body)
+			if strings.Contains("boompowaccepted", string(body)) {
+				resp, err := httpmock.NewJsonResponse(200, map[string]interface{}{
+					"data": map[string]interface{}{
+						"workGenerate": "boompowwork",
+					},
+				})
+				return resp, err
+			}
+
 			resp, err := httpmock.NewJsonResponse(200, map[string]interface{}{
-				"work": "abcd1234",
+				"error": "error",
 			})
 			return resp, err
 		},
@@ -183,10 +177,14 @@ func TestWorkGenerateMeta(t *testing.T) {
 	assert.ErrorContains(t, err, "Unable to generate work")
 
 	// BoomPoW only one that works with this request
-
 	result, err = PPow.WorkGenerateMeta("boompowaccepted", 1, false, true, "")
 	assert.Nil(t, err)
 	assert.Equal(t, "boompowwork", result)
+
+	// Test BoomPoW overriding key
+	result, err = PPow.WorkGenerateMeta("boompowaccepted", 1, false, true, "overridden")
+	assert.Nil(t, err)
+	assert.Equal(t, "customkey", result)
 
 	// Test with local pow (no peers, no boompow configured)
 	ppow := &PippinPow{

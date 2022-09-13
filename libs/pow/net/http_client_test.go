@@ -67,3 +67,33 @@ func TestWorkCancel(t *testing.T) {
 	err := MakeWorkCancelRequest(context.TODO(), "https://workurl.com", "nano_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3")
 	assert.Nil(t, err)
 }
+
+func TestBoompowWorkGenerate(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("POST", "/mockboompow",
+		func(req *http.Request) (*http.Response, error) {
+			if req.Header.Get("Authorization") == "valid" {
+				resp, err := httpmock.NewJsonResponse(200, map[string]interface{}{
+					"data": map[string]interface{}{
+						"workGenerate": "abcd1234",
+					},
+				})
+				return resp, err
+			}
+			resp, err := httpmock.NewJsonResponse(403, map[string]interface{}{
+				"error": "unauthorized",
+			})
+			return resp, err
+		},
+	)
+
+	resp, err := MakeBoompowWorkGenerateRequest(context.TODO(), "/mockboompow", "invalidkey", "74681bdf45345dcef2f13fbaf9cedf5b30412ce9fcbe437d09677529cb0dbe9e", 1, true)
+	assert.NotNil(t, err)
+	assert.Len(t, resp, 0)
+
+	resp, err = MakeBoompowWorkGenerateRequest(context.TODO(), "/mockboompow", "valid", "74681bdf45345dcef2f13fbaf9cedf5b30412ce9fcbe437d09677529cb0dbe9e", 1, true)
+	assert.Nil(t, err)
+	assert.Equal(t, "abcd1234", resp)
+}

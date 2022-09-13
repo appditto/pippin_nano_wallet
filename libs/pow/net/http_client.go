@@ -13,7 +13,7 @@ import (
 )
 
 // Base request
-func MakeRequest(ctx context.Context, url string, request interface{}) ([]byte, error) {
+func MakeRequest(ctx context.Context, url string, request interface{}, authorization string) ([]byte, error) {
 	requestBody, _ := json.Marshal(request)
 	// HTTP post
 	httpRequest, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(requestBody))
@@ -22,6 +22,9 @@ func MakeRequest(ctx context.Context, url string, request interface{}) ([]byte, 
 		return nil, err
 	}
 	httpRequest.Header.Add("Content-Type", "application/json")
+	if authorization != "" {
+		httpRequest.Header.Add("Authorization", authorization)
+	}
 	httpRequest.WithContext(ctx)
 	client := &http.Client{}
 	resp, err := client.Do(httpRequest)
@@ -47,7 +50,7 @@ func MakeWorkGenerateRequest(ctx context.Context, url string, hash string, diffi
 		},
 		Difficulty: difficulty,
 	}
-	response, err := MakeRequest(ctx, url, request)
+	response, err := MakeRequest(ctx, url, request, "")
 	if err != nil {
 		klog.Errorf("Error making request %s", err)
 		return nil, err
@@ -72,10 +75,38 @@ func MakeWorkCancelRequest(ctx context.Context, url string, hash string) error {
 		Action: "work_cancel",
 		Hash:   hash,
 	}
-	_, err := MakeRequest(ctx, url, request)
+	_, err := MakeRequest(ctx, url, request, "")
 	if err != nil {
 		klog.Errorf("Error making request %s", err)
 		return err
 	}
 	return nil
+}
+
+func MakeBoompowWorkGenerateRequest(ctx context.Context, url string, bpowKey string, hash string, difficultyMultiplier int, blockAward bool) (string, error) {
+	request := models.BoompowWorkGenerateRequest{
+		Query: "mutation($hash:String!, $difficultyMultiplier: Int!, $blockAward: Boolean) { workGenerate(input:{hash:$hash, difficultyMultiplier:$difficultyMultiplier, blockAward: $blockAward}) }",
+		Variables: models.BoompowWorkGenerateRequestVariables{
+			Hash:                 hash,
+			DifficultyMultiplier: difficultyMultiplier,
+			BlockAward:           blockAward,
+		},
+	}
+	response, err := MakeRequest(ctx, url, request, bpowKey)
+	if err != nil {
+		klog.Errorf("Error making request %s", err)
+		return "", err
+	}
+	var resp models.BoompowResponse
+	err = json.Unmarshal(response, &resp)
+	if err != nil {
+		klog.Errorf("Error unmarshalling response %s", err)
+		return "", err
+	}
+	// Check that it's not empty
+	if resp.Data.WorkGenerate == "" {
+		return "", errors.New("Unable to generate work")
+	}
+
+	return resp.Data.WorkGenerate, nil
 }

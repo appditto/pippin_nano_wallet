@@ -12,7 +12,6 @@ import (
 	"github.com/appditto/pippin_nano_wallet/libs/database"
 	"github.com/appditto/pippin_nano_wallet/libs/pow"
 	"github.com/appditto/pippin_nano_wallet/libs/rpc"
-	"github.com/appditto/pippin_nano_wallet/libs/rpc/mocks"
 	"github.com/appditto/pippin_nano_wallet/libs/wallet"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/klog/v2"
@@ -57,8 +56,6 @@ func testMainWrapper(m *testing.M) int {
 		Ctx:    ctx,
 		Banano: false,
 	}
-
-	rpc.Client = &mocks.MockClient{}
 
 	MockController = &HttpController{
 		Wallet: &wallet,

@@ -347,7 +347,7 @@ func (hc *HttpController) HandleWalletInfo(rawRequest *map[string]interface{}, w
 
 	// Return balances
 	render.Status(r, http.StatusOK)
-	render.JSON(w, r, &responses.WalletInfoResponse{
+	render.JSON(w, r, responses.WalletInfoResponse{
 		Balance:            balance.String(),
 		Pending:            pendingBalance.String(),
 		Receivable:         pendingBalance.String(),

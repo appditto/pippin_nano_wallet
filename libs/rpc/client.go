@@ -26,7 +26,8 @@ func (client *RPCClient) MakeRequest(request interface{}) ([]byte, error) {
 		return nil, err
 	}
 	httpRequest.Header.Add("Content-Type", "application/json")
-	resp, err := Client.Do(httpRequest)
+	httpC := &http.Client{}
+	resp, err := httpC.Do(httpRequest)
 	if err != nil {
 		klog.Errorf("Error making RPC request %s", err)
 		return nil, err

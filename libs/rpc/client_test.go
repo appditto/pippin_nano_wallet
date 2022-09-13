@@ -1,11 +1,13 @@
 package rpc
 
 import (
+	"encoding/json"
 	"net/http"
 	"os"
 	"testing"
 
 	"github.com/appditto/pippin_nano_wallet/libs/rpc/mocks"
+	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,22 +19,22 @@ func TestMain(m *testing.M) {
 
 func testMainWrapper(m *testing.M) int {
 	// Mock HTTP client
-	Client = &mocks.MockClient{}
 	MockRpcClient = &RPCClient{Url: "http://localhost:123456"}
 	return m.Run()
 }
 
 func TestGetAccountsBalances(t *testing.T) {
-	// Simulate response
-	mocks.GetDoFunc = func(req *http.Request) (*http.Response, error) {
-		return &http.Response{
-			StatusCode: 200,
-			Header: http.Header{
-				"Content-Type": []string{"application/json"},
-			},
-			Body: mocks.AccountsBalancesResponse,
-		}, nil
-	}
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("POST", "http://localhost:123456",
+		func(req *http.Request) (*http.Response, error) {
+			var js map[string]interface{}
+			json.Unmarshal([]byte(mocks.AccountBalancesResponseStr), &js)
+			resp, err := httpmock.NewJsonResponse(200, js)
+			return resp, err
+		},
+	)
 
 	resp, err := MockRpcClient.MakeAccountsBalancesRequest([]string{"nano_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3"})
 	assert.Nil(t, err)
@@ -41,16 +43,17 @@ func TestGetAccountsBalances(t *testing.T) {
 }
 
 func TestGetAccountsFrontiers(t *testing.T) {
-	// Simulate response
-	mocks.GetDoFunc = func(req *http.Request) (*http.Response, error) {
-		return &http.Response{
-			StatusCode: 200,
-			Header: http.Header{
-				"Content-Type": []string{"application/json"},
-			},
-			Body: mocks.AccountsFrontiersResponse,
-		}, nil
-	}
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("POST", "http://localhost:123456",
+		func(req *http.Request) (*http.Response, error) {
+			var js map[string]interface{}
+			json.Unmarshal([]byte(mocks.AccountsFrontiersResponseStr), &js)
+			resp, err := httpmock.NewJsonResponse(200, js)
+			return resp, err
+		},
+	)
 
 	resp, err := MockRpcClient.MakeAccountsFrontiersRequest([]string{"nano_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3"})
 	assert.Nil(t, err)
@@ -60,16 +63,17 @@ func TestGetAccountsFrontiers(t *testing.T) {
 }
 
 func TestGetAccountsPending(t *testing.T) {
-	// Simulate response
-	mocks.GetDoFunc = func(req *http.Request) (*http.Response, error) {
-		return &http.Response{
-			StatusCode: 200,
-			Header: http.Header{
-				"Content-Type": []string{"application/json"},
-			},
-			Body: mocks.AccountsPendingResponse,
-		}, nil
-	}
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("POST", "http://localhost:123456",
+		func(req *http.Request) (*http.Response, error) {
+			var js map[string]interface{}
+			json.Unmarshal([]byte(mocks.AccountsPendingResponseStr), &js)
+			resp, err := httpmock.NewJsonResponse(200, js)
+			return resp, err
+		},
+	)
 
 	resp, err := MockRpcClient.MakeAccountsPendingRequest([]string{"nano_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3"})
 	assert.Nil(t, err)

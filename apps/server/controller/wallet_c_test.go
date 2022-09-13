@@ -14,6 +14,7 @@ import (
 	rpcresp "github.com/appditto/pippin_nano_wallet/libs/rpc/models/responses"
 	"github.com/appditto/pippin_nano_wallet/libs/utils"
 	"github.com/google/uuid"
+	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -296,16 +297,17 @@ func TestWalletDestroy(t *testing.T) {
 }
 
 func TestWalletBalances(t *testing.T) {
-	// mock rpc response
-	mocks.GetDoFunc = func(req *http.Request) (*http.Response, error) {
-		return &http.Response{
-			StatusCode: 200,
-			Header: http.Header{
-				"Content-Type": []string{"application/json"},
-			},
-			Body: mocks.AccountsBalancesResponse,
-		}, nil
-	}
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("POST", "http://localhost:123456",
+		func(req *http.Request) (*http.Response, error) {
+			var js map[string]interface{}
+			json.Unmarshal([]byte(mocks.AccountBalancesResponseStr), &js)
+			resp, err := httpmock.NewJsonResponse(200, js)
+			return resp, err
+		},
+	)
 	newSeed, _ := utils.GenerateSeed(strings.NewReader("b0ec8a9edddc58abba90656853a27cb9968f0ba48b432c04eb0f2e9143d1e34c"))
 	wallet, _ := MockController.Wallet.WalletCreate(newSeed)
 	// Request JSON
@@ -334,16 +336,17 @@ func TestWalletBalances(t *testing.T) {
 	assert.Equal(t, "0", balances["nano_1gyeqc6u5j3oaxbe5qy1hyz3q745a318kh8h9ocnpan7fuxnq85cxqboapu5"].Receivable)
 }
 func TestWalletFrontiers(t *testing.T) {
-	// mock rpc response
-	mocks.GetDoFunc = func(req *http.Request) (*http.Response, error) {
-		return &http.Response{
-			StatusCode: 200,
-			Header: http.Header{
-				"Content-Type": []string{"application/json"},
-			},
-			Body: mocks.AccountsFrontiersResponse,
-		}, nil
-	}
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("POST", "http://localhost:123456",
+		func(req *http.Request) (*http.Response, error) {
+			var js map[string]interface{}
+			json.Unmarshal([]byte(mocks.AccountsFrontiersResponseStr), &js)
+			resp, err := httpmock.NewJsonResponse(200, js)
+			return resp, err
+		},
+	)
 	newSeed, _ := utils.GenerateSeed(strings.NewReader("597bce5b7950e33ad0c7755bf374b2a4c1a59a43e89b53cca1e4871bf8683c5e"))
 	wallet, _ := MockController.Wallet.WalletCreate(newSeed)
 	// Request JSON
@@ -372,16 +375,17 @@ func TestWalletFrontiers(t *testing.T) {
 }
 
 func TestWalletPending(t *testing.T) {
-	// mock rpc response
-	mocks.GetDoFunc = func(req *http.Request) (*http.Response, error) {
-		return &http.Response{
-			StatusCode: 200,
-			Header: http.Header{
-				"Content-Type": []string{"application/json"},
-			},
-			Body: mocks.AccountsPendingResponse,
-		}, nil
-	}
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("POST", "http://localhost:123456",
+		func(req *http.Request) (*http.Response, error) {
+			var js map[string]interface{}
+			json.Unmarshal([]byte(mocks.AccountsPendingResponseStr), &js)
+			resp, err := httpmock.NewJsonResponse(200, js)
+			return resp, err
+		},
+	)
 	newSeed, _ := utils.GenerateSeed(strings.NewReader("c53d6d42e94a41f55d8c7df53ebfceb7dffa468be271ab84e3d1a8221d385e0d"))
 	wallet, _ := MockController.Wallet.WalletCreate(newSeed)
 	// Request JSON
@@ -410,16 +414,17 @@ func TestWalletPending(t *testing.T) {
 }
 
 func TestWalletInfo(t *testing.T) {
-	// mock rpc response
-	mocks.GetDoFunc = func(req *http.Request) (*http.Response, error) {
-		return &http.Response{
-			StatusCode: 200,
-			Header: http.Header{
-				"Content-Type": []string{"application/json"},
-			},
-			Body: mocks.AccountsBalancesResponse,
-		}, nil
-	}
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("POST", "http://localhost:123456",
+		func(req *http.Request) (*http.Response, error) {
+			var js map[string]interface{}
+			json.Unmarshal([]byte(mocks.AccountBalancesResponseStr), &js)
+			resp, err := httpmock.NewJsonResponse(200, js)
+			return resp, err
+		},
+	)
 	newSeed, _ := utils.GenerateSeed(strings.NewReader("34c77ad1c1fbf4fd026c7c8c80069c0e84c636fcd9f0e4f14a69dacf1f9d67d0"))
 	wallet, _ := MockController.Wallet.WalletCreate(newSeed)
 	// Create some accounts

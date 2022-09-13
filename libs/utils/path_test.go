@@ -8,6 +8,7 @@ import (
 )
 
 func TestGetPippinConfigurationRoot(t *testing.T) {
+	defer os.RemoveAll(".testdata")
 	// Set env
 	os.Setenv("HOME", ".testdata")
 	defer os.Unsetenv("HOME")
@@ -21,8 +22,4 @@ func TestGetPippinConfigurationRoot(t *testing.T) {
 	assert.Equal(t, nil, nil)
 
 	assert.Equal(t, ".testdata/PippinData", pippinDataDir)
-
-	// Cleanup
-	err = os.RemoveAll(".testdata")
-	assert.Equal(t, nil, err)
 }

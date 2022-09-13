@@ -40,10 +40,10 @@ wallet:
   # Preconfigured wallet representative list
   # Only used when accounts are open
   preconfigured_representatives_banano:
-    - ban_xyz
+    - ban_3tta9pdxr4djdcm6r3c7969syoirj3dunrtynmmi8n1qtxzk9iksoz1gxdrh
 
   preconfigured_representatives_nano:
-    - nano_xyz
+    - nano_3tta9pdxr4djdcm6r3c7969syoirj3dunrtynmmi8n1qtxzk9iksoz1gxdrh
 
   # Set work peer(s) to retrieve work from
   # DPoW/BPoW will be used automatically if environment is present, see README for details

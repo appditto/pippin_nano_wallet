@@ -13,6 +13,7 @@ import (
 func TestParser(t *testing.T) {
 	os.Setenv("HOME", ".testdata")
 	defer os.Unsetenv("HOME")
+	defer os.RemoveAll(".testdata")
 	configRoot, _ := utils.GetPippinConfigurationRoot()
 
 	config, err := ParsePippinConfig()
@@ -127,22 +128,22 @@ func TestParser(t *testing.T) {
 	assert.Equal(t, false, *config.Wallet.AutoReceiveOnSend)
 	assert.Equal(t, true, config.Wallet.NodeWorkGenerate)
 	assert.Equal(t, []string{
-		"ban_xyz",
+		"ban_3tta9pdxr4djdcm6r3c7969syoirj3dunrtynmmi8n1qtxzk9iksoz1gxdrh",
 	}, config.Wallet.PreconfiguredRepresentativesBanano)
 	assert.Equal(t, []string{
-		"nano_xyz",
+		"nano_3tta9pdxr4djdcm6r3c7969syoirj3dunrtynmmi8n1qtxzk9iksoz1gxdrh",
 	}, config.Wallet.PreconfiguredRepresentativesNano)
 	assert.Equal(t, []string{
 		"http://localhost:5555",
 		"http://myotherworkpeer.com",
 	}, config.Wallet.WorkPeers)
 	assert.Equal(t, "1", config.Wallet.ReceiveMinimum)
-
-	// Cleanup
-	os.RemoveAll(".testdata")
 }
 
 func TestConfigValidation(t *testing.T) {
+	os.Setenv("HOME", ".testdata")
+	defer os.Unsetenv("HOME")
+	defer os.RemoveAll(".testdata")
 	// Setup
 	configRoot := path.Join(".testdata", "config")
 	os.RemoveAll(".testdata")
@@ -212,7 +213,4 @@ func TestConfigValidation(t *testing.T) {
 	config.Wallet.PreconfiguredRepresentativesBanano = []string{}
 	assert.Nil(t, config.Validate())
 	config.Wallet.PreconfiguredRepresentativesNano = []string{"nano_1fomoz167m7o38gw4rzt7hz67oq6itejpt4yocrfywujbpatd711cjew8gjk"}
-
-	// Cleanup
-	os.RemoveAll(".testdata")
 }

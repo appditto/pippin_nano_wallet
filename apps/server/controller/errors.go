@@ -91,6 +91,15 @@ func ErrWorkFailed(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, &WorkFailedError)
 }
 
+var InvalidAccountError = ErrorResponse{
+	Error: "Invalid account",
+}
+
+func ErrInvalidAccount(w http.ResponseWriter, r *http.Request) {
+	render.Status(r, http.StatusBadRequest)
+	render.JSON(w, r, &InvalidAccountError)
+}
+
 func ErrInternalServerError(w http.ResponseWriter, r *http.Request, errorText string) {
 	render.Status(r, http.StatusInternalServerError)
 	render.JSON(w, r, &ErrorResponse{

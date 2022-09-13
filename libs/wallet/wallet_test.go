@@ -331,3 +331,31 @@ func TestWalletInfo(t *testing.T) {
 	assert.Equal(t, info.DeterministicCount, 11)
 	assert.Equal(t, info.DeterministicIndex, 10)
 }
+
+func TestAccountExists(t *testing.T) {
+	// Create a test wallet
+	seed, _ := utils.GenerateSeed(strings.NewReader("cd92b5cf58554077ccd450a09ccbefaea04229c7d9bc54abba06dcaf7ed01af9"))
+	wallet, err := MockWallet.WalletCreate(seed)
+	assert.Nil(t, err)
+
+	// Check that account exists if asle
+	exists, err := MockWallet.AccountExists(wallet, "nano_33mhuqjxr166czm4y37xk7emfnt4zogxmqrhbfxyngrkbdchmpsk6qehhm3n")
+	assert.Nil(t, err)
+	assert.False(t, exists)
+
+	// Create an adhoc account
+	_, priv, _ := utils.KeypairFromSeed(seed, 100)
+	_, _, err = MockWallet.AdhocAccountCreate(wallet, priv)
+	assert.Nil(t, err)
+
+	exists, err = MockWallet.AccountExists(wallet, "nano_1hpq679fqnsahkjz4d66nantwsjbkd1erjbycinbrmhcfnuketzhfaeoptu6")
+	assert.Nil(t, err)
+	assert.True(t, exists)
+
+	// Create relationships to ensure cascade delete works
+
+	// Create some accounts
+	_, err = MockWallet.AccountCreate(wallet)
+	exists, err = MockWallet.AccountExists(wallet, "nano_1pidkij46sqyf7gan8fugj693z5ornpf449tikop83dwsuosy1o5164p1jry")
+	assert.True(t, exists)
+}

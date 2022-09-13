@@ -80,5 +80,8 @@ func (hc *HttpController) Gateway(w http.ResponseWriter, r *http.Request) {
 	case "wallet_info":
 		hc.HandleWalletInfo(&baseRequest, w, r)
 		return
+	case "wallet_contains":
+		hc.HandleWalletContains(&baseRequest, w, r)
+		return
 	}
 }

@@ -331,3 +331,31 @@ func (w *NanoWallet) WalletInfo(wallet *ent.Wallet) (*models.WalletInfo, error) 
 		DeterministicIndex: currentIndex,
 	}, nil
 }
+
+func (w *NanoWallet) AccountExists(wallet *ent.Wallet, address string) (bool, error) {
+	if wallet == nil {
+		return false, ErrInvalidWallet
+	}
+
+	// Determine if wallet is locked or not
+	_, err := GetDecryptedKeyFromStorage(wallet, "seed")
+	if err != nil {
+		return false, err
+	}
+
+	// Get accounts
+	count, err := w.DB.Account.Query().Where(account.WalletID(wallet.ID), account.Address(address)).Count(w.Ctx)
+	if err != nil {
+		return false, err
+	}
+
+	// Get adhoc accounts
+	if count == 0 {
+		count, err = w.DB.AdhocAccount.Query().Where(adhocaccount.WalletID(wallet.ID), adhocaccount.Address(address)).Count(w.Ctx)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	return count > 0, nil
+}

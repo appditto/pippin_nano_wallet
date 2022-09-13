@@ -178,3 +178,20 @@ func TestErrWorkFailed(t *testing.T) {
 
 	assert.Equal(t, "Failed to generate work", respJson["error"])
 }
+
+func TestErrInvalidAccount(t *testing.T) {
+	w := httptest.NewRecorder()
+	// Build request
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Content-Type", "application/json")
+	ErrInvalidAccount(w, req)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, 400, resp.StatusCode)
+
+	var respJson map[string]interface{}
+	respBody, _ := io.ReadAll(resp.Body)
+	json.Unmarshal(respBody, &respJson)
+
+	assert.Equal(t, "Invalid account", respJson["error"])
+}

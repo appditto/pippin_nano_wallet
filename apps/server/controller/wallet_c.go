@@ -357,3 +357,50 @@ func (hc *HttpController) HandleWalletInfo(rawRequest *map[string]interface{}, w
 		DeterministicIndex: walletInfo.DeterministicIndex,
 	})
 }
+
+func (hc *HttpController) HandleWalletContains(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+	var request requests.WalletContainsRequest
+	if err := mapstructure.Decode(rawRequest, &request); err != nil {
+		klog.Errorf("Error unmarshalling request %s", err)
+		ErrUnableToParseJson(w, r)
+		return
+	} else if request.Wallet == "" || request.Action == "" || request.Account == "" {
+		ErrUnableToParseJson(w, r)
+		return
+	}
+
+	// See if wallet exists
+	dbWallet := hc.WalletExists(request.Wallet, w, r)
+	if dbWallet == nil {
+		return
+	}
+
+	// Validate account
+	_, err := utils.AddressToPub(request.Account)
+	if err != nil {
+		ErrInvalidAccount(w, r)
+		return
+	}
+
+	// See if account exists
+	exists, err := hc.Wallet.AccountExists(dbWallet, request.Account)
+	if err != nil {
+		ErrInternalServerError(w, r, err.Error())
+		return
+	}
+
+	var resp responses.WalletContainsResponse
+	if exists {
+		resp = responses.WalletContainsResponse{
+			Exists: "1",
+		}
+	} else {
+		resp = responses.WalletContainsResponse{
+			Exists: "0",
+		}
+	}
+
+	// Return balances
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, resp)
+}

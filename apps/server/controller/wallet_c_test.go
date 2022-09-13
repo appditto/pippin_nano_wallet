@@ -456,3 +456,74 @@ func TestWalletInfo(t *testing.T) {
 	assert.Equal(t, "0", respJson.Pending)
 	assert.Equal(t, "0", respJson.Receivable)
 }
+
+func TestWalletContains(t *testing.T) {
+	newSeed, _ := utils.GenerateSeed(strings.NewReader("0dc54dc735bb2daad287a1bebc330f78a77af6097b9b45ac9a6144d4e57174ee"))
+	wallet, _ := MockController.Wallet.WalletCreate(newSeed)
+	// Create some accounts
+	accs, _ := MockController.Wallet.AccountsCreate(wallet, 2)
+	// Request JSON
+	reqBody := map[string]interface{}{
+		"action":  "wallet_contains",
+		"wallet":  wallet.ID.String(),
+		"account": accs[0].Address,
+	}
+	body, _ := json.Marshal(reqBody)
+	w := httptest.NewRecorder()
+	// Build request
+	req := httptest.NewRequest("POST", "/", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	MockController.Gateway(w, req)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var respJson responses.WalletContainsResponse
+	respBody, _ := io.ReadAll(resp.Body)
+	json.Unmarshal(respBody, &respJson)
+
+	assert.Equal(t, "1", respJson.Exists)
+
+	// Bad request
+	reqBody = map[string]interface{}{
+		"action":  "wallet_contains",
+		"wallet":  wallet.ID.String(),
+		"account": accs[0].Address + "1234",
+	}
+	body, _ = json.Marshal(reqBody)
+	w = httptest.NewRecorder()
+	// Build request
+	req = httptest.NewRequest("POST", "/", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	MockController.Gateway(w, req)
+	resp = w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, 400, resp.StatusCode)
+
+	var errEsp map[string]interface{}
+	respBody, _ = io.ReadAll(resp.Body)
+	json.Unmarshal(respBody, &errEsp)
+
+	assert.Equal(t, "Invalid account", errEsp["error"])
+
+	// Valid account that doesnt exist in wallet
+	reqBody = map[string]interface{}{
+		"action":  "wallet_contains",
+		"wallet":  wallet.ID.String(),
+		"account": "nano_1jtx5p8141zjtukz4msp1x93st7nh475f74odj8673qqm96xczmtcnanos1o",
+	}
+	body, _ = json.Marshal(reqBody)
+	w = httptest.NewRecorder()
+	// Build request
+	req = httptest.NewRequest("POST", "/", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	MockController.Gateway(w, req)
+	resp = w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, 200, resp.StatusCode)
+
+	respBody, _ = io.ReadAll(resp.Body)
+	json.Unmarshal(respBody, &respJson)
+
+	assert.Equal(t, "0", respJson.Exists)
+}

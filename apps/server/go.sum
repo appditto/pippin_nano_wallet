@@ -22,10 +22,18 @@ github.com/appditto/pippin_nano_wallet/libs/config v0.0.0-20220910042023-acfa16d
 github.com/appditto/pippin_nano_wallet/libs/config v0.0.0-20220910042023-acfa16d6fdd9/go.mod h1:bd4tdk5/bKiGIODqFlacvOsQOVGwkX5nl8KDVSZoQdw=
 github.com/appditto/pippin_nano_wallet/libs/database v0.0.0-20220910042023-acfa16d6fdd9 h1:sPmrLXqXJ0dMf1zqlC0uyoouZ6zWfZPmASZGFjjb0yw=
 github.com/appditto/pippin_nano_wallet/libs/database v0.0.0-20220910042023-acfa16d6fdd9/go.mod h1:ZOfnWs02FR0xoT90Z6MGD2ZRQXLqCBIi7yl51O38h5w=
-github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20220910042023-acfa16d6fdd9 h1:2fnWXI0c39YMGV3ONzfSBOIudVyZiN8CmNW3H0Mb9rY=
-github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20220910042023-acfa16d6fdd9/go.mod h1:HraaKfCJL7m2KMHtOr2mMbVkvuzjx3KK2uiM5UoUNyI=
+github.com/appditto/pippin_nano_wallet/libs/pow v0.0.0-20220913032807-bb837a90c28a h1:skhiWe9SazZ2ng7YBwJujRLheKP6t+sGSequW4NNPZE=
+github.com/appditto/pippin_nano_wallet/libs/pow v0.0.0-20220913032807-bb837a90c28a/go.mod h1:ghYj1jfvJCwZVgmJ0QNlwcWijQfJFUQjyCr/f0HWEPU=
+github.com/appditto/pippin_nano_wallet/libs/rpc v0.0.0-20220913032807-bb837a90c28a h1:d3CBYp9+fLf08qsItL9K9l2fovEGUX8iV0F5Bygq+iE=
+github.com/appditto/pippin_nano_wallet/libs/rpc v0.0.0-20220913032807-bb837a90c28a/go.mod h1:x/t+BSPc+kvJJJ8rQBO7VYe8DJmHGReusCh61ZkT75s=
+github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20220911213744-8822c2a7556c h1:aBKDwIidasrfr0PQ1dv5xfqsl8D6t4WZJanYZeXT5Dc=
+github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20220911213744-8822c2a7556c/go.mod h1:HraaKfCJL7m2KMHtOr2mMbVkvuzjx3KK2uiM5UoUNyI=
 github.com/appditto/pippin_nano_wallet/libs/wallet v0.0.0-20220910042023-acfa16d6fdd9 h1:pHqwcBZvDKWS8ITD0FvquMFkL8JXQU3D7x9IVJWSsRY=
 github.com/appditto/pippin_nano_wallet/libs/wallet v0.0.0-20220910042023-acfa16d6fdd9/go.mod h1:Pr1+uL+7ICFV6oLlszXCkpS2ceiRezRQvwlJWFgenI4=
+github.com/bbedward/go-opencl v0.0.0-20220912170320-f150bf21e6e1 h1:LJbzmDTMLguoBWzaecCD8lBzlB7g32yPAw88bYhaTX8=
+github.com/bbedward/go-opencl v0.0.0-20220912170320-f150bf21e6e1/go.mod h1:rBtj7YWY5xZa+kp6l6ht9PBIpFTL3UE/IJuq3K4p6/Y=
+github.com/bbedward/nanopow v0.0.0-20220912170356-7b5d1c750d9b h1:BOQyOguFswX6hN1AIG56gALSa676eVCbqziLRCCoqRs=
+github.com/bbedward/nanopow v0.0.0-20220912170356-7b5d1c750d9b/go.mod h1:Y8Hjy3WiN6GCuO5QMnKZob+SgBPXc6XM2x83f4tqvSc=
 github.com/bsm/redislock v0.8.0 h1:a0T+W/GjGzzvNUdj2yggvvcLf8lOLB1d3Kr5l0vDFW4=
 github.com/bsm/redislock v0.8.0/go.mod h1:/RQ+chuYmDkxIZOY65CF3hY9GRbaWpjax3tqytJ8V3c=
 github.com/cespare/xxhash/v2 v2.1.2 h1:YRXhKfTDauu4ajMg1TPgFO5jnlC2HCbmLXMcTG5cbYE=
@@ -121,6 +129,8 @@ github.com/jackc/puddle v0.0.0-20190413234325-e4ced69a3a2b/go.mod h1:m4B5Dj62Y0f
 github.com/jackc/puddle v0.0.0-20190608224051-11cab39313c9/go.mod h1:m4B5Dj62Y0fbyuIc15OsIqK0+JU8nkqQjsgx7dvjSWk=
 github.com/jackc/puddle v1.1.3/go.mod h1:m4B5Dj62Y0fbyuIc15OsIqK0+JU8nkqQjsgx7dvjSWk=
 github.com/jackc/puddle v1.3.0/go.mod h1:m4B5Dj62Y0fbyuIc15OsIqK0+JU8nkqQjsgx7dvjSWk=
+github.com/jarcoal/httpmock v1.2.0 h1:gSvTxxFR/MEMfsGrvRbdfpRUMBStovlSRLw0Ep1bwwc=
+github.com/jarcoal/httpmock v1.2.0/go.mod h1:oCoTsnAz4+UoOUIf5lJOWV2QQIW5UoeUI6aM2YnWAZk=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/konsorten/go-windows-terminal-sequences v1.0.2/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
@@ -144,6 +154,7 @@ github.com/mattn/go-isatty v0.0.7/go.mod h1:Iq45c/XA43vh69/j3iqttzPXn0bhXyGjM0Hd
 github.com/mattn/go-isatty v0.0.12/go.mod h1:cbi8OIDigv2wuxKPP5vlRcQ1OAZbq2CE4Kysco4FUpU=
 github.com/mattn/go-sqlite3 v1.14.15 h1:vfoHhTN1af61xCRSWzFIWzx2YskyMTwHLrExkBOjvxI=
 github.com/mattn/go-sqlite3 v1.14.15/go.mod h1:2eHXhiwb8IkHr+BDWZGa96P6+rkvnG63S2DGjv9HUNg=
+github.com/maxatome/go-testdeep v1.11.0 h1:Tgh5efyCYyJFGUYiT0qxBSIDeXw0F5zSoatlou685kk=
 github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7 h1:DpOJ2HYzCv8LZP15IdmG+YdwD2luVPHITV96TkirNBM=
 github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7/go.mod h1:ZXFpozHsX6DPmq2I0TCekCxypsnAUbP2oI0UX1GXzOo=
 github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=
@@ -214,6 +225,8 @@ golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97/go.mod h1:GvvjBRRGRdwPK5y
 golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
 golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90 h1:Y/gsMcFOcR+6S6f3YeMKl5g+dZMEWqcz5Czj/GWYbkM=
 golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
+golang.org/x/exp/errors v0.0.0-20220722155223-a9213eeb770e h1:uvrXQFahntD3rdbosx28GsECAFfg24BmQzn1QhSWuSE=
+golang.org/x/exp/errors v0.0.0-20220722155223-a9213eeb770e/go.mod h1:YgqsNsAu4fTvlab/7uiYK9LJrCIzKg/NiZUIH1/ayqo=
 golang.org/x/lint v0.0.0-20190930215403-16217165b5de/go.mod h1:6SW0HCj/g11FgYtHlgUYUwCkIfeOF89ocIRzGO/8vkc=
 golang.org/x/mod v0.0.0-20190513183733-4bf6d317e70e/go.mod h1:mXi4GBBbnImb6dmsKGUJ2LatrhH/nqhxcFungHvyanc=
 golang.org/x/mod v0.1.1-0.20191105210325-c90efee705ee/go.mod h1:QqPTAvyqsEbceGzBzNggFXnrqF1CaUcvgkdR5Ot7KZg=
@@ -246,8 +259,8 @@ golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20201119102817-f84b799fce68/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210423082822-04245dca01da/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
-golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f h1:v4INt8xihDGvnrfjMDVXGxw9wrfxYyCjk0KbXjhR55s=
-golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab h1:2QkjZIsXupsJbJIdSjjUOgWK3aEtzyuh2mPt3l/CkeU=
+golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/term v0.0.0-20201117132131-f5c789dd3221/go.mod h1:Nr5EML6q2oocZ2LXRh80K7BxOlk5/8JxuGnuhpl+muw=
 golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
@@ -284,5 +297,5 @@ gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c/go.mod h1:K4uyk7z7BCEPqu6E+C
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
 gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 honnef.co/go/tools v0.0.1-2019.2.3/go.mod h1:a3bituU0lyd329TUQxRnasdCoJDkEUEAqEt0JzvZhAg=
-k8s.io/klog/v2 v2.80.0 h1:lyJt0TWMPaGoODa8B8bUuxgHS3W/m/bNr2cca3brA/g=
-k8s.io/klog/v2 v2.80.0/go.mod h1:y1WjHnz7Dj687irZUWR/WLkLc5N1YHtjLdmgWjndZn0=
+k8s.io/klog/v2 v2.80.1 h1:atnLQ121W371wYYFawwYx1aEY2eUfs4l3J72wtgAwV4=
+k8s.io/klog/v2 v2.80.1/go.mod h1:y1WjHnz7Dj687irZUWR/WLkLc5N1YHtjLdmgWjndZn0=

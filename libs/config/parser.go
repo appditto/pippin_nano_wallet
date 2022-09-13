@@ -61,5 +61,10 @@ func ParsePippinConfig() (*models.PippinConfig, error) {
 		return nil, err
 	}
 
+	// Validate aspects of the configuration
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
+
 	return &config, nil
 }

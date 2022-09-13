@@ -16,6 +16,9 @@ const EncodeNano = "13456789abcdefghijkmnopqrstuwxyz"
 var NanoEncoding = base32.NewEncoding(EncodeNano)
 
 func AddressToPub(account string) (public_key []byte, err error) {
+	if len(account) != 64 {
+		return nil, errors.New("Invalid account length")
+	}
 	address := string(account)
 
 	if address[:4] == "xrb_" || address[:4] == "ban_" {

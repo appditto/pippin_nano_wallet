@@ -1,5 +1,14 @@
 package models
 
+import (
+	"errors"
+	"math/big"
+	"net/url"
+
+	"github.com/appditto/pippin_nano_wallet/libs/utils"
+	"golang.org/x/exp/slices"
+)
+
 // ! The old server also had:
 // log_file, log_to_stdout,
 type ServerConfig struct {
@@ -43,4 +52,65 @@ func (c *PippinConfig) SetDefaults() {
 			c.Server.NodeRpcUrl = "http://[::1]:7076"
 		}
 	}
+}
+
+var ErrInvalidRpcUrl = errors.New("invalid node_rpc_url")
+var ErrInvalidWSUrl = errors.New("invalid node_ws_url")
+var ErrInvalidPort = errors.New("invalid server port, out of range")
+var ErrInvalidReceiveMinimum = errors.New("invalid receive_minimum, must be between 1 and 133248290000000000000000000000000000000 (max supply)")
+
+func (c *PippinConfig) Validate() error {
+	u, err := url.Parse(c.Server.NodeRpcUrl)
+	if err != nil || !slices.Contains([]string{"http", "https"}, u.Scheme) || u.Host == "" {
+		return ErrInvalidRpcUrl
+	}
+
+	// Parse server port as int
+	if c.Server.Port < 1 || c.Server.Port > 65535 {
+		return ErrInvalidPort
+	}
+
+	// Validate websocket URL if set
+	if c.Server.NodeWsUrl != "" {
+		u, err := url.Parse(c.Server.NodeWsUrl)
+		if err != nil || !slices.Contains([]string{"ws", "wss"}, u.Scheme) || u.Host == "" {
+			return ErrInvalidWSUrl
+		}
+	}
+
+	// Parse receive minimum as big int
+	minimum, ok := big.NewInt(0).SetString(c.Wallet.ReceiveMinimum, 10)
+	if !ok {
+		return ErrInvalidReceiveMinimum
+	} else {
+		maxSupply, _ := big.NewInt(0).SetString("133248290000000000000000000000000000000", 10)
+		if minimum.Cmp(big.NewInt(1)) < 0 || minimum.Cmp(maxSupply) > 0 {
+			return ErrInvalidReceiveMinimum
+		}
+	}
+
+	// Validate all work peers
+	for _, peer := range c.Wallet.WorkPeers {
+		u, err := url.Parse(peer)
+		if err != nil || !slices.Contains([]string{"http", "https"}, u.Scheme) || u.Host == "" {
+			return errors.New("invalid work peer: " + peer)
+		}
+	}
+
+	// Validate representatives
+	if c.Wallet.Banano {
+		for _, rep := range c.Wallet.PreconfiguredRepresentativesBanano {
+			if _, err := utils.AddressToPub(rep); err != nil {
+				return errors.New("invalid preconfigured representative: " + rep)
+			}
+		}
+	} else {
+		for _, rep := range c.Wallet.PreconfiguredRepresentativesBanano {
+			if _, err := utils.AddressToPub(rep); err != nil {
+				return errors.New("invalid preconfigured representative: " + rep)
+			}
+		}
+	}
+
+	return err
 }

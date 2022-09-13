@@ -5,6 +5,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/appditto/pippin_nano_wallet/libs/config/models"
 	"github.com/appditto/pippin_nano_wallet/libs/utils"
 	"github.com/stretchr/testify/assert"
 )
@@ -136,6 +137,81 @@ func TestParser(t *testing.T) {
 		"http://myotherworkpeer.com",
 	}, config.Wallet.WorkPeers)
 	assert.Equal(t, "1", config.Wallet.ReceiveMinimum)
+
+	// Cleanup
+	os.RemoveAll(".testdata")
+}
+
+func TestConfigValidation(t *testing.T) {
+	// Setup
+	configRoot := path.Join(".testdata", "config")
+	os.RemoveAll(".testdata")
+	os.MkdirAll(configRoot, 0755)
+
+	// Copy testdata config 1
+	// Read 1.yaml
+	file, err := os.ReadFile(path.Join("testdata", "1.yaml"))
+	assert.Nil(t, err)
+	// Write 1.yaml to config.yaml
+	assert.Nil(t, os.WriteFile(path.Join(configRoot, "config.yaml"), file, 0644))
+
+	// ! Parse config - this one is valid
+	config, err := ParsePippinConfig()
+	assert.Nil(t, err)
+	assert.Nil(t, config.Validate())
+
+	// Set invalid rpc url
+	config.Server.NodeRpcUrl = "httpz://[::1]:7072"
+	assert.NotNil(t, config.Validate())
+	assert.ErrorIs(t, config.Validate(), models.ErrInvalidRpcUrl)
+	config.Server.NodeRpcUrl = "http://[::1]:7072"
+
+	// Set invalid port
+	config.Server.Port = 0
+	assert.NotNil(t, config.Validate())
+	assert.ErrorIs(t, config.Validate(), models.ErrInvalidPort)
+	config.Server.Port = 11338
+
+	// Check websocket port
+	config.Server.NodeWsUrl = "ws://[::1]:7078"
+	assert.Nil(t, config.Validate())
+	config.Server.NodeWsUrl = "wsz://[::1]:7072"
+	assert.NotNil(t, config.Validate())
+	assert.ErrorIs(t, config.Validate(), models.ErrInvalidWSUrl)
+	config.Server.NodeWsUrl = "ws://[::1]:7078"
+
+	// Check receive minimum
+	config.Wallet.ReceiveMinimum = "0"
+	assert.NotNil(t, config.Validate())
+	assert.ErrorIs(t, config.Validate(), models.ErrInvalidReceiveMinimum)
+	config.Wallet.ReceiveMinimum = "133248290000000000000000000000000000001"
+	assert.NotNil(t, config.Validate())
+	assert.ErrorIs(t, config.Validate(), models.ErrInvalidReceiveMinimum)
+	config.Wallet.ReceiveMinimum = "1"
+	assert.Nil(t, config.Validate())
+
+	// Check work peers
+	config.Wallet.WorkPeers = []string{"http://localhost:5555", "http://myotherworkpeer.com"}
+	assert.Nil(t, config.Validate())
+	config.Wallet.WorkPeers = []string{"http://localhost:5555", "httpz://myotherworkpeer.com"}
+	assert.NotNil(t, config.Validate())
+	assert.ErrorContains(t, config.Validate(), "invalid work peer")
+	config.Wallet.WorkPeers = []string{"http://localhost:5555", "http://myotherworkpeer.com"}
+
+	// Check representatives
+	config.Wallet.PreconfiguredRepresentativesBanano = []string{"ban_1fomoz167m7o38gw4rzt7hz67oq6itejpt4yocrfywujbpatd711cjew8gjj"}
+	config.Wallet.PreconfiguredRepresentativesNano = []string{"nano_1fomoz167m7o38gw4rzt7hz67oq6itejpt4yocrfywujbpatd711cjew8gjj"}
+	config.Wallet.Banano = false
+	assert.Nil(t, config.Validate())
+	config.Wallet.Banano = true
+	assert.Nil(t, config.Validate())
+	config.Wallet.PreconfiguredRepresentativesBanano = []string{"ban_1fomoz167m7o38gw4rzt7hz67oq6itejpt4yocrfywujbpatd711cjew8gjk"}
+	assert.NotNil(t, config.Validate())
+	assert.ErrorContains(t, config.Validate(), "invalid preconfigured representative")
+	config.Wallet.Banano = false
+	config.Wallet.PreconfiguredRepresentativesBanano = []string{}
+	assert.Nil(t, config.Validate())
+	config.Wallet.PreconfiguredRepresentativesNano = []string{"nano_1fomoz167m7o38gw4rzt7hz67oq6itejpt4yocrfywujbpatd711cjew8gjk"}
 
 	// Cleanup
 	os.RemoveAll(".testdata")

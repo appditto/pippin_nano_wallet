@@ -128,7 +128,11 @@ func (p *PippinPow) WorkGenerateMeta(hash string, difficultyMultiplier int, vali
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	resultChan := make(chan *string, len(p.WorkPeers))
+	chanSize := len(p.WorkPeers)
+	if p.bpowUrl != "" && (bpowKey != "" || p.bpowKey != "") {
+		chanSize++
+	}
+	resultChan := make(chan *string, chanSize)
 	defer close(resultChan)
 
 	difficultyUint := DifficultyFromMultiplier(difficultyMultiplier)

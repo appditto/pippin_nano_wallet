@@ -73,16 +73,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Setup nano wallet instance with DB, options, etc.
-	nanoWallet := wallet.NanoWallet{
-		DB:     entClient,
-		Ctx:    ctx,
-		Banano: conf.Wallet.Banano,
-	}
-
 	// Setup RPC handlers
 	rpcClient := rpc.RPCClient{
 		Url: conf.Server.NodeRpcUrl,
+	}
+
+	// Setup nano wallet instance with DB, options, etc.
+	nanoWallet := wallet.NanoWallet{
+		DB:        entClient,
+		Ctx:       ctx,
+		Banano:    conf.Wallet.Banano,
+		RpcClient: &rpcClient,
 	}
 
 	// Setup pow client

@@ -119,3 +119,22 @@ func (client *RPCClient) MakeAccountsPendingRequest(accounts []string) (*respons
 
 	return &resp, nil
 }
+
+func (client *RPCClient) MakeProcessRequest(request requests.ProcessRequest) (*responses.ProcessResponse, error) {
+	response, err := client.MakeRequest(request)
+	if err != nil {
+		klog.Errorf("Error making request %s", err)
+		return nil, err
+	}
+	var resp responses.ProcessResponse
+	err = json.Unmarshal(response, &resp)
+	if err != nil {
+		klog.Errorf("Error unmarshalling response %s", err)
+		return nil, err
+	}
+	if resp.Hash == "" {
+		return nil, errors.New("Error procesing")
+	}
+
+	return &resp, nil
+}

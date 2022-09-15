@@ -34,3 +34,26 @@ func TestToInt(t *testing.T) {
 	assert.ErrorContains(t, err, "not an int")
 	assert.Equal(t, 0, asInt)
 }
+
+func TestToBool(t *testing.T) {
+	// given
+	var val interface{}
+	val = false
+	asBool, err := ToBool(val)
+	assert.Nil(t, err)
+	assert.Equal(t, false, asBool)
+
+	val = "false"
+	asBool, err = ToBool(val)
+	assert.Nil(t, err)
+	assert.Equal(t, false, asBool)
+
+	val = "true"
+	asBool, err = ToBool(val)
+	assert.Nil(t, err)
+	assert.Equal(t, true, asBool)
+
+	val = "NotABool"
+	asBool, err = ToBool(val)
+	assert.ErrorContains(t, err, "not a bool")
+}

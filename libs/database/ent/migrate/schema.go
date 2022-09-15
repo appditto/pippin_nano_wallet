@@ -84,7 +84,7 @@ var (
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "block_hash", Type: field.TypeString, Unique: true, Size: 64},
 		{Name: "block", Type: field.TypeJSON},
-		{Name: "send_id", Type: field.TypeString, Nullable: true, Size: 64},
+		{Name: "send_id", Type: field.TypeString, Nullable: true, Size: 256},
 		{Name: "subtype", Type: field.TypeString, Size: 10},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "account_id", Type: field.TypeUUID, Nullable: true},

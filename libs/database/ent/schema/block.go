@@ -35,7 +35,7 @@ func (Block) Fields() []ent.Field {
 		field.String("block_hash").MaxLen(64).Unique().Immutable(),
 		// TODO use a proper struct, not map[string]interface{}
 		field.JSON("block", map[string]interface{}{}).Immutable(),
-		field.String("send_id").MaxLen(64).Nillable().Immutable().Optional(),
+		field.String("send_id").MaxLen(256).Nillable().Immutable().Optional(),
 		field.String("subtype").MaxLen(10),
 		field.Time("created_at").Default(time.Now).Immutable(),
 	}

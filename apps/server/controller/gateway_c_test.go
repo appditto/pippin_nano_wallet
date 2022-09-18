@@ -98,3 +98,25 @@ func TestBadJson(t *testing.T) {
 
 	assert.Equal(t, "Unable to parse json", respJson["error"])
 }
+
+func TestUnsupportedAction(t *testing.T) {
+	// Request JSON
+	reqBody := map[string]interface{}{
+		"action": "account_move",
+	}
+	body, _ := json.Marshal(reqBody)
+	w := httptest.NewRecorder()
+	// Build request
+	req := httptest.NewRequest("POST", "/", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	MockController.Gateway(w, req)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, 400, resp.StatusCode)
+
+	var respJson map[string]interface{}
+	respBody, _ := io.ReadAll(resp.Body)
+	json.Unmarshal(respBody, &respJson)
+
+	assert.Equal(t, "not_implemented", respJson["error"])
+}

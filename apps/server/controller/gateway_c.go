@@ -6,8 +6,11 @@ import (
 	"net/http"
 	"strings"
 
+	"golang.org/x/exp/slices"
 	"k8s.io/klog/v2"
 )
+
+var UNSUPPORTED_WALLET_ACTIONS = []string{"account_move", "account_remove", "receive_minimum", "receive_minimum_set", "search_pending", "search_pending_all", "wallet_add_watch", "wallet_export", "wallet_history", "wallet_ledger", "wallet_republish", "wallet_work_get", "work_get", "work_set"}
 
 // This is called the "Gateway" because it's the entry point for all requests
 // This API is intended to replace the nano node wallet RPCs
@@ -33,6 +36,11 @@ func (hc *HttpController) Gateway(w http.ResponseWriter, r *http.Request) {
 	}
 
 	action := strings.ToLower(fmt.Sprintf("%v", baseRequest["action"]))
+
+	if slices.Contains(UNSUPPORTED_WALLET_ACTIONS, action) {
+		ErrBadRequest(w, r, "not_implemented")
+		return
+	}
 
 	switch action {
 	case "wallet_create":

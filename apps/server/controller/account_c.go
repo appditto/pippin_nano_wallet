@@ -14,7 +14,7 @@ import (
 // Create a new account in sequence for given wallet
 // ! TODO - we don't support setting a specific index like the node does, not sure the best way around that with how we handle our sequencing
 func (hc *HttpController) HandleAccountCreate(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-	request := hc.DecodeBaseRequest(rawRequest, w, r)
+	request, idx := hc.DecodeAccountCreateRequest(rawRequest, w, r)
 	if request == nil {
 		return
 	}
@@ -26,9 +26,12 @@ func (hc *HttpController) HandleAccountCreate(rawRequest *map[string]interface{}
 	}
 
 	// Create the account
-	newAccount, err := hc.Wallet.AccountCreate(dbWallet)
+	newAccount, err := hc.Wallet.AccountCreate(dbWallet, idx)
 	if errors.Is(err, wallet.ErrWalletLocked) || errors.Is(err, wallet.ErrInvalidWallet) {
 		ErrWalletLocked(w, r)
+	} else if errors.Is(err, wallet.ErrAccountExists) {
+		ErrBadRequest(w, r, "Account already exists")
+		return
 	} else if err != nil {
 		ErrInternalServerError(w, r, err.Error())
 		return

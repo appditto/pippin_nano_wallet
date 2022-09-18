@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
-	"github.com/appditto/pippin_nano_wallet/libs/database/ent/adhocaccount"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/block"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/schema"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/wallet"
@@ -23,40 +22,22 @@ func init() {
 	accountDescAddress := accountFields[2].Descriptor()
 	// account.AddressValidator is a validator for the "address" field. It is called by the builders before save.
 	account.AddressValidator = accountDescAddress.Validators[0].(func(string) error)
+	// accountDescPrivateKey is the schema descriptor for private_key field.
+	accountDescPrivateKey := accountFields[4].Descriptor()
+	// account.PrivateKeyValidator is a validator for the "private_key" field. It is called by the builders before save.
+	account.PrivateKeyValidator = accountDescPrivateKey.Validators[0].(func(string) error)
 	// accountDescWork is the schema descriptor for work field.
-	accountDescWork := accountFields[4].Descriptor()
+	accountDescWork := accountFields[5].Descriptor()
 	// account.DefaultWork holds the default value on creation for the work field.
 	account.DefaultWork = accountDescWork.Default.(bool)
 	// accountDescCreatedAt is the schema descriptor for created_at field.
-	accountDescCreatedAt := accountFields[5].Descriptor()
+	accountDescCreatedAt := accountFields[6].Descriptor()
 	// account.DefaultCreatedAt holds the default value on creation for the created_at field.
 	account.DefaultCreatedAt = accountDescCreatedAt.Default.(func() time.Time)
 	// accountDescID is the schema descriptor for id field.
 	accountDescID := accountFields[0].Descriptor()
 	// account.DefaultID holds the default value on creation for the id field.
 	account.DefaultID = accountDescID.Default.(func() uuid.UUID)
-	adhocaccountFields := schema.AdhocAccount{}.Fields()
-	_ = adhocaccountFields
-	// adhocaccountDescAddress is the schema descriptor for address field.
-	adhocaccountDescAddress := adhocaccountFields[2].Descriptor()
-	// adhocaccount.AddressValidator is a validator for the "address" field. It is called by the builders before save.
-	adhocaccount.AddressValidator = adhocaccountDescAddress.Validators[0].(func(string) error)
-	// adhocaccountDescPrivateKey is the schema descriptor for private_key field.
-	adhocaccountDescPrivateKey := adhocaccountFields[3].Descriptor()
-	// adhocaccount.PrivateKeyValidator is a validator for the "private_key" field. It is called by the builders before save.
-	adhocaccount.PrivateKeyValidator = adhocaccountDescPrivateKey.Validators[0].(func(string) error)
-	// adhocaccountDescWork is the schema descriptor for work field.
-	adhocaccountDescWork := adhocaccountFields[4].Descriptor()
-	// adhocaccount.DefaultWork holds the default value on creation for the work field.
-	adhocaccount.DefaultWork = adhocaccountDescWork.Default.(bool)
-	// adhocaccountDescCreatedAt is the schema descriptor for created_at field.
-	adhocaccountDescCreatedAt := adhocaccountFields[5].Descriptor()
-	// adhocaccount.DefaultCreatedAt holds the default value on creation for the created_at field.
-	adhocaccount.DefaultCreatedAt = adhocaccountDescCreatedAt.Default.(func() time.Time)
-	// adhocaccountDescID is the schema descriptor for id field.
-	adhocaccountDescID := adhocaccountFields[0].Descriptor()
-	// adhocaccount.DefaultID holds the default value on creation for the id field.
-	adhocaccount.DefaultID = adhocaccountDescID.Default.(func() uuid.UUID)
 	blockFields := schema.Block{}.Fields()
 	_ = blockFields
 	// blockDescBlockHash is the schema descriptor for block_hash field.

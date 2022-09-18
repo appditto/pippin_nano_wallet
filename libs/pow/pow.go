@@ -88,6 +88,7 @@ func (p *PippinPow) generateWorkLocally(hash string, difficultyMultiplier int) (
 		return "", err
 	}
 	res, err := nanopow.GenerateWork(decoded, DifficultyFromMultiplier(difficultyMultiplier))
+
 	if err != nil {
 		return "", err
 	}

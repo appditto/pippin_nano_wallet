@@ -6,9 +6,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/appditto/pippin_nano_wallet/libs/config"
 	"github.com/appditto/pippin_nano_wallet/libs/database"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
+	"github.com/appditto/pippin_nano_wallet/libs/pow"
 	nanorpc "github.com/appditto/pippin_nano_wallet/libs/rpc"
 	"github.com/appditto/pippin_nano_wallet/libs/utils"
 	"github.com/google/uuid"
@@ -31,20 +33,28 @@ func testMainWrapper(m *testing.M) int {
 	if err := client.Schema.Create(context.TODO()); err != nil {
 		panic(err)
 	}
+	os.Setenv("HOME", ".testdata")
+	defer os.Unsetenv("HOME")
+	defer os.RemoveAll(".testdata")
+	config, _ := config.ParsePippinConfig()
 	rpcclient := &nanorpc.RPCClient{
 		Url: "/mockrpcendpoint",
 	}
+	powClient := pow.NewPippinPow([]string{}, "", "")
 	MockWallet = &NanoWallet{
-		DB:        client,
-		Ctx:       context.TODO(),
-		Banano:    false,
-		RpcClient: rpcclient,
+		DB:         client,
+		Ctx:        context.TODO(),
+		Banano:     false,
+		RpcClient:  rpcclient,
+		WorkClient: powClient,
+		Config:     config,
 	}
 	bananoWallet = &NanoWallet{
 		DB:        client,
 		Ctx:       context.TODO(),
 		Banano:    true,
 		RpcClient: rpcclient,
+		Config:    config,
 	}
 	return m.Run()
 }
@@ -103,7 +113,7 @@ func TestWalletCreateBanano(t *testing.T) {
 	account, err := bananoWallet.DB.Account.Query().Where(account.WalletID(wallet.ID)).First(bananoWallet.Ctx)
 	assert.Nil(t, err)
 	assert.Equal(t, "ban_33mhuqjxr166czm4y37xk7emfnt4zogxmqrhbfxyngrkbdchmpsk6qehhm3n", account.Address)
-	assert.Equal(t, 0, account.AccountIndex)
+	assert.Equal(t, 0, *account.AccountIndex)
 	assert.Equal(t, true, account.Work)
 }
 
@@ -131,13 +141,13 @@ func TestWalletDestroy(t *testing.T) {
 
 	// Create adhoc accounts
 	_, priv, _ := utils.KeypairFromSeed(seed, 100)
-	acc, _, err := MockWallet.AdhocAccountCreate(wallet, priv)
+	acc, err := MockWallet.AdhocAccountCreate(wallet, priv)
 	assert.Nil(t, err)
 
 	// Create a block object
-	_, err = MockWallet.DB.Block.Create().SetAdhocAccount(acc).SetBlock(map[string]interface{}{
+	_, err = MockWallet.DB.Block.Create().SetAccount(acc).SetBlock(map[string]interface{}{
 		"block": "hello",
-	}).SetBlockHash("abc").SetSubtype("change").Save(MockWallet.Ctx)
+	}).SetBlockHash("sdadasdasd").SetSubtype("change").Save(MockWallet.Ctx)
 	assert.Nil(t, err)
 
 	err = MockWallet.WalletDestroy(wallet)
@@ -162,7 +172,7 @@ func TestWalletInfo(t *testing.T) {
 
 	// Create adhoc accounts
 	_, priv, _ := utils.KeypairFromSeed(seed, 100)
-	_, _, err = MockWallet.AdhocAccountCreate(wallet, priv)
+	_, err = MockWallet.AdhocAccountCreate(wallet, priv)
 	assert.Nil(t, err)
 
 	info, err := MockWallet.WalletInfo(wallet)

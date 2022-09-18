@@ -12,7 +12,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
-	"github.com/appditto/pippin_nano_wallet/libs/database/ent/adhocaccount"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/block"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/wallet"
 
@@ -28,8 +27,6 @@ type Client struct {
 	Schema *migrate.Schema
 	// Account is the client for interacting with the Account builders.
 	Account *AccountClient
-	// AdhocAccount is the client for interacting with the AdhocAccount builders.
-	AdhocAccount *AdhocAccountClient
 	// Block is the client for interacting with the Block builders.
 	Block *BlockClient
 	// Wallet is the client for interacting with the Wallet builders.
@@ -48,7 +45,6 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Account = NewAccountClient(c.config)
-	c.AdhocAccount = NewAdhocAccountClient(c.config)
 	c.Block = NewBlockClient(c.config)
 	c.Wallet = NewWalletClient(c.config)
 }
@@ -82,12 +78,11 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:          ctx,
-		config:       cfg,
-		Account:      NewAccountClient(cfg),
-		AdhocAccount: NewAdhocAccountClient(cfg),
-		Block:        NewBlockClient(cfg),
-		Wallet:       NewWalletClient(cfg),
+		ctx:     ctx,
+		config:  cfg,
+		Account: NewAccountClient(cfg),
+		Block:   NewBlockClient(cfg),
+		Wallet:  NewWalletClient(cfg),
 	}, nil
 }
 
@@ -105,12 +100,11 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:          ctx,
-		config:       cfg,
-		Account:      NewAccountClient(cfg),
-		AdhocAccount: NewAdhocAccountClient(cfg),
-		Block:        NewBlockClient(cfg),
-		Wallet:       NewWalletClient(cfg),
+		ctx:     ctx,
+		config:  cfg,
+		Account: NewAccountClient(cfg),
+		Block:   NewBlockClient(cfg),
+		Wallet:  NewWalletClient(cfg),
 	}, nil
 }
 
@@ -140,7 +134,6 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.Account.Use(hooks...)
-	c.AdhocAccount.Use(hooks...)
 	c.Block.Use(hooks...)
 	c.Wallet.Use(hooks...)
 }
@@ -267,128 +260,6 @@ func (c *AccountClient) Hooks() []Hook {
 	return c.hooks.Account
 }
 
-// AdhocAccountClient is a client for the AdhocAccount schema.
-type AdhocAccountClient struct {
-	config
-}
-
-// NewAdhocAccountClient returns a client for the AdhocAccount from the given config.
-func NewAdhocAccountClient(c config) *AdhocAccountClient {
-	return &AdhocAccountClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `adhocaccount.Hooks(f(g(h())))`.
-func (c *AdhocAccountClient) Use(hooks ...Hook) {
-	c.hooks.AdhocAccount = append(c.hooks.AdhocAccount, hooks...)
-}
-
-// Create returns a builder for creating a AdhocAccount entity.
-func (c *AdhocAccountClient) Create() *AdhocAccountCreate {
-	mutation := newAdhocAccountMutation(c.config, OpCreate)
-	return &AdhocAccountCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of AdhocAccount entities.
-func (c *AdhocAccountClient) CreateBulk(builders ...*AdhocAccountCreate) *AdhocAccountCreateBulk {
-	return &AdhocAccountCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for AdhocAccount.
-func (c *AdhocAccountClient) Update() *AdhocAccountUpdate {
-	mutation := newAdhocAccountMutation(c.config, OpUpdate)
-	return &AdhocAccountUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *AdhocAccountClient) UpdateOne(aa *AdhocAccount) *AdhocAccountUpdateOne {
-	mutation := newAdhocAccountMutation(c.config, OpUpdateOne, withAdhocAccount(aa))
-	return &AdhocAccountUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *AdhocAccountClient) UpdateOneID(id uuid.UUID) *AdhocAccountUpdateOne {
-	mutation := newAdhocAccountMutation(c.config, OpUpdateOne, withAdhocAccountID(id))
-	return &AdhocAccountUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for AdhocAccount.
-func (c *AdhocAccountClient) Delete() *AdhocAccountDelete {
-	mutation := newAdhocAccountMutation(c.config, OpDelete)
-	return &AdhocAccountDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *AdhocAccountClient) DeleteOne(aa *AdhocAccount) *AdhocAccountDeleteOne {
-	return c.DeleteOneID(aa.ID)
-}
-
-// DeleteOne returns a builder for deleting the given entity by its id.
-func (c *AdhocAccountClient) DeleteOneID(id uuid.UUID) *AdhocAccountDeleteOne {
-	builder := c.Delete().Where(adhocaccount.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &AdhocAccountDeleteOne{builder}
-}
-
-// Query returns a query builder for AdhocAccount.
-func (c *AdhocAccountClient) Query() *AdhocAccountQuery {
-	return &AdhocAccountQuery{
-		config: c.config,
-	}
-}
-
-// Get returns a AdhocAccount entity by its id.
-func (c *AdhocAccountClient) Get(ctx context.Context, id uuid.UUID) (*AdhocAccount, error) {
-	return c.Query().Where(adhocaccount.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *AdhocAccountClient) GetX(ctx context.Context, id uuid.UUID) *AdhocAccount {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryWallet queries the wallet edge of a AdhocAccount.
-func (c *AdhocAccountClient) QueryWallet(aa *AdhocAccount) *WalletQuery {
-	query := &WalletQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := aa.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(adhocaccount.Table, adhocaccount.FieldID, id),
-			sqlgraph.To(wallet.Table, wallet.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, adhocaccount.WalletTable, adhocaccount.WalletColumn),
-		)
-		fromV = sqlgraph.Neighbors(aa.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryBlocks queries the blocks edge of a AdhocAccount.
-func (c *AdhocAccountClient) QueryBlocks(aa *AdhocAccount) *BlockQuery {
-	query := &BlockQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := aa.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(adhocaccount.Table, adhocaccount.FieldID, id),
-			sqlgraph.To(block.Table, block.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, adhocaccount.BlocksTable, adhocaccount.BlocksColumn),
-		)
-		fromV = sqlgraph.Neighbors(aa.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *AdhocAccountClient) Hooks() []Hook {
-	return c.hooks.AdhocAccount
-}
-
 // BlockClient is a client for the Block schema.
 type BlockClient struct {
 	config
@@ -483,22 +354,6 @@ func (c *BlockClient) QueryAccount(b *Block) *AccountQuery {
 			sqlgraph.From(block.Table, block.FieldID, id),
 			sqlgraph.To(account.Table, account.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, block.AccountTable, block.AccountColumn),
-		)
-		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryAdhocAccount queries the adhoc_account edge of a Block.
-func (c *BlockClient) QueryAdhocAccount(b *Block) *AdhocAccountQuery {
-	query := &AdhocAccountQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := b.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(block.Table, block.FieldID, id),
-			sqlgraph.To(adhocaccount.Table, adhocaccount.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, block.AdhocAccountTable, block.AdhocAccountColumn),
 		)
 		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
 		return fromV, nil
@@ -605,22 +460,6 @@ func (c *WalletClient) QueryAccounts(w *Wallet) *AccountQuery {
 			sqlgraph.From(wallet.Table, wallet.FieldID, id),
 			sqlgraph.To(account.Table, account.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, wallet.AccountsTable, wallet.AccountsColumn),
-		)
-		fromV = sqlgraph.Neighbors(w.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryAdhocAccounts queries the adhoc_accounts edge of a Wallet.
-func (c *WalletClient) QueryAdhocAccounts(w *Wallet) *AdhocAccountQuery {
-	query := &AdhocAccountQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := w.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(wallet.Table, wallet.FieldID, id),
-			sqlgraph.To(adhocaccount.Table, adhocaccount.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, wallet.AdhocAccountsTable, wallet.AdhocAccountsColumn),
 		)
 		fromV = sqlgraph.Neighbors(w.driver.Dialect(), step)
 		return fromV, nil

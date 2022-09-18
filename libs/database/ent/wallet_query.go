@@ -12,7 +12,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
-	"github.com/appditto/pippin_nano_wallet/libs/database/ent/adhocaccount"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/predicate"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/wallet"
 	"github.com/google/uuid"
@@ -21,14 +20,13 @@ import (
 // WalletQuery is the builder for querying Wallet entities.
 type WalletQuery struct {
 	config
-	limit             *int
-	offset            *int
-	unique            *bool
-	order             []OrderFunc
-	fields            []string
-	predicates        []predicate.Wallet
-	withAccounts      *AccountQuery
-	withAdhocAccounts *AdhocAccountQuery
+	limit        *int
+	offset       *int
+	unique       *bool
+	order        []OrderFunc
+	fields       []string
+	predicates   []predicate.Wallet
+	withAccounts *AccountQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -80,28 +78,6 @@ func (wq *WalletQuery) QueryAccounts() *AccountQuery {
 			sqlgraph.From(wallet.Table, wallet.FieldID, selector),
 			sqlgraph.To(account.Table, account.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, wallet.AccountsTable, wallet.AccountsColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(wq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryAdhocAccounts chains the current query on the "adhoc_accounts" edge.
-func (wq *WalletQuery) QueryAdhocAccounts() *AdhocAccountQuery {
-	query := &AdhocAccountQuery{config: wq.config}
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := wq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := wq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(wallet.Table, wallet.FieldID, selector),
-			sqlgraph.To(adhocaccount.Table, adhocaccount.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, wallet.AdhocAccountsTable, wallet.AdhocAccountsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(wq.driver.Dialect(), step)
 		return fromU, nil
@@ -285,13 +261,12 @@ func (wq *WalletQuery) Clone() *WalletQuery {
 		return nil
 	}
 	return &WalletQuery{
-		config:            wq.config,
-		limit:             wq.limit,
-		offset:            wq.offset,
-		order:             append([]OrderFunc{}, wq.order...),
-		predicates:        append([]predicate.Wallet{}, wq.predicates...),
-		withAccounts:      wq.withAccounts.Clone(),
-		withAdhocAccounts: wq.withAdhocAccounts.Clone(),
+		config:       wq.config,
+		limit:        wq.limit,
+		offset:       wq.offset,
+		order:        append([]OrderFunc{}, wq.order...),
+		predicates:   append([]predicate.Wallet{}, wq.predicates...),
+		withAccounts: wq.withAccounts.Clone(),
 		// clone intermediate query.
 		sql:    wq.sql.Clone(),
 		path:   wq.path,
@@ -307,17 +282,6 @@ func (wq *WalletQuery) WithAccounts(opts ...func(*AccountQuery)) *WalletQuery {
 		opt(query)
 	}
 	wq.withAccounts = query
-	return wq
-}
-
-// WithAdhocAccounts tells the query-builder to eager-load the nodes that are connected to
-// the "adhoc_accounts" edge. The optional arguments are used to configure the query builder of the edge.
-func (wq *WalletQuery) WithAdhocAccounts(opts ...func(*AdhocAccountQuery)) *WalletQuery {
-	query := &AdhocAccountQuery{config: wq.config}
-	for _, opt := range opts {
-		opt(query)
-	}
-	wq.withAdhocAccounts = query
 	return wq
 }
 
@@ -389,9 +353,8 @@ func (wq *WalletQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Walle
 	var (
 		nodes       = []*Wallet{}
 		_spec       = wq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [1]bool{
 			wq.withAccounts != nil,
-			wq.withAdhocAccounts != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
@@ -419,13 +382,6 @@ func (wq *WalletQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Walle
 			return nil, err
 		}
 	}
-	if query := wq.withAdhocAccounts; query != nil {
-		if err := wq.loadAdhocAccounts(ctx, query, nodes,
-			func(n *Wallet) { n.Edges.AdhocAccounts = []*AdhocAccount{} },
-			func(n *Wallet, e *AdhocAccount) { n.Edges.AdhocAccounts = append(n.Edges.AdhocAccounts, e) }); err != nil {
-			return nil, err
-		}
-	}
 	return nodes, nil
 }
 
@@ -441,33 +397,6 @@ func (wq *WalletQuery) loadAccounts(ctx context.Context, query *AccountQuery, no
 	}
 	query.Where(predicate.Account(func(s *sql.Selector) {
 		s.Where(sql.InValues(wallet.AccountsColumn, fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.WalletID
-		node, ok := nodeids[fk]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "wallet_id" returned %v for node %v`, fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (wq *WalletQuery) loadAdhocAccounts(ctx context.Context, query *AdhocAccountQuery, nodes []*Wallet, init func(*Wallet), assign func(*Wallet, *AdhocAccount)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Wallet)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.Where(predicate.AdhocAccount(func(s *sql.Selector) {
-		s.Where(sql.InValues(wallet.AdhocAccountsColumn, fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

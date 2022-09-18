@@ -41,6 +41,28 @@ func (ac *AccountCreate) SetAccountIndex(i int) *AccountCreate {
 	return ac
 }
 
+// SetNillableAccountIndex sets the "account_index" field if the given value is not nil.
+func (ac *AccountCreate) SetNillableAccountIndex(i *int) *AccountCreate {
+	if i != nil {
+		ac.SetAccountIndex(*i)
+	}
+	return ac
+}
+
+// SetPrivateKey sets the "private_key" field.
+func (ac *AccountCreate) SetPrivateKey(s string) *AccountCreate {
+	ac.mutation.SetPrivateKey(s)
+	return ac
+}
+
+// SetNillablePrivateKey sets the "private_key" field if the given value is not nil.
+func (ac *AccountCreate) SetNillablePrivateKey(s *string) *AccountCreate {
+	if s != nil {
+		ac.SetPrivateKey(*s)
+	}
+	return ac
+}
+
 // SetWork sets the "work" field.
 func (ac *AccountCreate) SetWork(b bool) *AccountCreate {
 	ac.mutation.SetWork(b)
@@ -207,8 +229,10 @@ func (ac *AccountCreate) check() error {
 			return &ValidationError{Name: "address", err: fmt.Errorf(`ent: validator failed for field "Account.address": %w`, err)}
 		}
 	}
-	if _, ok := ac.mutation.AccountIndex(); !ok {
-		return &ValidationError{Name: "account_index", err: errors.New(`ent: missing required field "Account.account_index"`)}
+	if v, ok := ac.mutation.PrivateKey(); ok {
+		if err := account.PrivateKeyValidator(v); err != nil {
+			return &ValidationError{Name: "private_key", err: fmt.Errorf(`ent: validator failed for field "Account.private_key": %w`, err)}
+		}
 	}
 	if _, ok := ac.mutation.Work(); !ok {
 		return &ValidationError{Name: "work", err: errors.New(`ent: missing required field "Account.work"`)}
@@ -269,7 +293,15 @@ func (ac *AccountCreate) createSpec() (*Account, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: account.FieldAccountIndex,
 		})
-		_node.AccountIndex = value
+		_node.AccountIndex = &value
+	}
+	if value, ok := ac.mutation.PrivateKey(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: account.FieldPrivateKey,
+		})
+		_node.PrivateKey = &value
 	}
 	if value, ok := ac.mutation.Work(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{

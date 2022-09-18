@@ -10,7 +10,6 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
-	"github.com/appditto/pippin_nano_wallet/libs/database/ent/adhocaccount"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/block"
 	"github.com/google/uuid"
 )
@@ -43,11 +42,9 @@ type Block struct {
 type BlockEdges struct {
 	// Account holds the value of the account edge.
 	Account *Account `json:"account,omitempty"`
-	// AdhocAccount holds the value of the adhoc_account edge.
-	AdhocAccount *AdhocAccount `json:"adhoc_account,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [1]bool
 }
 
 // AccountOrErr returns the Account value or an error if the edge
@@ -61,19 +58,6 @@ func (e BlockEdges) AccountOrErr() (*Account, error) {
 		return e.Account, nil
 	}
 	return nil, &NotLoadedError{edge: "account"}
-}
-
-// AdhocAccountOrErr returns the AdhocAccount value or an error if the edge
-// was not loaded in eager-loading, or loaded but was not found.
-func (e BlockEdges) AdhocAccountOrErr() (*AdhocAccount, error) {
-	if e.loadedTypes[1] {
-		if e.AdhocAccount == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: adhocaccount.Label}
-		}
-		return e.AdhocAccount, nil
-	}
-	return nil, &NotLoadedError{edge: "adhoc_account"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -167,11 +151,6 @@ func (b *Block) assignValues(columns []string, values []interface{}) error {
 // QueryAccount queries the "account" edge of the Block entity.
 func (b *Block) QueryAccount() *AccountQuery {
 	return (&BlockClient{config: b.config}).QueryAccount(b)
-}
-
-// QueryAdhocAccount queries the "adhoc_account" edge of the Block entity.
-func (b *Block) QueryAdhocAccount() *AdhocAccountQuery {
-	return (&BlockClient{config: b.config}).QueryAdhocAccount(b)
 }
 
 // Update returns a builder for updating this Block.

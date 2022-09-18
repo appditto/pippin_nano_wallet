@@ -22,19 +22,6 @@ func (f AccountFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	return f(ctx, mv)
 }
 
-// The AdhocAccountFunc type is an adapter to allow the use of ordinary
-// function as AdhocAccount mutator.
-type AdhocAccountFunc func(context.Context, *ent.AdhocAccountMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f AdhocAccountFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.AdhocAccountMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AdhocAccountMutation", m)
-	}
-	return f(ctx, mv)
-}
-
 // The BlockFunc type is an adapter to allow the use of ordinary
 // function as Block mutator.
 type BlockFunc func(context.Context, *ent.BlockMutation) (ent.Value, error)

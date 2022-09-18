@@ -49,9 +49,43 @@ func (au *AccountUpdate) SetAccountIndex(i int) *AccountUpdate {
 	return au
 }
 
+// SetNillableAccountIndex sets the "account_index" field if the given value is not nil.
+func (au *AccountUpdate) SetNillableAccountIndex(i *int) *AccountUpdate {
+	if i != nil {
+		au.SetAccountIndex(*i)
+	}
+	return au
+}
+
 // AddAccountIndex adds i to the "account_index" field.
 func (au *AccountUpdate) AddAccountIndex(i int) *AccountUpdate {
 	au.mutation.AddAccountIndex(i)
+	return au
+}
+
+// ClearAccountIndex clears the value of the "account_index" field.
+func (au *AccountUpdate) ClearAccountIndex() *AccountUpdate {
+	au.mutation.ClearAccountIndex()
+	return au
+}
+
+// SetPrivateKey sets the "private_key" field.
+func (au *AccountUpdate) SetPrivateKey(s string) *AccountUpdate {
+	au.mutation.SetPrivateKey(s)
+	return au
+}
+
+// SetNillablePrivateKey sets the "private_key" field if the given value is not nil.
+func (au *AccountUpdate) SetNillablePrivateKey(s *string) *AccountUpdate {
+	if s != nil {
+		au.SetPrivateKey(*s)
+	}
+	return au
+}
+
+// ClearPrivateKey clears the value of the "private_key" field.
+func (au *AccountUpdate) ClearPrivateKey() *AccountUpdate {
+	au.mutation.ClearPrivateKey()
 	return au
 }
 
@@ -188,6 +222,11 @@ func (au *AccountUpdate) check() error {
 			return &ValidationError{Name: "address", err: fmt.Errorf(`ent: validator failed for field "Account.address": %w`, err)}
 		}
 	}
+	if v, ok := au.mutation.PrivateKey(); ok {
+		if err := account.PrivateKeyValidator(v); err != nil {
+			return &ValidationError{Name: "private_key", err: fmt.Errorf(`ent: validator failed for field "Account.private_key": %w`, err)}
+		}
+	}
 	if _, ok := au.mutation.WalletID(); au.mutation.WalletCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Account.wallet"`)
 	}
@@ -231,6 +270,25 @@ func (au *AccountUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Type:   field.TypeInt,
 			Value:  value,
 			Column: account.FieldAccountIndex,
+		})
+	}
+	if au.mutation.AccountIndexCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt,
+			Column: account.FieldAccountIndex,
+		})
+	}
+	if value, ok := au.mutation.PrivateKey(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: account.FieldPrivateKey,
+		})
+	}
+	if au.mutation.PrivateKeyCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: account.FieldPrivateKey,
 		})
 	}
 	if value, ok := au.mutation.Work(); ok {
@@ -367,9 +425,43 @@ func (auo *AccountUpdateOne) SetAccountIndex(i int) *AccountUpdateOne {
 	return auo
 }
 
+// SetNillableAccountIndex sets the "account_index" field if the given value is not nil.
+func (auo *AccountUpdateOne) SetNillableAccountIndex(i *int) *AccountUpdateOne {
+	if i != nil {
+		auo.SetAccountIndex(*i)
+	}
+	return auo
+}
+
 // AddAccountIndex adds i to the "account_index" field.
 func (auo *AccountUpdateOne) AddAccountIndex(i int) *AccountUpdateOne {
 	auo.mutation.AddAccountIndex(i)
+	return auo
+}
+
+// ClearAccountIndex clears the value of the "account_index" field.
+func (auo *AccountUpdateOne) ClearAccountIndex() *AccountUpdateOne {
+	auo.mutation.ClearAccountIndex()
+	return auo
+}
+
+// SetPrivateKey sets the "private_key" field.
+func (auo *AccountUpdateOne) SetPrivateKey(s string) *AccountUpdateOne {
+	auo.mutation.SetPrivateKey(s)
+	return auo
+}
+
+// SetNillablePrivateKey sets the "private_key" field if the given value is not nil.
+func (auo *AccountUpdateOne) SetNillablePrivateKey(s *string) *AccountUpdateOne {
+	if s != nil {
+		auo.SetPrivateKey(*s)
+	}
+	return auo
+}
+
+// ClearPrivateKey clears the value of the "private_key" field.
+func (auo *AccountUpdateOne) ClearPrivateKey() *AccountUpdateOne {
+	auo.mutation.ClearPrivateKey()
 	return auo
 }
 
@@ -519,6 +611,11 @@ func (auo *AccountUpdateOne) check() error {
 			return &ValidationError{Name: "address", err: fmt.Errorf(`ent: validator failed for field "Account.address": %w`, err)}
 		}
 	}
+	if v, ok := auo.mutation.PrivateKey(); ok {
+		if err := account.PrivateKeyValidator(v); err != nil {
+			return &ValidationError{Name: "private_key", err: fmt.Errorf(`ent: validator failed for field "Account.private_key": %w`, err)}
+		}
+	}
 	if _, ok := auo.mutation.WalletID(); auo.mutation.WalletCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Account.wallet"`)
 	}
@@ -579,6 +676,25 @@ func (auo *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err e
 			Type:   field.TypeInt,
 			Value:  value,
 			Column: account.FieldAccountIndex,
+		})
+	}
+	if auo.mutation.AccountIndexCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt,
+			Column: account.FieldAccountIndex,
+		})
+	}
+	if value, ok := auo.mutation.PrivateKey(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: account.FieldPrivateKey,
+		})
+	}
+	if auo.mutation.PrivateKeyCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: account.FieldPrivateKey,
 		})
 	}
 	if value, ok := auo.mutation.Work(); ok {

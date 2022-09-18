@@ -11,7 +11,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
-	"github.com/appditto/pippin_nano_wallet/libs/database/ent/adhocaccount"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/block"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/predicate"
 	"github.com/google/uuid"
@@ -81,11 +80,6 @@ func (bu *BlockUpdate) SetAccount(a *Account) *BlockUpdate {
 	return bu.SetAccountID(a.ID)
 }
 
-// SetAdhocAccount sets the "adhoc_account" edge to the AdhocAccount entity.
-func (bu *BlockUpdate) SetAdhocAccount(a *AdhocAccount) *BlockUpdate {
-	return bu.SetAdhocAccountID(a.ID)
-}
-
 // Mutation returns the BlockMutation object of the builder.
 func (bu *BlockUpdate) Mutation() *BlockMutation {
 	return bu.mutation
@@ -94,12 +88,6 @@ func (bu *BlockUpdate) Mutation() *BlockMutation {
 // ClearAccount clears the "account" edge to the Account entity.
 func (bu *BlockUpdate) ClearAccount() *BlockUpdate {
 	bu.mutation.ClearAccount()
-	return bu
-}
-
-// ClearAdhocAccount clears the "adhoc_account" edge to the AdhocAccount entity.
-func (bu *BlockUpdate) ClearAdhocAccount() *BlockUpdate {
-	bu.mutation.ClearAdhocAccount()
 	return bu
 }
 
@@ -191,6 +179,19 @@ func (bu *BlockUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
+	if value, ok := bu.mutation.AdhocAccountID(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeUUID,
+			Value:  value,
+			Column: block.FieldAdhocAccountID,
+		})
+	}
+	if bu.mutation.AdhocAccountIDCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeUUID,
+			Column: block.FieldAdhocAccountID,
+		})
+	}
 	if bu.mutation.SendIDCleared() {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -231,41 +232,6 @@ func (bu *BlockUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: account.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if bu.mutation.AdhocAccountCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   block.AdhocAccountTable,
-			Columns: []string{block.AdhocAccountColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: adhocaccount.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := bu.mutation.AdhocAccountIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   block.AdhocAccountTable,
-			Columns: []string{block.AdhocAccountColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: adhocaccount.FieldID,
 				},
 			},
 		}
@@ -344,11 +310,6 @@ func (buo *BlockUpdateOne) SetAccount(a *Account) *BlockUpdateOne {
 	return buo.SetAccountID(a.ID)
 }
 
-// SetAdhocAccount sets the "adhoc_account" edge to the AdhocAccount entity.
-func (buo *BlockUpdateOne) SetAdhocAccount(a *AdhocAccount) *BlockUpdateOne {
-	return buo.SetAdhocAccountID(a.ID)
-}
-
 // Mutation returns the BlockMutation object of the builder.
 func (buo *BlockUpdateOne) Mutation() *BlockMutation {
 	return buo.mutation
@@ -357,12 +318,6 @@ func (buo *BlockUpdateOne) Mutation() *BlockMutation {
 // ClearAccount clears the "account" edge to the Account entity.
 func (buo *BlockUpdateOne) ClearAccount() *BlockUpdateOne {
 	buo.mutation.ClearAccount()
-	return buo
-}
-
-// ClearAdhocAccount clears the "adhoc_account" edge to the AdhocAccount entity.
-func (buo *BlockUpdateOne) ClearAdhocAccount() *BlockUpdateOne {
-	buo.mutation.ClearAdhocAccount()
 	return buo
 }
 
@@ -484,6 +439,19 @@ func (buo *BlockUpdateOne) sqlSave(ctx context.Context) (_node *Block, err error
 			}
 		}
 	}
+	if value, ok := buo.mutation.AdhocAccountID(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeUUID,
+			Value:  value,
+			Column: block.FieldAdhocAccountID,
+		})
+	}
+	if buo.mutation.AdhocAccountIDCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeUUID,
+			Column: block.FieldAdhocAccountID,
+		})
+	}
 	if buo.mutation.SendIDCleared() {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -524,41 +492,6 @@ func (buo *BlockUpdateOne) sqlSave(ctx context.Context) (_node *Block, err error
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: account.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if buo.mutation.AdhocAccountCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   block.AdhocAccountTable,
-			Columns: []string{block.AdhocAccountColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: adhocaccount.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := buo.mutation.AdhocAccountIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   block.AdhocAccountTable,
-			Columns: []string{block.AdhocAccountColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: adhocaccount.FieldID,
 				},
 			},
 		}

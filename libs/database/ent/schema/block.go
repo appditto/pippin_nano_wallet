@@ -48,17 +48,12 @@ func (Block) Edges() []ent.Edge {
 			Ref("blocks").
 			Field("account_id").
 			Unique(),
-		edge.From("adhoc_account", AdhocAccount.Type).
-			Ref("blocks").
-			Field("adhoc_account_id").
-			Unique(),
 	}
 }
 
 // Indexes of the Block.
 func (Block) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("adhoc_account_id", "send_id").Unique(),
 		index.Fields("account_id", "send_id").Unique(),
 	}
 }

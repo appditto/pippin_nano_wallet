@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/appditto/pippin_nano_wallet/libs/utils"
 	walletmodels "github.com/appditto/pippin_nano_wallet/libs/wallet/models"
 	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
@@ -33,13 +32,12 @@ func TestEncodeProcessRequest(t *testing.T) {
 }
 
 func TestDecodeProcessRequest(t *testing.T) {
-	encoded := `{"action":"process","json_block":"true","block":{"type":"state","hash":"1234","account":"1","previous":"2","representative":"3","balance":"4","link":"5","work":"","signature":""}}`
+	encoded := `{"action":"process","json_block":true,"block":{"type":"state","hash":"1234","account":"1","previous":"2","representative":"3","balance":"4","link":"5","work":"","signature":""}}`
 	var request ProcessRequest
 	err := json.Unmarshal([]byte(encoded), &request)
 	assert.Nil(t, err)
 	assert.Equal(t, "process", request.Action)
-	asBool, _ := utils.ToBool(request.JsonBlock)
-	assert.True(t, asBool)
+	assert.Equal(t, true, request.JsonBlock)
 	assert.Equal(t, "state", request.Block.Type)
 	assert.Equal(t, "1234", request.Block.Hash)
 	assert.Equal(t, "1", request.Block.Account)
@@ -54,7 +52,7 @@ func TestDecodeProcessRequest(t *testing.T) {
 func TestMapStructureDecodeProcessRequest(t *testing.T) {
 	request := map[string]interface{}{
 		"action":     "process",
-		"json_block": "true",
+		"json_block": true,
 		"block": map[string]interface{}{
 			"type":           "state",
 			"hash":           "1234",
@@ -70,8 +68,7 @@ func TestMapStructureDecodeProcessRequest(t *testing.T) {
 	var decoded ProcessRequest
 	mapstructure.Decode(request, &decoded)
 	assert.Equal(t, "process", decoded.Action)
-	asBool, _ := utils.ToBool(decoded.JsonBlock)
-	assert.True(t, asBool)
+	assert.Equal(t, true, decoded.JsonBlock)
 	assert.Equal(t, "state", decoded.Block.Type)
 	assert.Equal(t, "1234", decoded.Block.Hash)
 	assert.Equal(t, "1", decoded.Block.Account)

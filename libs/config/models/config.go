@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"math/big"
+	"math/rand"
 	"net/url"
 
 	"github.com/appditto/pippin_nano_wallet/libs/utils"
@@ -113,4 +114,21 @@ func (c *PippinConfig) Validate() error {
 	}
 
 	return err
+}
+
+var ErrNoRepsConfigured = errors.New("no representatives configured")
+
+func (c *PippinConfig) GetRandomRep() (string, error) {
+	// Retrieve a random banano or nano representative from the arrays
+	if c.Wallet.Banano {
+		if len(c.Wallet.PreconfiguredRepresentativesBanano) == 0 {
+			return "", ErrNoRepsConfigured
+		}
+		return c.Wallet.PreconfiguredRepresentativesBanano[rand.Intn(len(c.Wallet.PreconfiguredRepresentativesBanano))], nil
+	}
+	if len(c.Wallet.PreconfiguredRepresentativesNano) == 0 {
+		return "", ErrNoRepsConfigured
+	}
+	return c.Wallet.PreconfiguredRepresentativesNano[rand.Intn(len(c.Wallet.PreconfiguredRepresentativesNano))], nil
+
 }

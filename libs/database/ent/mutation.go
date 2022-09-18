@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
-	"github.com/appditto/pippin_nano_wallet/libs/database/ent/adhocaccount"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/block"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/predicate"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/wallet"
@@ -28,10 +27,9 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeAccount      = "Account"
-	TypeAdhocAccount = "AdhocAccount"
-	TypeBlock        = "Block"
-	TypeWallet       = "Wallet"
+	TypeAccount = "Account"
+	TypeBlock   = "Block"
+	TypeWallet  = "Wallet"
 )
 
 // AccountMutation represents an operation that mutates the Account nodes in the graph.
@@ -43,6 +41,7 @@ type AccountMutation struct {
 	address          *string
 	account_index    *int
 	addaccount_index *int
+	private_key      *string
 	work             *bool
 	created_at       *time.Time
 	clearedFields    map[string]struct{}
@@ -250,7 +249,7 @@ func (m *AccountMutation) AccountIndex() (r int, exists bool) {
 // OldAccountIndex returns the old "account_index" field's value of the Account entity.
 // If the Account object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AccountMutation) OldAccountIndex(ctx context.Context) (v int, err error) {
+func (m *AccountMutation) OldAccountIndex(ctx context.Context) (v *int, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldAccountIndex is only allowed on UpdateOne operations")
 	}
@@ -282,10 +281,73 @@ func (m *AccountMutation) AddedAccountIndex() (r int, exists bool) {
 	return *v, true
 }
 
+// ClearAccountIndex clears the value of the "account_index" field.
+func (m *AccountMutation) ClearAccountIndex() {
+	m.account_index = nil
+	m.addaccount_index = nil
+	m.clearedFields[account.FieldAccountIndex] = struct{}{}
+}
+
+// AccountIndexCleared returns if the "account_index" field was cleared in this mutation.
+func (m *AccountMutation) AccountIndexCleared() bool {
+	_, ok := m.clearedFields[account.FieldAccountIndex]
+	return ok
+}
+
 // ResetAccountIndex resets all changes to the "account_index" field.
 func (m *AccountMutation) ResetAccountIndex() {
 	m.account_index = nil
 	m.addaccount_index = nil
+	delete(m.clearedFields, account.FieldAccountIndex)
+}
+
+// SetPrivateKey sets the "private_key" field.
+func (m *AccountMutation) SetPrivateKey(s string) {
+	m.private_key = &s
+}
+
+// PrivateKey returns the value of the "private_key" field in the mutation.
+func (m *AccountMutation) PrivateKey() (r string, exists bool) {
+	v := m.private_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPrivateKey returns the old "private_key" field's value of the Account entity.
+// If the Account object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AccountMutation) OldPrivateKey(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPrivateKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPrivateKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPrivateKey: %w", err)
+	}
+	return oldValue.PrivateKey, nil
+}
+
+// ClearPrivateKey clears the value of the "private_key" field.
+func (m *AccountMutation) ClearPrivateKey() {
+	m.private_key = nil
+	m.clearedFields[account.FieldPrivateKey] = struct{}{}
+}
+
+// PrivateKeyCleared returns if the "private_key" field was cleared in this mutation.
+func (m *AccountMutation) PrivateKeyCleared() bool {
+	_, ok := m.clearedFields[account.FieldPrivateKey]
+	return ok
+}
+
+// ResetPrivateKey resets all changes to the "private_key" field.
+func (m *AccountMutation) ResetPrivateKey() {
+	m.private_key = nil
+	delete(m.clearedFields, account.FieldPrivateKey)
 }
 
 // SetWork sets the "work" field.
@@ -459,7 +521,7 @@ func (m *AccountMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AccountMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
 	if m.wallet != nil {
 		fields = append(fields, account.FieldWalletID)
 	}
@@ -468,6 +530,9 @@ func (m *AccountMutation) Fields() []string {
 	}
 	if m.account_index != nil {
 		fields = append(fields, account.FieldAccountIndex)
+	}
+	if m.private_key != nil {
+		fields = append(fields, account.FieldPrivateKey)
 	}
 	if m.work != nil {
 		fields = append(fields, account.FieldWork)
@@ -489,6 +554,8 @@ func (m *AccountMutation) Field(name string) (ent.Value, bool) {
 		return m.Address()
 	case account.FieldAccountIndex:
 		return m.AccountIndex()
+	case account.FieldPrivateKey:
+		return m.PrivateKey()
 	case account.FieldWork:
 		return m.Work()
 	case account.FieldCreatedAt:
@@ -508,6 +575,8 @@ func (m *AccountMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldAddress(ctx)
 	case account.FieldAccountIndex:
 		return m.OldAccountIndex(ctx)
+	case account.FieldPrivateKey:
+		return m.OldPrivateKey(ctx)
 	case account.FieldWork:
 		return m.OldWork(ctx)
 	case account.FieldCreatedAt:
@@ -541,6 +610,13 @@ func (m *AccountMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetAccountIndex(v)
+		return nil
+	case account.FieldPrivateKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPrivateKey(v)
 		return nil
 	case account.FieldWork:
 		v, ok := value.(bool)
@@ -600,7 +676,14 @@ func (m *AccountMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *AccountMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(account.FieldAccountIndex) {
+		fields = append(fields, account.FieldAccountIndex)
+	}
+	if m.FieldCleared(account.FieldPrivateKey) {
+		fields = append(fields, account.FieldPrivateKey)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -613,6 +696,14 @@ func (m *AccountMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *AccountMutation) ClearField(name string) error {
+	switch name {
+	case account.FieldAccountIndex:
+		m.ClearAccountIndex()
+		return nil
+	case account.FieldPrivateKey:
+		m.ClearPrivateKey()
+		return nil
+	}
 	return fmt.Errorf("unknown Account nullable field %s", name)
 }
 
@@ -628,6 +719,9 @@ func (m *AccountMutation) ResetField(name string) error {
 		return nil
 	case account.FieldAccountIndex:
 		m.ResetAccountIndex()
+		return nil
+	case account.FieldPrivateKey:
+		m.ResetPrivateKey()
 		return nil
 	case account.FieldWork:
 		m.ResetWork()
@@ -741,696 +835,24 @@ func (m *AccountMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Account edge %s", name)
 }
 
-// AdhocAccountMutation represents an operation that mutates the AdhocAccount nodes in the graph.
-type AdhocAccountMutation struct {
-	config
-	op            Op
-	typ           string
-	id            *uuid.UUID
-	address       *string
-	private_key   *string
-	work          *bool
-	created_at    *time.Time
-	clearedFields map[string]struct{}
-	wallet        *uuid.UUID
-	clearedwallet bool
-	blocks        map[uuid.UUID]struct{}
-	removedblocks map[uuid.UUID]struct{}
-	clearedblocks bool
-	done          bool
-	oldValue      func(context.Context) (*AdhocAccount, error)
-	predicates    []predicate.AdhocAccount
-}
-
-var _ ent.Mutation = (*AdhocAccountMutation)(nil)
-
-// adhocaccountOption allows management of the mutation configuration using functional options.
-type adhocaccountOption func(*AdhocAccountMutation)
-
-// newAdhocAccountMutation creates new mutation for the AdhocAccount entity.
-func newAdhocAccountMutation(c config, op Op, opts ...adhocaccountOption) *AdhocAccountMutation {
-	m := &AdhocAccountMutation{
-		config:        c,
-		op:            op,
-		typ:           TypeAdhocAccount,
-		clearedFields: make(map[string]struct{}),
-	}
-	for _, opt := range opts {
-		opt(m)
-	}
-	return m
-}
-
-// withAdhocAccountID sets the ID field of the mutation.
-func withAdhocAccountID(id uuid.UUID) adhocaccountOption {
-	return func(m *AdhocAccountMutation) {
-		var (
-			err   error
-			once  sync.Once
-			value *AdhocAccount
-		)
-		m.oldValue = func(ctx context.Context) (*AdhocAccount, error) {
-			once.Do(func() {
-				if m.done {
-					err = errors.New("querying old values post mutation is not allowed")
-				} else {
-					value, err = m.Client().AdhocAccount.Get(ctx, id)
-				}
-			})
-			return value, err
-		}
-		m.id = &id
-	}
-}
-
-// withAdhocAccount sets the old AdhocAccount of the mutation.
-func withAdhocAccount(node *AdhocAccount) adhocaccountOption {
-	return func(m *AdhocAccountMutation) {
-		m.oldValue = func(context.Context) (*AdhocAccount, error) {
-			return node, nil
-		}
-		m.id = &node.ID
-	}
-}
-
-// Client returns a new `ent.Client` from the mutation. If the mutation was
-// executed in a transaction (ent.Tx), a transactional client is returned.
-func (m AdhocAccountMutation) Client() *Client {
-	client := &Client{config: m.config}
-	client.init()
-	return client
-}
-
-// Tx returns an `ent.Tx` for mutations that were executed in transactions;
-// it returns an error otherwise.
-func (m AdhocAccountMutation) Tx() (*Tx, error) {
-	if _, ok := m.driver.(*txDriver); !ok {
-		return nil, errors.New("ent: mutation is not running in a transaction")
-	}
-	tx := &Tx{config: m.config}
-	tx.init()
-	return tx, nil
-}
-
-// SetID sets the value of the id field. Note that this
-// operation is only accepted on creation of AdhocAccount entities.
-func (m *AdhocAccountMutation) SetID(id uuid.UUID) {
-	m.id = &id
-}
-
-// ID returns the ID value in the mutation. Note that the ID is only available
-// if it was provided to the builder or after it was returned from the database.
-func (m *AdhocAccountMutation) ID() (id uuid.UUID, exists bool) {
-	if m.id == nil {
-		return
-	}
-	return *m.id, true
-}
-
-// IDs queries the database and returns the entity ids that match the mutation's predicate.
-// That means, if the mutation is applied within a transaction with an isolation level such
-// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
-// or updated by the mutation.
-func (m *AdhocAccountMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
-	switch {
-	case m.op.Is(OpUpdateOne | OpDeleteOne):
-		id, exists := m.ID()
-		if exists {
-			return []uuid.UUID{id}, nil
-		}
-		fallthrough
-	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().AdhocAccount.Query().Where(m.predicates...).IDs(ctx)
-	default:
-		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
-	}
-}
-
-// SetWalletID sets the "wallet_id" field.
-func (m *AdhocAccountMutation) SetWalletID(u uuid.UUID) {
-	m.wallet = &u
-}
-
-// WalletID returns the value of the "wallet_id" field in the mutation.
-func (m *AdhocAccountMutation) WalletID() (r uuid.UUID, exists bool) {
-	v := m.wallet
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldWalletID returns the old "wallet_id" field's value of the AdhocAccount entity.
-// If the AdhocAccount object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AdhocAccountMutation) OldWalletID(ctx context.Context) (v uuid.UUID, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldWalletID is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldWalletID requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldWalletID: %w", err)
-	}
-	return oldValue.WalletID, nil
-}
-
-// ResetWalletID resets all changes to the "wallet_id" field.
-func (m *AdhocAccountMutation) ResetWalletID() {
-	m.wallet = nil
-}
-
-// SetAddress sets the "address" field.
-func (m *AdhocAccountMutation) SetAddress(s string) {
-	m.address = &s
-}
-
-// Address returns the value of the "address" field in the mutation.
-func (m *AdhocAccountMutation) Address() (r string, exists bool) {
-	v := m.address
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAddress returns the old "address" field's value of the AdhocAccount entity.
-// If the AdhocAccount object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AdhocAccountMutation) OldAddress(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAddress is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAddress requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAddress: %w", err)
-	}
-	return oldValue.Address, nil
-}
-
-// ResetAddress resets all changes to the "address" field.
-func (m *AdhocAccountMutation) ResetAddress() {
-	m.address = nil
-}
-
-// SetPrivateKey sets the "private_key" field.
-func (m *AdhocAccountMutation) SetPrivateKey(s string) {
-	m.private_key = &s
-}
-
-// PrivateKey returns the value of the "private_key" field in the mutation.
-func (m *AdhocAccountMutation) PrivateKey() (r string, exists bool) {
-	v := m.private_key
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldPrivateKey returns the old "private_key" field's value of the AdhocAccount entity.
-// If the AdhocAccount object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AdhocAccountMutation) OldPrivateKey(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPrivateKey is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPrivateKey requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPrivateKey: %w", err)
-	}
-	return oldValue.PrivateKey, nil
-}
-
-// ResetPrivateKey resets all changes to the "private_key" field.
-func (m *AdhocAccountMutation) ResetPrivateKey() {
-	m.private_key = nil
-}
-
-// SetWork sets the "work" field.
-func (m *AdhocAccountMutation) SetWork(b bool) {
-	m.work = &b
-}
-
-// Work returns the value of the "work" field in the mutation.
-func (m *AdhocAccountMutation) Work() (r bool, exists bool) {
-	v := m.work
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldWork returns the old "work" field's value of the AdhocAccount entity.
-// If the AdhocAccount object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AdhocAccountMutation) OldWork(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldWork is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldWork requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldWork: %w", err)
-	}
-	return oldValue.Work, nil
-}
-
-// ResetWork resets all changes to the "work" field.
-func (m *AdhocAccountMutation) ResetWork() {
-	m.work = nil
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (m *AdhocAccountMutation) SetCreatedAt(t time.Time) {
-	m.created_at = &t
-}
-
-// CreatedAt returns the value of the "created_at" field in the mutation.
-func (m *AdhocAccountMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.created_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCreatedAt returns the old "created_at" field's value of the AdhocAccount entity.
-// If the AdhocAccount object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AdhocAccountMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
-	}
-	return oldValue.CreatedAt, nil
-}
-
-// ResetCreatedAt resets all changes to the "created_at" field.
-func (m *AdhocAccountMutation) ResetCreatedAt() {
-	m.created_at = nil
-}
-
-// ClearWallet clears the "wallet" edge to the Wallet entity.
-func (m *AdhocAccountMutation) ClearWallet() {
-	m.clearedwallet = true
-}
-
-// WalletCleared reports if the "wallet" edge to the Wallet entity was cleared.
-func (m *AdhocAccountMutation) WalletCleared() bool {
-	return m.clearedwallet
-}
-
-// WalletIDs returns the "wallet" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// WalletID instead. It exists only for internal usage by the builders.
-func (m *AdhocAccountMutation) WalletIDs() (ids []uuid.UUID) {
-	if id := m.wallet; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetWallet resets all changes to the "wallet" edge.
-func (m *AdhocAccountMutation) ResetWallet() {
-	m.wallet = nil
-	m.clearedwallet = false
-}
-
-// AddBlockIDs adds the "blocks" edge to the Block entity by ids.
-func (m *AdhocAccountMutation) AddBlockIDs(ids ...uuid.UUID) {
-	if m.blocks == nil {
-		m.blocks = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		m.blocks[ids[i]] = struct{}{}
-	}
-}
-
-// ClearBlocks clears the "blocks" edge to the Block entity.
-func (m *AdhocAccountMutation) ClearBlocks() {
-	m.clearedblocks = true
-}
-
-// BlocksCleared reports if the "blocks" edge to the Block entity was cleared.
-func (m *AdhocAccountMutation) BlocksCleared() bool {
-	return m.clearedblocks
-}
-
-// RemoveBlockIDs removes the "blocks" edge to the Block entity by IDs.
-func (m *AdhocAccountMutation) RemoveBlockIDs(ids ...uuid.UUID) {
-	if m.removedblocks == nil {
-		m.removedblocks = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		delete(m.blocks, ids[i])
-		m.removedblocks[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedBlocks returns the removed IDs of the "blocks" edge to the Block entity.
-func (m *AdhocAccountMutation) RemovedBlocksIDs() (ids []uuid.UUID) {
-	for id := range m.removedblocks {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// BlocksIDs returns the "blocks" edge IDs in the mutation.
-func (m *AdhocAccountMutation) BlocksIDs() (ids []uuid.UUID) {
-	for id := range m.blocks {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetBlocks resets all changes to the "blocks" edge.
-func (m *AdhocAccountMutation) ResetBlocks() {
-	m.blocks = nil
-	m.clearedblocks = false
-	m.removedblocks = nil
-}
-
-// Where appends a list predicates to the AdhocAccountMutation builder.
-func (m *AdhocAccountMutation) Where(ps ...predicate.AdhocAccount) {
-	m.predicates = append(m.predicates, ps...)
-}
-
-// Op returns the operation name.
-func (m *AdhocAccountMutation) Op() Op {
-	return m.op
-}
-
-// Type returns the node type of this mutation (AdhocAccount).
-func (m *AdhocAccountMutation) Type() string {
-	return m.typ
-}
-
-// Fields returns all fields that were changed during this mutation. Note that in
-// order to get all numeric fields that were incremented/decremented, call
-// AddedFields().
-func (m *AdhocAccountMutation) Fields() []string {
-	fields := make([]string, 0, 5)
-	if m.wallet != nil {
-		fields = append(fields, adhocaccount.FieldWalletID)
-	}
-	if m.address != nil {
-		fields = append(fields, adhocaccount.FieldAddress)
-	}
-	if m.private_key != nil {
-		fields = append(fields, adhocaccount.FieldPrivateKey)
-	}
-	if m.work != nil {
-		fields = append(fields, adhocaccount.FieldWork)
-	}
-	if m.created_at != nil {
-		fields = append(fields, adhocaccount.FieldCreatedAt)
-	}
-	return fields
-}
-
-// Field returns the value of a field with the given name. The second boolean
-// return value indicates that this field was not set, or was not defined in the
-// schema.
-func (m *AdhocAccountMutation) Field(name string) (ent.Value, bool) {
-	switch name {
-	case adhocaccount.FieldWalletID:
-		return m.WalletID()
-	case adhocaccount.FieldAddress:
-		return m.Address()
-	case adhocaccount.FieldPrivateKey:
-		return m.PrivateKey()
-	case adhocaccount.FieldWork:
-		return m.Work()
-	case adhocaccount.FieldCreatedAt:
-		return m.CreatedAt()
-	}
-	return nil, false
-}
-
-// OldField returns the old value of the field from the database. An error is
-// returned if the mutation operation is not UpdateOne, or the query to the
-// database failed.
-func (m *AdhocAccountMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
-	switch name {
-	case adhocaccount.FieldWalletID:
-		return m.OldWalletID(ctx)
-	case adhocaccount.FieldAddress:
-		return m.OldAddress(ctx)
-	case adhocaccount.FieldPrivateKey:
-		return m.OldPrivateKey(ctx)
-	case adhocaccount.FieldWork:
-		return m.OldWork(ctx)
-	case adhocaccount.FieldCreatedAt:
-		return m.OldCreatedAt(ctx)
-	}
-	return nil, fmt.Errorf("unknown AdhocAccount field %s", name)
-}
-
-// SetField sets the value of a field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *AdhocAccountMutation) SetField(name string, value ent.Value) error {
-	switch name {
-	case adhocaccount.FieldWalletID:
-		v, ok := value.(uuid.UUID)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetWalletID(v)
-		return nil
-	case adhocaccount.FieldAddress:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAddress(v)
-		return nil
-	case adhocaccount.FieldPrivateKey:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPrivateKey(v)
-		return nil
-	case adhocaccount.FieldWork:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetWork(v)
-		return nil
-	case adhocaccount.FieldCreatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetCreatedAt(v)
-		return nil
-	}
-	return fmt.Errorf("unknown AdhocAccount field %s", name)
-}
-
-// AddedFields returns all numeric fields that were incremented/decremented during
-// this mutation.
-func (m *AdhocAccountMutation) AddedFields() []string {
-	return nil
-}
-
-// AddedField returns the numeric value that was incremented/decremented on a field
-// with the given name. The second boolean return value indicates that this field
-// was not set, or was not defined in the schema.
-func (m *AdhocAccountMutation) AddedField(name string) (ent.Value, bool) {
-	return nil, false
-}
-
-// AddField adds the value to the field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *AdhocAccountMutation) AddField(name string, value ent.Value) error {
-	switch name {
-	}
-	return fmt.Errorf("unknown AdhocAccount numeric field %s", name)
-}
-
-// ClearedFields returns all nullable fields that were cleared during this
-// mutation.
-func (m *AdhocAccountMutation) ClearedFields() []string {
-	return nil
-}
-
-// FieldCleared returns a boolean indicating if a field with the given name was
-// cleared in this mutation.
-func (m *AdhocAccountMutation) FieldCleared(name string) bool {
-	_, ok := m.clearedFields[name]
-	return ok
-}
-
-// ClearField clears the value of the field with the given name. It returns an
-// error if the field is not defined in the schema.
-func (m *AdhocAccountMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown AdhocAccount nullable field %s", name)
-}
-
-// ResetField resets all changes in the mutation for the field with the given name.
-// It returns an error if the field is not defined in the schema.
-func (m *AdhocAccountMutation) ResetField(name string) error {
-	switch name {
-	case adhocaccount.FieldWalletID:
-		m.ResetWalletID()
-		return nil
-	case adhocaccount.FieldAddress:
-		m.ResetAddress()
-		return nil
-	case adhocaccount.FieldPrivateKey:
-		m.ResetPrivateKey()
-		return nil
-	case adhocaccount.FieldWork:
-		m.ResetWork()
-		return nil
-	case adhocaccount.FieldCreatedAt:
-		m.ResetCreatedAt()
-		return nil
-	}
-	return fmt.Errorf("unknown AdhocAccount field %s", name)
-}
-
-// AddedEdges returns all edge names that were set/added in this mutation.
-func (m *AdhocAccountMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
-	if m.wallet != nil {
-		edges = append(edges, adhocaccount.EdgeWallet)
-	}
-	if m.blocks != nil {
-		edges = append(edges, adhocaccount.EdgeBlocks)
-	}
-	return edges
-}
-
-// AddedIDs returns all IDs (to other nodes) that were added for the given edge
-// name in this mutation.
-func (m *AdhocAccountMutation) AddedIDs(name string) []ent.Value {
-	switch name {
-	case adhocaccount.EdgeWallet:
-		if id := m.wallet; id != nil {
-			return []ent.Value{*id}
-		}
-	case adhocaccount.EdgeBlocks:
-		ids := make([]ent.Value, 0, len(m.blocks))
-		for id := range m.blocks {
-			ids = append(ids, id)
-		}
-		return ids
-	}
-	return nil
-}
-
-// RemovedEdges returns all edge names that were removed in this mutation.
-func (m *AdhocAccountMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
-	if m.removedblocks != nil {
-		edges = append(edges, adhocaccount.EdgeBlocks)
-	}
-	return edges
-}
-
-// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
-// the given name in this mutation.
-func (m *AdhocAccountMutation) RemovedIDs(name string) []ent.Value {
-	switch name {
-	case adhocaccount.EdgeBlocks:
-		ids := make([]ent.Value, 0, len(m.removedblocks))
-		for id := range m.removedblocks {
-			ids = append(ids, id)
-		}
-		return ids
-	}
-	return nil
-}
-
-// ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *AdhocAccountMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
-	if m.clearedwallet {
-		edges = append(edges, adhocaccount.EdgeWallet)
-	}
-	if m.clearedblocks {
-		edges = append(edges, adhocaccount.EdgeBlocks)
-	}
-	return edges
-}
-
-// EdgeCleared returns a boolean which indicates if the edge with the given name
-// was cleared in this mutation.
-func (m *AdhocAccountMutation) EdgeCleared(name string) bool {
-	switch name {
-	case adhocaccount.EdgeWallet:
-		return m.clearedwallet
-	case adhocaccount.EdgeBlocks:
-		return m.clearedblocks
-	}
-	return false
-}
-
-// ClearEdge clears the value of the edge with the given name. It returns an error
-// if that edge is not defined in the schema.
-func (m *AdhocAccountMutation) ClearEdge(name string) error {
-	switch name {
-	case adhocaccount.EdgeWallet:
-		m.ClearWallet()
-		return nil
-	}
-	return fmt.Errorf("unknown AdhocAccount unique edge %s", name)
-}
-
-// ResetEdge resets all changes to the edge with the given name in this mutation.
-// It returns an error if the edge is not defined in the schema.
-func (m *AdhocAccountMutation) ResetEdge(name string) error {
-	switch name {
-	case adhocaccount.EdgeWallet:
-		m.ResetWallet()
-		return nil
-	case adhocaccount.EdgeBlocks:
-		m.ResetBlocks()
-		return nil
-	}
-	return fmt.Errorf("unknown AdhocAccount edge %s", name)
-}
-
 // BlockMutation represents an operation that mutates the Block nodes in the graph.
 type BlockMutation struct {
 	config
-	op                   Op
-	typ                  string
-	id                   *uuid.UUID
-	block_hash           *string
-	block                *map[string]interface{}
-	send_id              *string
-	subtype              *string
-	created_at           *time.Time
-	clearedFields        map[string]struct{}
-	account              *uuid.UUID
-	clearedaccount       bool
-	adhoc_account        *uuid.UUID
-	clearedadhoc_account bool
-	done                 bool
-	oldValue             func(context.Context) (*Block, error)
-	predicates           []predicate.Block
+	op               Op
+	typ              string
+	id               *uuid.UUID
+	adhoc_account_id *uuid.UUID
+	block_hash       *string
+	block            *map[string]interface{}
+	send_id          *string
+	subtype          *string
+	created_at       *time.Time
+	clearedFields    map[string]struct{}
+	account          *uuid.UUID
+	clearedaccount   bool
+	done             bool
+	oldValue         func(context.Context) (*Block, error)
+	predicates       []predicate.Block
 }
 
 var _ ent.Mutation = (*BlockMutation)(nil)
@@ -1588,12 +1010,12 @@ func (m *BlockMutation) ResetAccountID() {
 
 // SetAdhocAccountID sets the "adhoc_account_id" field.
 func (m *BlockMutation) SetAdhocAccountID(u uuid.UUID) {
-	m.adhoc_account = &u
+	m.adhoc_account_id = &u
 }
 
 // AdhocAccountID returns the value of the "adhoc_account_id" field in the mutation.
 func (m *BlockMutation) AdhocAccountID() (r uuid.UUID, exists bool) {
-	v := m.adhoc_account
+	v := m.adhoc_account_id
 	if v == nil {
 		return
 	}
@@ -1619,7 +1041,7 @@ func (m *BlockMutation) OldAdhocAccountID(ctx context.Context) (v *uuid.UUID, er
 
 // ClearAdhocAccountID clears the value of the "adhoc_account_id" field.
 func (m *BlockMutation) ClearAdhocAccountID() {
-	m.adhoc_account = nil
+	m.adhoc_account_id = nil
 	m.clearedFields[block.FieldAdhocAccountID] = struct{}{}
 }
 
@@ -1631,7 +1053,7 @@ func (m *BlockMutation) AdhocAccountIDCleared() bool {
 
 // ResetAdhocAccountID resets all changes to the "adhoc_account_id" field.
 func (m *BlockMutation) ResetAdhocAccountID() {
-	m.adhoc_account = nil
+	m.adhoc_account_id = nil
 	delete(m.clearedFields, block.FieldAdhocAccountID)
 }
 
@@ -1854,32 +1276,6 @@ func (m *BlockMutation) ResetAccount() {
 	m.clearedaccount = false
 }
 
-// ClearAdhocAccount clears the "adhoc_account" edge to the AdhocAccount entity.
-func (m *BlockMutation) ClearAdhocAccount() {
-	m.clearedadhoc_account = true
-}
-
-// AdhocAccountCleared reports if the "adhoc_account" edge to the AdhocAccount entity was cleared.
-func (m *BlockMutation) AdhocAccountCleared() bool {
-	return m.AdhocAccountIDCleared() || m.clearedadhoc_account
-}
-
-// AdhocAccountIDs returns the "adhoc_account" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// AdhocAccountID instead. It exists only for internal usage by the builders.
-func (m *BlockMutation) AdhocAccountIDs() (ids []uuid.UUID) {
-	if id := m.adhoc_account; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetAdhocAccount resets all changes to the "adhoc_account" edge.
-func (m *BlockMutation) ResetAdhocAccount() {
-	m.adhoc_account = nil
-	m.clearedadhoc_account = false
-}
-
 // Where appends a list predicates to the BlockMutation builder.
 func (m *BlockMutation) Where(ps ...predicate.Block) {
 	m.predicates = append(m.predicates, ps...)
@@ -1903,7 +1299,7 @@ func (m *BlockMutation) Fields() []string {
 	if m.account != nil {
 		fields = append(fields, block.FieldAccountID)
 	}
-	if m.adhoc_account != nil {
+	if m.adhoc_account_id != nil {
 		fields = append(fields, block.FieldAdhocAccountID)
 	}
 	if m.block_hash != nil {
@@ -2121,12 +1517,9 @@ func (m *BlockMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *BlockMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 1)
 	if m.account != nil {
 		edges = append(edges, block.EdgeAccount)
-	}
-	if m.adhoc_account != nil {
-		edges = append(edges, block.EdgeAdhocAccount)
 	}
 	return edges
 }
@@ -2139,17 +1532,13 @@ func (m *BlockMutation) AddedIDs(name string) []ent.Value {
 		if id := m.account; id != nil {
 			return []ent.Value{*id}
 		}
-	case block.EdgeAdhocAccount:
-		if id := m.adhoc_account; id != nil {
-			return []ent.Value{*id}
-		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *BlockMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 1)
 	return edges
 }
 
@@ -2163,12 +1552,9 @@ func (m *BlockMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *BlockMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 1)
 	if m.clearedaccount {
 		edges = append(edges, block.EdgeAccount)
-	}
-	if m.clearedadhoc_account {
-		edges = append(edges, block.EdgeAdhocAccount)
 	}
 	return edges
 }
@@ -2179,8 +1565,6 @@ func (m *BlockMutation) EdgeCleared(name string) bool {
 	switch name {
 	case block.EdgeAccount:
 		return m.clearedaccount
-	case block.EdgeAdhocAccount:
-		return m.clearedadhoc_account
 	}
 	return false
 }
@@ -2191,9 +1575,6 @@ func (m *BlockMutation) ClearEdge(name string) error {
 	switch name {
 	case block.EdgeAccount:
 		m.ClearAccount()
-		return nil
-	case block.EdgeAdhocAccount:
-		m.ClearAdhocAccount()
 		return nil
 	}
 	return fmt.Errorf("unknown Block unique edge %s", name)
@@ -2206,9 +1587,6 @@ func (m *BlockMutation) ResetEdge(name string) error {
 	case block.EdgeAccount:
 		m.ResetAccount()
 		return nil
-	case block.EdgeAdhocAccount:
-		m.ResetAdhocAccount()
-		return nil
 	}
 	return fmt.Errorf("unknown Block edge %s", name)
 }
@@ -2216,24 +1594,21 @@ func (m *BlockMutation) ResetEdge(name string) error {
 // WalletMutation represents an operation that mutates the Wallet nodes in the graph.
 type WalletMutation struct {
 	config
-	op                    Op
-	typ                   string
-	id                    *uuid.UUID
-	seed                  *string
-	representative        *string
-	encrypted             *bool
-	work                  *bool
-	created_at            *time.Time
-	clearedFields         map[string]struct{}
-	accounts              map[uuid.UUID]struct{}
-	removedaccounts       map[uuid.UUID]struct{}
-	clearedaccounts       bool
-	adhoc_accounts        map[uuid.UUID]struct{}
-	removedadhoc_accounts map[uuid.UUID]struct{}
-	clearedadhoc_accounts bool
-	done                  bool
-	oldValue              func(context.Context) (*Wallet, error)
-	predicates            []predicate.Wallet
+	op              Op
+	typ             string
+	id              *uuid.UUID
+	seed            *string
+	representative  *string
+	encrypted       *bool
+	work            *bool
+	created_at      *time.Time
+	clearedFields   map[string]struct{}
+	accounts        map[uuid.UUID]struct{}
+	removedaccounts map[uuid.UUID]struct{}
+	clearedaccounts bool
+	done            bool
+	oldValue        func(context.Context) (*Wallet, error)
+	predicates      []predicate.Wallet
 }
 
 var _ ent.Mutation = (*WalletMutation)(nil)
@@ -2587,60 +1962,6 @@ func (m *WalletMutation) ResetAccounts() {
 	m.removedaccounts = nil
 }
 
-// AddAdhocAccountIDs adds the "adhoc_accounts" edge to the AdhocAccount entity by ids.
-func (m *WalletMutation) AddAdhocAccountIDs(ids ...uuid.UUID) {
-	if m.adhoc_accounts == nil {
-		m.adhoc_accounts = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		m.adhoc_accounts[ids[i]] = struct{}{}
-	}
-}
-
-// ClearAdhocAccounts clears the "adhoc_accounts" edge to the AdhocAccount entity.
-func (m *WalletMutation) ClearAdhocAccounts() {
-	m.clearedadhoc_accounts = true
-}
-
-// AdhocAccountsCleared reports if the "adhoc_accounts" edge to the AdhocAccount entity was cleared.
-func (m *WalletMutation) AdhocAccountsCleared() bool {
-	return m.clearedadhoc_accounts
-}
-
-// RemoveAdhocAccountIDs removes the "adhoc_accounts" edge to the AdhocAccount entity by IDs.
-func (m *WalletMutation) RemoveAdhocAccountIDs(ids ...uuid.UUID) {
-	if m.removedadhoc_accounts == nil {
-		m.removedadhoc_accounts = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		delete(m.adhoc_accounts, ids[i])
-		m.removedadhoc_accounts[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedAdhocAccounts returns the removed IDs of the "adhoc_accounts" edge to the AdhocAccount entity.
-func (m *WalletMutation) RemovedAdhocAccountsIDs() (ids []uuid.UUID) {
-	for id := range m.removedadhoc_accounts {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// AdhocAccountsIDs returns the "adhoc_accounts" edge IDs in the mutation.
-func (m *WalletMutation) AdhocAccountsIDs() (ids []uuid.UUID) {
-	for id := range m.adhoc_accounts {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetAdhocAccounts resets all changes to the "adhoc_accounts" edge.
-func (m *WalletMutation) ResetAdhocAccounts() {
-	m.adhoc_accounts = nil
-	m.clearedadhoc_accounts = false
-	m.removedadhoc_accounts = nil
-}
-
 // Where appends a list predicates to the WalletMutation builder.
 func (m *WalletMutation) Where(ps ...predicate.Wallet) {
 	m.predicates = append(m.predicates, ps...)
@@ -2836,12 +2157,9 @@ func (m *WalletMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WalletMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 1)
 	if m.accounts != nil {
 		edges = append(edges, wallet.EdgeAccounts)
-	}
-	if m.adhoc_accounts != nil {
-		edges = append(edges, wallet.EdgeAdhocAccounts)
 	}
 	return edges
 }
@@ -2856,24 +2174,15 @@ func (m *WalletMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case wallet.EdgeAdhocAccounts:
-		ids := make([]ent.Value, 0, len(m.adhoc_accounts))
-		for id := range m.adhoc_accounts {
-			ids = append(ids, id)
-		}
-		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WalletMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 1)
 	if m.removedaccounts != nil {
 		edges = append(edges, wallet.EdgeAccounts)
-	}
-	if m.removedadhoc_accounts != nil {
-		edges = append(edges, wallet.EdgeAdhocAccounts)
 	}
 	return edges
 }
@@ -2888,24 +2197,15 @@ func (m *WalletMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case wallet.EdgeAdhocAccounts:
-		ids := make([]ent.Value, 0, len(m.removedadhoc_accounts))
-		for id := range m.removedadhoc_accounts {
-			ids = append(ids, id)
-		}
-		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WalletMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 1)
 	if m.clearedaccounts {
 		edges = append(edges, wallet.EdgeAccounts)
-	}
-	if m.clearedadhoc_accounts {
-		edges = append(edges, wallet.EdgeAdhocAccounts)
 	}
 	return edges
 }
@@ -2916,8 +2216,6 @@ func (m *WalletMutation) EdgeCleared(name string) bool {
 	switch name {
 	case wallet.EdgeAccounts:
 		return m.clearedaccounts
-	case wallet.EdgeAdhocAccounts:
-		return m.clearedadhoc_accounts
 	}
 	return false
 }
@@ -2936,9 +2234,6 @@ func (m *WalletMutation) ResetEdge(name string) error {
 	switch name {
 	case wallet.EdgeAccounts:
 		m.ResetAccounts()
-		return nil
-	case wallet.EdgeAdhocAccounts:
-		m.ResetAdhocAccounts()
 		return nil
 	}
 	return fmt.Errorf("unknown Wallet edge %s", name)

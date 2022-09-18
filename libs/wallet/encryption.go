@@ -5,7 +5,7 @@ import (
 
 	"github.com/appditto/pippin_nano_wallet/libs/database"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent"
-	"github.com/appditto/pippin_nano_wallet/libs/database/ent/adhocaccount"
+	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
 	"github.com/appditto/pippin_nano_wallet/libs/utils"
 	"github.com/go-redis/redis/v9"
 )
@@ -53,7 +53,7 @@ func (w *NanoWallet) EncryptWallet(wallet *ent.Wallet, password string) (bool, e
 			tx.Rollback()
 			return false, err
 		}
-		adhocAccts, err := tx.AdhocAccount.Query().Where(adhocaccount.WalletID(wallet.ID)).All(w.Ctx)
+		adhocAccts, err := tx.Account.Query().Where(account.WalletID(wallet.ID), account.PrivateKeyNotNil()).All(w.Ctx)
 		if err != nil {
 			tx.Rollback()
 			return false, err
@@ -64,7 +64,7 @@ func (w *NanoWallet) EncryptWallet(wallet *ent.Wallet, password string) (bool, e
 				tx.Rollback()
 				return false, err
 			}
-			_, err = tx.AdhocAccount.UpdateOne(acct).SetPrivateKey(key).Save(w.Ctx)
+			_, err = tx.Account.UpdateOne(acct).SetPrivateKey(key).Save(w.Ctx)
 			if err != nil {
 				tx.Rollback()
 				return false, err
@@ -97,17 +97,17 @@ func (w *NanoWallet) EncryptWallet(wallet *ent.Wallet, password string) (bool, e
 		return false, err
 	}
 	// Encrypt all adhoc private keys
-	adhocAccts, err := tx.AdhocAccount.Query().Where(adhocaccount.WalletID(wallet.ID)).All(w.Ctx)
+	adhocAccts, err := tx.Account.Query().Where(account.WalletID(wallet.ID), account.PrivateKeyNotNil()).All(w.Ctx)
 	if err != nil {
 		tx.Rollback()
 		return false, err
 	}
 	for _, acct := range adhocAccts {
-		encryptedKey, err := crypter.Encrypt(acct.PrivateKey)
+		encryptedKey, err := crypter.Encrypt(*acct.PrivateKey)
 		if err != nil {
 			return false, err
 		}
-		_, err = tx.AdhocAccount.UpdateOne(acct).SetPrivateKey(encryptedKey).Save(w.Ctx)
+		_, err = tx.Account.UpdateOne(acct).SetPrivateKey(encryptedKey).Save(w.Ctx)
 		if err != nil {
 			tx.Rollback()
 			return false, err
@@ -152,12 +152,12 @@ func (w *NanoWallet) UnlockWallet(wallet *ent.Wallet, password string) (bool, er
 	}
 
 	// Every adhoc account gets decrypted too
-	adhocAccts, err := w.DB.AdhocAccount.Query().Where(adhocaccount.WalletID(wallet.ID)).All(w.Ctx)
+	adhocAccts, err := w.DB.Account.Query().Where(account.WalletID(wallet.ID), account.PrivateKeyNotNil()).All(w.Ctx)
 	if err != nil {
 		return false, err
 	}
 	for _, acct := range adhocAccts {
-		key, err := crypter.Decrypt(acct.PrivateKey)
+		key, err := crypter.Decrypt(*acct.PrivateKey)
 		if err != nil {
 			return false, err
 		}

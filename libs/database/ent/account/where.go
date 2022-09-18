@@ -103,6 +103,13 @@ func AccountIndex(v int) predicate.Account {
 	})
 }
 
+// PrivateKey applies equality check predicate on the "private_key" field. It's identical to PrivateKeyEQ.
+func PrivateKey(v string) predicate.Account {
+	return predicate.Account(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldPrivateKey), v))
+	})
+}
+
 // Work applies equality check predicate on the "work" field. It's identical to WorkEQ.
 func Work(v bool) predicate.Account {
 	return predicate.Account(func(s *sql.Selector) {
@@ -313,6 +320,133 @@ func AccountIndexLT(v int) predicate.Account {
 func AccountIndexLTE(v int) predicate.Account {
 	return predicate.Account(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldAccountIndex), v))
+	})
+}
+
+// AccountIndexIsNil applies the IsNil predicate on the "account_index" field.
+func AccountIndexIsNil() predicate.Account {
+	return predicate.Account(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldAccountIndex)))
+	})
+}
+
+// AccountIndexNotNil applies the NotNil predicate on the "account_index" field.
+func AccountIndexNotNil() predicate.Account {
+	return predicate.Account(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldAccountIndex)))
+	})
+}
+
+// PrivateKeyEQ applies the EQ predicate on the "private_key" field.
+func PrivateKeyEQ(v string) predicate.Account {
+	return predicate.Account(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldPrivateKey), v))
+	})
+}
+
+// PrivateKeyNEQ applies the NEQ predicate on the "private_key" field.
+func PrivateKeyNEQ(v string) predicate.Account {
+	return predicate.Account(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldPrivateKey), v))
+	})
+}
+
+// PrivateKeyIn applies the In predicate on the "private_key" field.
+func PrivateKeyIn(vs ...string) predicate.Account {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Account(func(s *sql.Selector) {
+		s.Where(sql.In(s.C(FieldPrivateKey), v...))
+	})
+}
+
+// PrivateKeyNotIn applies the NotIn predicate on the "private_key" field.
+func PrivateKeyNotIn(vs ...string) predicate.Account {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Account(func(s *sql.Selector) {
+		s.Where(sql.NotIn(s.C(FieldPrivateKey), v...))
+	})
+}
+
+// PrivateKeyGT applies the GT predicate on the "private_key" field.
+func PrivateKeyGT(v string) predicate.Account {
+	return predicate.Account(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldPrivateKey), v))
+	})
+}
+
+// PrivateKeyGTE applies the GTE predicate on the "private_key" field.
+func PrivateKeyGTE(v string) predicate.Account {
+	return predicate.Account(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldPrivateKey), v))
+	})
+}
+
+// PrivateKeyLT applies the LT predicate on the "private_key" field.
+func PrivateKeyLT(v string) predicate.Account {
+	return predicate.Account(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldPrivateKey), v))
+	})
+}
+
+// PrivateKeyLTE applies the LTE predicate on the "private_key" field.
+func PrivateKeyLTE(v string) predicate.Account {
+	return predicate.Account(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldPrivateKey), v))
+	})
+}
+
+// PrivateKeyContains applies the Contains predicate on the "private_key" field.
+func PrivateKeyContains(v string) predicate.Account {
+	return predicate.Account(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldPrivateKey), v))
+	})
+}
+
+// PrivateKeyHasPrefix applies the HasPrefix predicate on the "private_key" field.
+func PrivateKeyHasPrefix(v string) predicate.Account {
+	return predicate.Account(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldPrivateKey), v))
+	})
+}
+
+// PrivateKeyHasSuffix applies the HasSuffix predicate on the "private_key" field.
+func PrivateKeyHasSuffix(v string) predicate.Account {
+	return predicate.Account(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldPrivateKey), v))
+	})
+}
+
+// PrivateKeyIsNil applies the IsNil predicate on the "private_key" field.
+func PrivateKeyIsNil() predicate.Account {
+	return predicate.Account(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldPrivateKey)))
+	})
+}
+
+// PrivateKeyNotNil applies the NotNil predicate on the "private_key" field.
+func PrivateKeyNotNil() predicate.Account {
+	return predicate.Account(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldPrivateKey)))
+	})
+}
+
+// PrivateKeyEqualFold applies the EqualFold predicate on the "private_key" field.
+func PrivateKeyEqualFold(v string) predicate.Account {
+	return predicate.Account(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldPrivateKey), v))
+	})
+}
+
+// PrivateKeyContainsFold applies the ContainsFold predicate on the "private_key" field.
+func PrivateKeyContainsFold(v string) predicate.Account {
+	return predicate.Account(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldPrivateKey), v))
 	})
 }
 

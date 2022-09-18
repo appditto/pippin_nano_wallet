@@ -23,7 +23,9 @@ type Account struct {
 	// Address holds the value of the "address" field.
 	Address string `json:"address,omitempty"`
 	// AccountIndex holds the value of the "account_index" field.
-	AccountIndex int `json:"account_index,omitempty"`
+	AccountIndex *int `json:"account_index,omitempty"`
+	// PrivateKey holds the value of the "private_key" field.
+	PrivateKey *string `json:"private_key,omitempty"`
 	// Work holds the value of the "work" field.
 	Work bool `json:"work,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -75,7 +77,7 @@ func (*Account) scanValues(columns []string) ([]interface{}, error) {
 			values[i] = new(sql.NullBool)
 		case account.FieldAccountIndex:
 			values[i] = new(sql.NullInt64)
-		case account.FieldAddress:
+		case account.FieldAddress, account.FieldPrivateKey:
 			values[i] = new(sql.NullString)
 		case account.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -118,7 +120,15 @@ func (a *Account) assignValues(columns []string, values []interface{}) error {
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field account_index", values[i])
 			} else if value.Valid {
-				a.AccountIndex = int(value.Int64)
+				a.AccountIndex = new(int)
+				*a.AccountIndex = int(value.Int64)
+			}
+		case account.FieldPrivateKey:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field private_key", values[i])
+			} else if value.Valid {
+				a.PrivateKey = new(string)
+				*a.PrivateKey = value.String
 			}
 		case account.FieldWork:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -176,8 +186,15 @@ func (a *Account) String() string {
 	builder.WriteString("address=")
 	builder.WriteString(a.Address)
 	builder.WriteString(", ")
-	builder.WriteString("account_index=")
-	builder.WriteString(fmt.Sprintf("%v", a.AccountIndex))
+	if v := a.AccountIndex; v != nil {
+		builder.WriteString("account_index=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := a.PrivateKey; v != nil {
+		builder.WriteString("private_key=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", ")
 	builder.WriteString("work=")
 	builder.WriteString(fmt.Sprintf("%v", a.Work))

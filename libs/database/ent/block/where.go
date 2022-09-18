@@ -210,6 +210,34 @@ func AdhocAccountIDNotIn(vs ...uuid.UUID) predicate.Block {
 	})
 }
 
+// AdhocAccountIDGT applies the GT predicate on the "adhoc_account_id" field.
+func AdhocAccountIDGT(v uuid.UUID) predicate.Block {
+	return predicate.Block(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldAdhocAccountID), v))
+	})
+}
+
+// AdhocAccountIDGTE applies the GTE predicate on the "adhoc_account_id" field.
+func AdhocAccountIDGTE(v uuid.UUID) predicate.Block {
+	return predicate.Block(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldAdhocAccountID), v))
+	})
+}
+
+// AdhocAccountIDLT applies the LT predicate on the "adhoc_account_id" field.
+func AdhocAccountIDLT(v uuid.UUID) predicate.Block {
+	return predicate.Block(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldAdhocAccountID), v))
+	})
+}
+
+// AdhocAccountIDLTE applies the LTE predicate on the "adhoc_account_id" field.
+func AdhocAccountIDLTE(v uuid.UUID) predicate.Block {
+	return predicate.Block(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldAdhocAccountID), v))
+	})
+}
+
 // AdhocAccountIDIsNil applies the IsNil predicate on the "adhoc_account_id" field.
 func AdhocAccountIDIsNil() predicate.Block {
 	return predicate.Block(func(s *sql.Selector) {
@@ -618,34 +646,6 @@ func HasAccountWith(preds ...predicate.Account) predicate.Block {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(AccountInverseTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, AccountTable, AccountColumn),
-		)
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasAdhocAccount applies the HasEdge predicate on the "adhoc_account" edge.
-func HasAdhocAccount() predicate.Block {
-	return predicate.Block(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(AdhocAccountTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, AdhocAccountTable, AdhocAccountColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasAdhocAccountWith applies the HasEdge predicate on the "adhoc_account" edge with a given conditions (other predicates).
-func HasAdhocAccountWith(preds ...predicate.AdhocAccount) predicate.Block {
-	return predicate.Block(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(AdhocAccountInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, AdhocAccountTable, AdhocAccountColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

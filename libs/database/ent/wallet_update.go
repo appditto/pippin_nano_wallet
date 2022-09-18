@@ -11,7 +11,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
-	"github.com/appditto/pippin_nano_wallet/libs/database/ent/adhocaccount"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/predicate"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/wallet"
 	"github.com/google/uuid"
@@ -99,21 +98,6 @@ func (wu *WalletUpdate) AddAccounts(a ...*Account) *WalletUpdate {
 	return wu.AddAccountIDs(ids...)
 }
 
-// AddAdhocAccountIDs adds the "adhoc_accounts" edge to the AdhocAccount entity by IDs.
-func (wu *WalletUpdate) AddAdhocAccountIDs(ids ...uuid.UUID) *WalletUpdate {
-	wu.mutation.AddAdhocAccountIDs(ids...)
-	return wu
-}
-
-// AddAdhocAccounts adds the "adhoc_accounts" edges to the AdhocAccount entity.
-func (wu *WalletUpdate) AddAdhocAccounts(a ...*AdhocAccount) *WalletUpdate {
-	ids := make([]uuid.UUID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return wu.AddAdhocAccountIDs(ids...)
-}
-
 // Mutation returns the WalletMutation object of the builder.
 func (wu *WalletUpdate) Mutation() *WalletMutation {
 	return wu.mutation
@@ -138,27 +122,6 @@ func (wu *WalletUpdate) RemoveAccounts(a ...*Account) *WalletUpdate {
 		ids[i] = a[i].ID
 	}
 	return wu.RemoveAccountIDs(ids...)
-}
-
-// ClearAdhocAccounts clears all "adhoc_accounts" edges to the AdhocAccount entity.
-func (wu *WalletUpdate) ClearAdhocAccounts() *WalletUpdate {
-	wu.mutation.ClearAdhocAccounts()
-	return wu
-}
-
-// RemoveAdhocAccountIDs removes the "adhoc_accounts" edge to AdhocAccount entities by IDs.
-func (wu *WalletUpdate) RemoveAdhocAccountIDs(ids ...uuid.UUID) *WalletUpdate {
-	wu.mutation.RemoveAdhocAccountIDs(ids...)
-	return wu
-}
-
-// RemoveAdhocAccounts removes "adhoc_accounts" edges to AdhocAccount entities.
-func (wu *WalletUpdate) RemoveAdhocAccounts(a ...*AdhocAccount) *WalletUpdate {
-	ids := make([]uuid.UUID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return wu.RemoveAdhocAccountIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -342,60 +305,6 @@ func (wu *WalletUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if wu.mutation.AdhocAccountsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   wallet.AdhocAccountsTable,
-			Columns: []string{wallet.AdhocAccountsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: adhocaccount.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := wu.mutation.RemovedAdhocAccountsIDs(); len(nodes) > 0 && !wu.mutation.AdhocAccountsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   wallet.AdhocAccountsTable,
-			Columns: []string{wallet.AdhocAccountsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: adhocaccount.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := wu.mutation.AdhocAccountsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   wallet.AdhocAccountsTable,
-			Columns: []string{wallet.AdhocAccountsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: adhocaccount.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
 	if n, err = sqlgraph.UpdateNodes(ctx, wu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{wallet.Label}
@@ -484,21 +393,6 @@ func (wuo *WalletUpdateOne) AddAccounts(a ...*Account) *WalletUpdateOne {
 	return wuo.AddAccountIDs(ids...)
 }
 
-// AddAdhocAccountIDs adds the "adhoc_accounts" edge to the AdhocAccount entity by IDs.
-func (wuo *WalletUpdateOne) AddAdhocAccountIDs(ids ...uuid.UUID) *WalletUpdateOne {
-	wuo.mutation.AddAdhocAccountIDs(ids...)
-	return wuo
-}
-
-// AddAdhocAccounts adds the "adhoc_accounts" edges to the AdhocAccount entity.
-func (wuo *WalletUpdateOne) AddAdhocAccounts(a ...*AdhocAccount) *WalletUpdateOne {
-	ids := make([]uuid.UUID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return wuo.AddAdhocAccountIDs(ids...)
-}
-
 // Mutation returns the WalletMutation object of the builder.
 func (wuo *WalletUpdateOne) Mutation() *WalletMutation {
 	return wuo.mutation
@@ -523,27 +417,6 @@ func (wuo *WalletUpdateOne) RemoveAccounts(a ...*Account) *WalletUpdateOne {
 		ids[i] = a[i].ID
 	}
 	return wuo.RemoveAccountIDs(ids...)
-}
-
-// ClearAdhocAccounts clears all "adhoc_accounts" edges to the AdhocAccount entity.
-func (wuo *WalletUpdateOne) ClearAdhocAccounts() *WalletUpdateOne {
-	wuo.mutation.ClearAdhocAccounts()
-	return wuo
-}
-
-// RemoveAdhocAccountIDs removes the "adhoc_accounts" edge to AdhocAccount entities by IDs.
-func (wuo *WalletUpdateOne) RemoveAdhocAccountIDs(ids ...uuid.UUID) *WalletUpdateOne {
-	wuo.mutation.RemoveAdhocAccountIDs(ids...)
-	return wuo
-}
-
-// RemoveAdhocAccounts removes "adhoc_accounts" edges to AdhocAccount entities.
-func (wuo *WalletUpdateOne) RemoveAdhocAccounts(a ...*AdhocAccount) *WalletUpdateOne {
-	ids := make([]uuid.UUID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return wuo.RemoveAdhocAccountIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -749,60 +622,6 @@ func (wuo *WalletUpdateOne) sqlSave(ctx context.Context) (_node *Wallet, err err
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: account.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if wuo.mutation.AdhocAccountsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   wallet.AdhocAccountsTable,
-			Columns: []string{wallet.AdhocAccountsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: adhocaccount.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := wuo.mutation.RemovedAdhocAccountsIDs(); len(nodes) > 0 && !wuo.mutation.AdhocAccountsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   wallet.AdhocAccountsTable,
-			Columns: []string{wallet.AdhocAccountsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: adhocaccount.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := wuo.mutation.AdhocAccountsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   wallet.AdhocAccountsTable,
-			Columns: []string{wallet.AdhocAccountsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: adhocaccount.FieldID,
 				},
 			},
 		}

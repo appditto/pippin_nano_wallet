@@ -36,11 +36,9 @@ type Wallet struct {
 type WalletEdges struct {
 	// Accounts holds the value of the accounts edge.
 	Accounts []*Account `json:"accounts,omitempty"`
-	// AdhocAccounts holds the value of the adhoc_accounts edge.
-	AdhocAccounts []*AdhocAccount `json:"adhoc_accounts,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [1]bool
 }
 
 // AccountsOrErr returns the Accounts value or an error if the edge
@@ -50,15 +48,6 @@ func (e WalletEdges) AccountsOrErr() ([]*Account, error) {
 		return e.Accounts, nil
 	}
 	return nil, &NotLoadedError{edge: "accounts"}
-}
-
-// AdhocAccountsOrErr returns the AdhocAccounts value or an error if the edge
-// was not loaded in eager-loading.
-func (e WalletEdges) AdhocAccountsOrErr() ([]*AdhocAccount, error) {
-	if e.loadedTypes[1] {
-		return e.AdhocAccounts, nil
-	}
-	return nil, &NotLoadedError{edge: "adhoc_accounts"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -134,11 +123,6 @@ func (w *Wallet) assignValues(columns []string, values []interface{}) error {
 // QueryAccounts queries the "accounts" edge of the Wallet entity.
 func (w *Wallet) QueryAccounts() *AccountQuery {
 	return (&WalletClient{config: w.config}).QueryAccounts(w)
-}
-
-// QueryAdhocAccounts queries the "adhoc_accounts" edge of the Wallet entity.
-func (w *Wallet) QueryAdhocAccounts() *AdhocAccountQuery {
-	return (&WalletClient{config: w.config}).QueryAdhocAccounts(w)
 }
 
 // Update returns a builder for updating this Wallet.

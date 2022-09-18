@@ -106,3 +106,10 @@ func ErrInternalServerError(w http.ResponseWriter, r *http.Request, errorText st
 		Error: errorText,
 	})
 }
+
+func ErrBadRequest(w http.ResponseWriter, r *http.Request, errorText string) {
+	render.Status(r, http.StatusBadRequest)
+	render.JSON(w, r, &ErrorResponse{
+		Error: errorText,
+	})
+}

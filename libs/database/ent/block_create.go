@@ -11,7 +11,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
-	"github.com/appditto/pippin_nano_wallet/libs/database/ent/adhocaccount"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/block"
 	"github.com/google/uuid"
 )
@@ -114,11 +113,6 @@ func (bc *BlockCreate) SetNillableID(u *uuid.UUID) *BlockCreate {
 // SetAccount sets the "account" edge to the Account entity.
 func (bc *BlockCreate) SetAccount(a *Account) *BlockCreate {
 	return bc.SetAccountID(a.ID)
-}
-
-// SetAdhocAccount sets the "adhoc_account" edge to the AdhocAccount entity.
-func (bc *BlockCreate) SetAdhocAccount(a *AdhocAccount) *BlockCreate {
-	return bc.SetAdhocAccountID(a.ID)
 }
 
 // Mutation returns the BlockMutation object of the builder.
@@ -273,6 +267,14 @@ func (bc *BlockCreate) createSpec() (*Block, *sqlgraph.CreateSpec) {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
+	if value, ok := bc.mutation.AdhocAccountID(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeUUID,
+			Value:  value,
+			Column: block.FieldAdhocAccountID,
+		})
+		_node.AdhocAccountID = &value
+	}
 	if value, ok := bc.mutation.BlockHash(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -331,26 +333,6 @@ func (bc *BlockCreate) createSpec() (*Block, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.AccountID = &nodes[0]
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := bc.mutation.AdhocAccountIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   block.AdhocAccountTable,
-			Columns: []string{block.AdhocAccountColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: adhocaccount.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_node.AdhocAccountID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

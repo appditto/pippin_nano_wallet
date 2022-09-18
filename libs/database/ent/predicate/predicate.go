@@ -9,9 +9,6 @@ import (
 // Account is the predicate function for account builders.
 type Account func(*sql.Selector)
 
-// AdhocAccount is the predicate function for adhocaccount builders.
-type AdhocAccount func(*sql.Selector)
-
 // Block is the predicate function for block builders.
 type Block func(*sql.Selector)
 

@@ -125,7 +125,6 @@ APIs that are different between Pippin and the Nano node wallet.
 
 - `account_list` accepts a `count` parameter that defaults to 1000
 - Pippin has an `auto_receive_on_send` option that will automatically receive pending blocks when you do a `send`, it will only do this if the source balance isn't high enough to make the transaction.
-- `account_create` does not accept an index. If you want to add a specific account to a wallet, you can use `wallet_add`
 
 **Fuzzy Behavior**
 

@@ -14,8 +14,6 @@ type Tx struct {
 	config
 	// Account is the client for interacting with the Account builders.
 	Account *AccountClient
-	// AdhocAccount is the client for interacting with the AdhocAccount builders.
-	AdhocAccount *AdhocAccountClient
 	// Block is the client for interacting with the Block builders.
 	Block *BlockClient
 	// Wallet is the client for interacting with the Wallet builders.
@@ -156,7 +154,6 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Account = NewAccountClient(tx.config)
-	tx.AdhocAccount = NewAdhocAccountClient(tx.config)
 	tx.Block = NewBlockClient(tx.config)
 	tx.Wallet = NewWalletClient(tx.config)
 }

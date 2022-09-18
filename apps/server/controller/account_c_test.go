@@ -16,8 +16,10 @@ import (
 func TestAccountCreate(t *testing.T) {
 	// Create wallet first
 	// Request JSON
+	seed := "3ab3de2721b57af86637e2c4c8994adf4f8eecfd62f59d013de0353500b9b823"
 	reqBody := map[string]interface{}{
 		"action": "wallet_create",
+		"seed":   seed,
 	}
 	body, _ := json.Marshal(reqBody)
 	w := httptest.NewRecorder()
@@ -60,6 +62,37 @@ func TestAccountCreate(t *testing.T) {
 	assert.Contains(t, respJson, "account")
 	_, err = utils.AddressToPub(respJson["account"].(string))
 	assert.Nil(t, err)
+	assert.Equal(t, "nano_13coy8t4jzd516m5ydw8a7mdfguttcm6nkm4t69fwd1dzm87mgj5p8ijge8w", respJson["account"].(string))
+
+	// Create an account at index 500 to make sure it comes back correctly
+	// First derive expected
+	pub, _, err := utils.KeypairFromSeed(seed, 500)
+	assert.Nil(t, err)
+	addr := utils.PubKeyToAddress(pub, false)
+
+	reqBody = map[string]interface{}{
+		"action": "account_create",
+		"wallet": respJson["wallet"],
+		"index":  500,
+	}
+	body, _ = json.Marshal(reqBody)
+	w = httptest.NewRecorder()
+	// Build request
+	req = httptest.NewRequest("POST", "/", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	MockController.Gateway(w, req)
+	resp = w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, 200, resp.StatusCode)
+
+	respBody, _ = io.ReadAll(resp.Body)
+	json.Unmarshal(respBody, &respJson)
+
+	// Make sure address is valid
+	assert.Contains(t, respJson, "account")
+	_, err = utils.AddressToPub(respJson["account"].(string))
+	assert.Nil(t, err)
+	assert.Equal(t, addr, respJson["account"].(string))
 }
 
 func TestAccountsCreate(t *testing.T) {

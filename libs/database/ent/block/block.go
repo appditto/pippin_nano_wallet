@@ -29,8 +29,6 @@ const (
 	FieldCreatedAt = "created_at"
 	// EdgeAccount holds the string denoting the account edge name in mutations.
 	EdgeAccount = "account"
-	// EdgeAdhocAccount holds the string denoting the adhoc_account edge name in mutations.
-	EdgeAdhocAccount = "adhoc_account"
 	// Table holds the table name of the block in the database.
 	Table = "blocks"
 	// AccountTable is the table that holds the account relation/edge.
@@ -40,13 +38,6 @@ const (
 	AccountInverseTable = "accounts"
 	// AccountColumn is the table column denoting the account relation/edge.
 	AccountColumn = "account_id"
-	// AdhocAccountTable is the table that holds the adhoc_account relation/edge.
-	AdhocAccountTable = "blocks"
-	// AdhocAccountInverseTable is the table name for the AdhocAccount entity.
-	// It exists in this package in order to avoid circular dependency with the "adhocaccount" package.
-	AdhocAccountInverseTable = "adhoc_accounts"
-	// AdhocAccountColumn is the table column denoting the adhoc_account relation/edge.
-	AdhocAccountColumn = "adhoc_account_id"
 )
 
 // Columns holds all SQL columns for block fields.

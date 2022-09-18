@@ -128,3 +128,58 @@ func TestDecodeBaseRequestWithCount(t *testing.T) {
 	assert.Contains(t, respJson, "error")
 	assert.Equal(t, "Unable to parse json", respJson["error"].(string))
 }
+
+func TestDecodeAccountCreateRequest(t *testing.T) {
+	w := httptest.NewRecorder()
+	// Build request
+	req := httptest.NewRequest("GET", "/", nil)
+	reqBody := map[string]interface{}{
+		"action": "account_create",
+		"wallet": "1234",
+	}
+	be, idx := MockController.DecodeAccountCreateRequest(&reqBody, w, req)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, 200, resp.StatusCode)
+	assert.NotNil(t, be)
+	assert.Equal(t, "account_create", be.Action)
+	assert.Equal(t, "1234", be.Wallet)
+	assert.Nil(t, idx)
+
+	// Empty count should return 0
+	w = httptest.NewRecorder()
+	// Build request
+	req = httptest.NewRequest("GET", "/", nil)
+	reqBody = map[string]interface{}{
+		"action": "account_create",
+		"wallet": "1234",
+		"index":  "500",
+	}
+	be, idx = MockController.DecodeAccountCreateRequest(&reqBody, w, req)
+	resp = w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, 200, resp.StatusCode)
+	assert.NotNil(t, be)
+	assert.Equal(t, "account_create", be.Action)
+	assert.Equal(t, "1234", be.Wallet)
+	assert.Equal(t, 500, *idx)
+
+	// With error
+	w = httptest.NewRecorder()
+	// Build request
+	req = httptest.NewRequest("GET", "/", nil)
+	reqBody = map[string]interface{}{
+		"wallet": "1234",
+	}
+	be, idx = MockController.DecodeAccountCreateRequest(&reqBody, w, req)
+	resp = w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, 400, resp.StatusCode)
+	assert.Nil(t, be)
+	var respJson map[string]interface{}
+	respBody, _ := io.ReadAll(resp.Body)
+	json.Unmarshal(respBody, &respJson)
+
+	assert.Contains(t, respJson, "error")
+	assert.Equal(t, "Unable to parse json", respJson["error"].(string))
+}

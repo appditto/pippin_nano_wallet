@@ -13,7 +13,8 @@ var (
 	AccountsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "address", Type: field.TypeString, Size: 65},
-		{Name: "account_index", Type: field.TypeInt},
+		{Name: "account_index", Type: field.TypeInt, Nullable: true},
+		{Name: "private_key", Type: field.TypeString, Nullable: true, Size: 512},
 		{Name: "work", Type: field.TypeBool, Default: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "wallet_id", Type: field.TypeUUID},
@@ -26,7 +27,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "accounts_wallets_accounts",
-				Columns:    []*schema.Column{AccountsColumns[5]},
+				Columns:    []*schema.Column{AccountsColumns[6]},
 				RefColumns: []*schema.Column{WalletsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -35,60 +36,25 @@ var (
 			{
 				Name:    "account_wallet_id",
 				Unique:  false,
-				Columns: []*schema.Column{AccountsColumns[5]},
+				Columns: []*schema.Column{AccountsColumns[6]},
 			},
 			{
-				Name:    "account_wallet_id_address_account_index",
+				Name:    "account_wallet_id_address",
 				Unique:  true,
-				Columns: []*schema.Column{AccountsColumns[5], AccountsColumns[1], AccountsColumns[2]},
-			},
-		},
-	}
-	// AdhocAccountsColumns holds the columns for the "adhoc_accounts" table.
-	AdhocAccountsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID},
-		{Name: "address", Type: field.TypeString, Size: 65},
-		{Name: "private_key", Type: field.TypeString, Size: 512},
-		{Name: "work", Type: field.TypeBool, Default: true},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "wallet_id", Type: field.TypeUUID},
-	}
-	// AdhocAccountsTable holds the schema information for the "adhoc_accounts" table.
-	AdhocAccountsTable = &schema.Table{
-		Name:       "adhoc_accounts",
-		Columns:    AdhocAccountsColumns,
-		PrimaryKey: []*schema.Column{AdhocAccountsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "adhoc_accounts_wallets_adhoc_accounts",
-				Columns:    []*schema.Column{AdhocAccountsColumns[5]},
-				RefColumns: []*schema.Column{WalletsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-		},
-		Indexes: []*schema.Index{
-			{
-				Name:    "adhocaccount_wallet_id",
-				Unique:  false,
-				Columns: []*schema.Column{AdhocAccountsColumns[5]},
-			},
-			{
-				Name:    "adhocaccount_wallet_id_address_private_key",
-				Unique:  true,
-				Columns: []*schema.Column{AdhocAccountsColumns[5], AdhocAccountsColumns[1], AdhocAccountsColumns[2]},
+				Columns: []*schema.Column{AccountsColumns[6], AccountsColumns[1]},
 			},
 		},
 	}
 	// BlocksColumns holds the columns for the "blocks" table.
 	BlocksColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
+		{Name: "adhoc_account_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "block_hash", Type: field.TypeString, Unique: true, Size: 64},
 		{Name: "block", Type: field.TypeJSON},
 		{Name: "send_id", Type: field.TypeString, Nullable: true, Size: 256},
 		{Name: "subtype", Type: field.TypeString, Size: 10},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "account_id", Type: field.TypeUUID, Nullable: true},
-		{Name: "adhoc_account_id", Type: field.TypeUUID, Nullable: true},
 	}
 	// BlocksTable holds the schema information for the "blocks" table.
 	BlocksTable = &schema.Table{
@@ -98,27 +64,16 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "blocks_accounts_blocks",
-				Columns:    []*schema.Column{BlocksColumns[6]},
-				RefColumns: []*schema.Column{AccountsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-			{
-				Symbol:     "blocks_adhoc_accounts_blocks",
 				Columns:    []*schema.Column{BlocksColumns[7]},
-				RefColumns: []*schema.Column{AdhocAccountsColumns[0]},
+				RefColumns: []*schema.Column{AccountsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "block_adhoc_account_id_send_id",
-				Unique:  true,
-				Columns: []*schema.Column{BlocksColumns[7], BlocksColumns[3]},
-			},
-			{
 				Name:    "block_account_id_send_id",
 				Unique:  true,
-				Columns: []*schema.Column{BlocksColumns[6], BlocksColumns[3]},
+				Columns: []*schema.Column{BlocksColumns[7], BlocksColumns[4]},
 			},
 		},
 	}
@@ -140,7 +95,6 @@ var (
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AccountsTable,
-		AdhocAccountsTable,
 		BlocksTable,
 		WalletsTable,
 	}
@@ -151,12 +105,7 @@ func init() {
 	AccountsTable.Annotation = &entsql.Annotation{
 		Table: "accounts",
 	}
-	AdhocAccountsTable.ForeignKeys[0].RefTable = WalletsTable
-	AdhocAccountsTable.Annotation = &entsql.Annotation{
-		Table: "adhoc_accounts",
-	}
 	BlocksTable.ForeignKeys[0].RefTable = AccountsTable
-	BlocksTable.ForeignKeys[1].RefTable = AdhocAccountsTable
 	BlocksTable.Annotation = &entsql.Annotation{
 		Table: "blocks",
 	}

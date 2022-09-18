@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"time"
 
+	config "github.com/appditto/pippin_nano_wallet/libs/config/models"
 	"github.com/appditto/pippin_nano_wallet/libs/database"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
-	"github.com/appditto/pippin_nano_wallet/libs/database/ent/adhocaccount"
+	"github.com/appditto/pippin_nano_wallet/libs/pow"
 	nanorpc "github.com/appditto/pippin_nano_wallet/libs/rpc"
 	"github.com/appditto/pippin_nano_wallet/libs/utils"
 	"github.com/appditto/pippin_nano_wallet/libs/wallet/models"
@@ -17,14 +18,17 @@ import (
 )
 
 type NanoWallet struct {
-	DB        *ent.Client
-	Ctx       context.Context
-	RpcClient *nanorpc.RPCClient
-	Banano    bool
+	DB         *ent.Client
+	Ctx        context.Context
+	RpcClient  *nanorpc.RPCClient
+	WorkClient *pow.PippinPow
+	Config     *config.PippinConfig
+	Banano     bool
 }
 
 var ErrInvalidSeed = errors.New("invalid seed")
 var ErrInvalidWallet = errors.New("invalid wallet")
+var ErrInvalidAccount = errors.New("invalid account")
 var ErrInvalidPrivKey = errors.New("invalid private key")
 var ErrInvalidAccountCount = errors.New("invalid count")
 var ErrWalletNotFound = errors.New("wallet not found")
@@ -122,22 +126,22 @@ func (w *NanoWallet) WalletInfo(wallet *ent.Wallet) (*models.WalletInfo, error) 
 		return nil, err
 	}
 
-	curAccount, err := w.DB.Account.Query().Where(account.WalletID(wallet.ID)).Order(ent.Desc(account.FieldAccountIndex)).First(w.Ctx)
+	curAccount, err := w.DB.Account.Query().Where(account.WalletID(wallet.ID), account.AccountIndexNotNil()).Order(ent.Desc(account.FieldAccountIndex)).First(w.Ctx)
 
 	if err != nil {
 		return nil, err
 	}
 
-	currentIndex := curAccount.AccountIndex
+	currentIndex := *curAccount.AccountIndex
 
 	// Get all accounts on wallet
-	accounts, err := w.DB.Account.Query().Where(account.WalletID(wallet.ID)).Count(w.Ctx)
+	accounts, err := w.DB.Account.Query().Where(account.WalletID(wallet.ID), account.AccountIndexNotNil()).Count(w.Ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	// Get all adhoc accounts on wallet
-	adhocAccounts, err := w.DB.AdhocAccount.Query().Where(adhocaccount.WalletID(wallet.ID)).Count(w.Ctx)
+	adhocAccounts, err := w.DB.Account.Query().Where(account.WalletID(wallet.ID), account.PrivateKeyNotNil()).Count(w.Ctx)
 	if err != nil {
 		return nil, err
 	}

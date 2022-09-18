@@ -449,34 +449,6 @@ func HasAccountsWith(preds ...predicate.Account) predicate.Wallet {
 	})
 }
 
-// HasAdhocAccounts applies the HasEdge predicate on the "adhoc_accounts" edge.
-func HasAdhocAccounts() predicate.Wallet {
-	return predicate.Wallet(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(AdhocAccountsTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, AdhocAccountsTable, AdhocAccountsColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasAdhocAccountsWith applies the HasEdge predicate on the "adhoc_accounts" edge with a given conditions (other predicates).
-func HasAdhocAccountsWith(preds ...predicate.AdhocAccount) predicate.Wallet {
-	return predicate.Wallet(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(AdhocAccountsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, AdhocAccountsTable, AdhocAccountsColumn),
-		)
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Wallet) predicate.Wallet {
 	return predicate.Wallet(func(s *sql.Selector) {

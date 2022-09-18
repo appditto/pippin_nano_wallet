@@ -1,12 +1,16 @@
 package wallet
 
 import (
+	"encoding/hex"
 	"errors"
 	"math/big"
 
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent"
 	entblock "github.com/appditto/pippin_nano_wallet/libs/database/ent/block"
+	nanorpc "github.com/appditto/pippin_nano_wallet/libs/rpc"
 	"github.com/appditto/pippin_nano_wallet/libs/rpc/models/requests"
+	"github.com/appditto/pippin_nano_wallet/libs/utils"
+	"github.com/appditto/pippin_nano_wallet/libs/utils/ed25519"
 	"github.com/appditto/pippin_nano_wallet/libs/wallet/models"
 	"github.com/mitchellh/mapstructure"
 )
@@ -30,7 +34,7 @@ func (w *NanoWallet) GetBlockFromDatabase(wallet *ent.Wallet, address string, se
 	}
 
 	// Check if account exists
-	acc, adhoc, err := w.GetAccount(wallet, address)
+	acc, err := w.GetAccount(wallet, address)
 	if err != nil {
 		return nil, err
 	}
@@ -44,25 +48,135 @@ func (w *NanoWallet) GetBlockFromDatabase(wallet *ent.Wallet, address string, se
 		} else if err != nil {
 			return nil, err
 		}
-	} else {
-		block, err = w.DB.Block.Query().Where(entblock.AdhocAccountID(adhoc.ID), entblock.SendID(sendID)).First(w.Ctx)
-		if ent.IsNotFound(err) {
-			return nil, ErrBlockNotFound
-		} else if err != nil {
-			return nil, err
-		}
 	}
 
 	return block, nil
 }
 
+// ** Low level block creations, not intended for use by the user **
+func (w *NanoWallet) createReceiveBlock(wallet *ent.Wallet, receiver *ent.Account, hash string, precomputedWork *string) (*models.StateBlock, error) {
+	if wallet == nil {
+		return nil, ErrInvalidWallet
+	} else if receiver == nil {
+		return nil, ErrInvalidAccount
+	}
+	blockInfo, err := w.RpcClient.MakeBlockInfoRequest(hash)
+	if err != nil {
+		return nil, err
+	} else if blockInfo == nil {
+		return nil, ErrBlockNotFound
+	}
+	// Get account info
+	isOpen := true
+	accountInfo, err := w.RpcClient.MakeAccountInfoRequest(receiver.Address)
+	if errors.Is(err, nanorpc.ErrAccountNotFound) {
+		isOpen = false
+	} else if err != nil {
+		return nil, err
+	}
+
+	var workbase string
+	if isOpen {
+		workbase = accountInfo.Frontier
+	} else {
+		pub, err := utils.AddressToPub(receiver.Address)
+		if err != nil {
+			return nil, err
+		}
+		workbase = hex.EncodeToString(pub)
+	}
+
+	// Build other block fields
+	var previous string
+	if isOpen {
+		previous = accountInfo.Frontier
+	} else {
+		previous = "0000000000000000000000000000000000000000000000000000000000000000"
+	}
+
+	var representative string
+
+	if isOpen {
+		representative = accountInfo.Representative
+	} else {
+		if wallet.Representative != nil {
+			representative = *wallet.Representative
+		} else {
+			rep, err := w.Config.GetRandomRep()
+			if err != nil {
+				return nil, err
+			}
+			representative = rep
+		}
+	}
+
+	var balance *big.Int
+	curB, ok := big.NewInt(0).SetString(blockInfo.Amount, 10)
+	if !ok {
+		return nil, errors.New("Unable to parse balance")
+	}
+	if !isOpen {
+		balance = curB
+	} else {
+		receiveAmount, ok := big.NewInt(0).SetString(blockInfo.Amount, 10)
+		if !ok {
+			return nil, errors.New("Unable to block info amount")
+		}
+		balance = big.NewInt(0).Add(receiveAmount, curB)
+	}
+
+	var work string
+	if precomputedWork == nil {
+		work, err = w.WorkClient.WorkGenerateMeta(workbase, 1, true, false, "")
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		work = *precomputedWork
+	}
+
+	stateBlock := &models.StateBlock{
+		Type:           "state",
+		Account:        receiver.Address,
+		Previous:       previous,
+		Representative: representative,
+		Balance:        balance.String(),
+		Link:           hash,
+		Work:           work,
+	}
+
+	// Get the private key for this account
+	var priv ed25519.PrivateKey
+	if receiver.PrivateKey != nil {
+		decoded, err := hex.DecodeString(*receiver.PrivateKey)
+		if err != nil {
+			return nil, err
+		}
+		priv = ed25519.PrivateKey(decoded)
+	} else {
+		sd, err := GetDecryptedKeyFromStorage(wallet, "seed")
+		if err != nil {
+			return nil, err
+		}
+		_, priv, _ = utils.KeypairFromSeed(sd, uint32(*receiver.AccountIndex))
+	}
+
+	// Sign the block
+	err = stateBlock.Sign(priv)
+	if err != nil {
+		return nil, err
+	}
+
+	return stateBlock, nil
+}
+
 func (w *NanoWallet) CreateAndPublishSendBlock(wallet *ent.Wallet, amount big.Int, source string, destination string, id string, work string, bpowKy string) (string, error) {
-	_, _, err := w.GetAccount(wallet, source)
+	_, err := w.GetAccount(wallet, source)
 	if err != nil {
 		return "", err
 	}
 
-	// This is our indempotent send test, we don't create a new send block if a send with this ID has already been created from this account
+	// This is our idempotent send test, we don't create a new send block if a send with this ID has already been created from this account
 	if id != "" {
 		block, err := w.GetBlockFromDatabase(wallet, source, id)
 		if !ent.IsNotFound(err) && err != nil {
@@ -88,6 +202,23 @@ func (w *NanoWallet) CreateAndPublishSendBlock(wallet *ent.Wallet, amount big.In
 			return resp.Hash, nil
 		}
 	}
+	// # Get account info
+	// account_balance = await RPCClient.instance().account_balance(self.account.address)
+	// if account_balance is None:
+	// 		return None
+
+	// # Check balance
+	// if amount > int(account_balance['balance']):
+	// 		# Auto-receive blocks if they have it pending
+	// 		if config.Config.instance().auto_receive_on_send and int(account_balance['balance']) + int(account_balance['pending']) >= amount:
+	// 				await self._receive_all()
+	// 				account_info = await RPCClient.instance().account_info(self.account.address)
+	// 				if account_info is None:
+	// 						return None
+	// 				if amount > int(account_info['balance']):
+	// 						raise InsufficientBalance(account_info['balance'])
+	// 		else:
+	// 				raise InsufficientBalance(account_balance['balance'])
 
 	return "", nil
 }

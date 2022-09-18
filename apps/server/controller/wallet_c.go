@@ -93,22 +93,18 @@ func (hc *HttpController) HandleWalletAdd(request *map[string]interface{}, w htt
 		ErrInvalidKey(w, r)
 		return
 	}
-	acc, adhocAcc, err := hc.Wallet.AdhocAccountCreate(dbWallet, priv)
+	acc, err := hc.Wallet.AdhocAccountCreate(dbWallet, priv)
 	if errors.Is(err, wallet.ErrWalletLocked) {
 		ErrWalletLocked(w, r)
 		return
-	} else if err != nil || (acc == nil && adhocAcc == nil) {
+	} else if err != nil || acc == nil {
 		ErrInternalServerError(w, r, err.Error())
 		return
 	}
 
 	// The adhoc account create will return the normal sequential account too if it already exists
 	var resp responses.AccountResponse
-	if adhocAcc != nil {
-		resp.Account = adhocAcc.Address
-	} else {
-		resp.Account = acc.Address
-	}
+	resp.Account = acc.Address
 
 	render.Status(r, http.StatusOK)
 	render.JSON(w, r, &resp)

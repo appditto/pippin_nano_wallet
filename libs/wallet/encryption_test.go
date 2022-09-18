@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/appditto/pippin_nano_wallet/libs/database/ent/adhocaccount"
+	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
 	"github.com/appditto/pippin_nano_wallet/libs/utils"
 	"github.com/appditto/pippin_nano_wallet/libs/utils/ed25519"
 	"github.com/stretchr/testify/assert"
@@ -20,10 +20,10 @@ func TestEncryptWallet(t *testing.T) {
 
 	// Create some adhoc accounts
 	_, priv, _ := ed25519.GenerateKey(strings.NewReader("1111111111111111111111111111111111111111111111111111111111111111"))
-	_, _, err = MockWallet.AdhocAccountCreate(wallet, priv)
+	_, err = MockWallet.AdhocAccountCreate(wallet, priv)
 	assert.Nil(t, err)
 	_, priv, _ = ed25519.GenerateKey(strings.NewReader("2111111111111111111111111111111111111111111111111111111111111111"))
-	_, _, err = MockWallet.AdhocAccountCreate(wallet, priv)
+	_, err = MockWallet.AdhocAccountCreate(wallet, priv)
 	assert.Nil(t, err)
 
 	// Encrypt the wallet
@@ -38,12 +38,12 @@ func TestEncryptWallet(t *testing.T) {
 	assert.NotEqual(t, seed, wallet.Seed)
 
 	// Ensure adhoc keys are encrypted
-	adhocs, err := MockWallet.DB.AdhocAccount.Query().Where(adhocaccount.WalletID(wallet.ID)).All(MockWallet.Ctx)
+	adhocs, err := MockWallet.DB.Account.Query().Where(account.WalletID(wallet.ID), account.PrivateKeyNotNil()).All(MockWallet.Ctx)
 	assert.Nil(t, err)
 	assert.Len(t, adhocs, 2)
 	for _, adhoc := range adhocs {
 		// If private key has this many bits its encrypted
-		assert.True(t, len(adhoc.PrivateKey) > 128)
+		assert.True(t, len(*adhoc.PrivateKey) > 128)
 	}
 
 	// Ensure we get an error acting on it since it's locked
@@ -97,10 +97,10 @@ func TestUnlockWallet(t *testing.T) {
 
 	// Create some adhoc accounts
 	_, priv, _ := ed25519.GenerateKey(strings.NewReader("1111111111111111111111111111111111111111111111111111111111111111"))
-	acc1, _, err := MockWallet.AdhocAccountCreate(wallet, priv)
+	acc1, err := MockWallet.AdhocAccountCreate(wallet, priv)
 	assert.Nil(t, err)
 	_, priv, _ = ed25519.GenerateKey(strings.NewReader("2111111111111111111111111111111111111111111111111111111111111111"))
-	acc2, _, err := MockWallet.AdhocAccountCreate(wallet, priv)
+	acc2, err := MockWallet.AdhocAccountCreate(wallet, priv)
 	assert.Nil(t, err)
 
 	// Encrypt the wallet
@@ -122,9 +122,9 @@ func TestUnlockWallet(t *testing.T) {
 	// Check that key exists
 	key, err := GetDecryptedKeyFromStorage(wallet, acc1.Address)
 	assert.Nil(t, err)
-	assert.Equal(t, acc1.PrivateKey, key)
+	assert.Equal(t, *acc1.PrivateKey, key)
 	key, _ = GetDecryptedKeyFromStorage(wallet, acc2.Address)
-	assert.Equal(t, acc2.PrivateKey, key)
+	assert.Equal(t, *acc2.PrivateKey, key)
 
 	// Check not locked error
 	wallet.Encrypted = false

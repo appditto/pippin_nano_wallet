@@ -70,3 +70,28 @@ func (hc *HttpController) DecodeBaseRequestWithCount(request *map[string]interfa
 
 	return &baseRequest, count
 }
+
+// ! TODO - can we reduce duplication with generics or something ?
+func (hc *HttpController) DecodeAccountCreateRequest(request *map[string]interface{}, w http.ResponseWriter, r *http.Request) (*requests.AccountCreateRequest, *int) {
+	var accountCreateRequest requests.AccountCreateRequest
+	if err := mapstructure.Decode(request, &accountCreateRequest); err != nil {
+		klog.Errorf("Error unmarshalling request with count %s", err)
+		ErrUnableToParseJson(w, r)
+		return nil, nil
+	} else if accountCreateRequest.Wallet == "" || accountCreateRequest.Action == "" {
+		ErrUnableToParseJson(w, r)
+		return nil, nil
+	}
+
+	var idx *int
+	if accountCreateRequest.Index != nil {
+		index, err := utils.ToInt(*accountCreateRequest.Index)
+		if err != nil || index < 0 {
+			ErrUnableToParseJson(w, r)
+			return nil, nil
+		}
+		idx = &index
+	}
+
+	return &accountCreateRequest, idx
+}

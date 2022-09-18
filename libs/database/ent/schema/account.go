@@ -31,7 +31,8 @@ func (Account) Fields() []ent.Field {
 			Default(uuid.New),
 		field.UUID("wallet_id", uuid.UUID{}),
 		field.String("address").MaxLen(65),
-		field.Int("account_index"),
+		field.Int("account_index").Nillable().Optional(),
+		field.String("private_key").MaxLen(512).Nillable().Optional(),
 		field.Bool("work").Default(true),
 		field.Time("created_at").Default(time.Now).Immutable(),
 	}
@@ -56,6 +57,6 @@ func (Account) Edges() []ent.Edge {
 func (Account) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("wallet_id"),
-		index.Fields("wallet_id", "address", "account_index").Unique(),
+		index.Fields("wallet_id", "address").Unique(),
 	}
 }

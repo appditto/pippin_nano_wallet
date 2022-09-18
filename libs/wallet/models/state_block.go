@@ -19,6 +19,7 @@ type StateBlock struct {
 	Representative string `json:"representative" mapstructure:"representative"`
 	Balance        string `json:"balance" mapstructure:"balance"`
 	Link           string `json:"link" mapstructure:"link"`
+	LinkAsAccount  string `json:"link_as_account" mapstructure:"link_as_account"`
 	Work           string `json:"work" mapstructure:"work"`
 	Signature      string `json:"signature" mapstructure:"signature"`
 }

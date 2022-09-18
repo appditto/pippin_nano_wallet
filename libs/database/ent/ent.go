@@ -11,7 +11,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
-	"github.com/appditto/pippin_nano_wallet/libs/database/ent/adhocaccount"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/block"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/wallet"
 )
@@ -34,10 +33,9 @@ type OrderFunc func(*sql.Selector)
 // columnChecker returns a function indicates if the column exists in the given column.
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
-		account.Table:      account.ValidColumn,
-		adhocaccount.Table: adhocaccount.ValidColumn,
-		block.Table:        block.ValidColumn,
-		wallet.Table:       wallet.ValidColumn,
+		account.Table: account.ValidColumn,
+		block.Table:   block.ValidColumn,
+		wallet.Table:  wallet.ValidColumn,
 	}
 	check, ok := checks[table]
 	if !ok {

@@ -19,6 +19,8 @@ const (
 	FieldAddress = "address"
 	// FieldAccountIndex holds the string denoting the account_index field in the database.
 	FieldAccountIndex = "account_index"
+	// FieldPrivateKey holds the string denoting the private_key field in the database.
+	FieldPrivateKey = "private_key"
 	// FieldWork holds the string denoting the work field in the database.
 	FieldWork = "work"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -51,6 +53,7 @@ var Columns = []string{
 	FieldWalletID,
 	FieldAddress,
 	FieldAccountIndex,
+	FieldPrivateKey,
 	FieldWork,
 	FieldCreatedAt,
 }
@@ -68,6 +71,8 @@ func ValidColumn(column string) bool {
 var (
 	// AddressValidator is a validator for the "address" field. It is called by the builders before save.
 	AddressValidator func(string) error
+	// PrivateKeyValidator is a validator for the "private_key" field. It is called by the builders before save.
+	PrivateKeyValidator func(string) error
 	// DefaultWork holds the default value on creation for the "work" field.
 	DefaultWork bool
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.

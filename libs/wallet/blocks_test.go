@@ -20,11 +20,11 @@ func TestGetBlockFromDatabase(t *testing.T) {
 	assert.Equal(t, seed, wallet.Seed)
 
 	// Create an account and an adhoc account
-	account, err := MockWallet.AccountCreate(wallet)
+	account, err := MockWallet.AccountCreate(wallet, nil)
 	assert.Nil(t, err)
 
 	_, priv, _ := ed25519.GenerateKey(strings.NewReader("1f729340e07eee69abac049c2fdd4a3c4b50e4672a2fabdf1ae295f2b4f3040d"))
-	adhocAcct, _, err := MockWallet.AdhocAccountCreate(wallet, priv)
+	adhocAcct, err := MockWallet.AdhocAccountCreate(wallet, priv)
 	assert.Nil(t, err)
 
 	// Create some blocks for each
@@ -33,7 +33,7 @@ func TestGetBlockFromDatabase(t *testing.T) {
 		"block": "hello",
 	}).SetBlockHash("abc").SetSubtype("send").SetSendID("abc").Save(MockWallet.Ctx)
 	assert.Nil(t, err)
-	_, err = MockWallet.DB.Block.Create().SetAdhocAccount(adhocAcct).SetBlock(map[string]interface{}{
+	_, err = MockWallet.DB.Block.Create().SetAccount(adhocAcct).SetBlock(map[string]interface{}{
 		"block": "world",
 	}).SetBlockHash("def").SetSubtype("change").SetSendID("def").Save(MockWallet.Ctx)
 	assert.Nil(t, err)

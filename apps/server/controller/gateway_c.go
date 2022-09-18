@@ -92,5 +92,8 @@ func (hc *HttpController) Gateway(w http.ResponseWriter, r *http.Request) {
 	case "send":
 		hc.HandleSendRequest(&baseRequest, w, r)
 		return
+	case "account_representative_set":
+		hc.HandleAccountRepresentativeSetRequest(&baseRequest, w, r)
+		return
 	}
 }

@@ -351,6 +351,78 @@ func (w *NanoWallet) createSendBlock(wallet *ent.Wallet, sender *ent.Account, am
 	return stateBlock, nil
 }
 
+func (w *NanoWallet) createChangeBlock(wallet *ent.Wallet, changer *ent.Account, representative string, precomputedWork *string, bpowKey *string) (*models.StateBlock, error) {
+	if wallet == nil {
+		return nil, ErrInvalidWallet
+	} else if changer == nil {
+		return nil, ErrInvalidAccount
+	}
+
+	// Get account info
+	accountInfo, err := w.RpcClient.MakeAccountInfoRequest(changer.Address)
+	if err != nil {
+		return nil, err
+	}
+
+	workbase := accountInfo.Frontier
+
+	// Build other block fields
+	previous := accountInfo.Frontier
+
+	var work string
+	if precomputedWork == nil {
+		key := ""
+		if bpowKey != nil {
+			key = *bpowKey
+		}
+		difficulty := 1
+		if !w.Config.Wallet.Banano {
+			difficulty = 64
+		}
+		work, err = w.WorkClient.WorkGenerateMeta(workbase, difficulty, true, false, key)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		work = *precomputedWork
+	}
+
+	stateBlock := &models.StateBlock{
+		Type:           "state",
+		Account:        changer.Address,
+		Previous:       previous,
+		Representative: representative,
+		Balance:        accountInfo.Balance,
+		Link:           "0000000000000000000000000000000000000000000000000000000000000000",
+		Work:           work,
+		Banano:         w.Config.Wallet.Banano,
+	}
+
+	// Get the private key for this account
+	var priv ed25519.PrivateKey
+	if changer.PrivateKey != nil {
+		decoded, err := hex.DecodeString(*changer.PrivateKey)
+		if err != nil {
+			return nil, err
+		}
+		priv = ed25519.PrivateKey(decoded)
+	} else {
+		sd, err := GetDecryptedKeyFromStorage(wallet, "seed")
+		if err != nil {
+			return nil, err
+		}
+		_, priv, _ = utils.KeypairFromSeed(sd, uint32(*changer.AccountIndex))
+	}
+
+	// Sign the block
+	err = stateBlock.Sign(priv)
+	if err != nil {
+		return nil, err
+	}
+
+	return stateBlock, nil
+}
+
 // The user facing APIs intended to be  for block creation/publishing
 // They are done in a locked context
 
@@ -483,6 +555,44 @@ func (w *NanoWallet) CreateAndPublishSendBlock(wallet *ent.Wallet, amount string
 		if err != nil {
 			return "", err
 		}
+	}
+
+	return resp.Hash, nil
+}
+
+func (w *NanoWallet) CreateAndPublishChangeBlock(wallet *ent.Wallet, address string, representative string, work *string, bpowKey *string) (string, error) {
+	if wallet == nil {
+		return "", ErrInvalidWallet
+	}
+	acc, err := w.GetAccount(wallet, address)
+	if err != nil {
+		return "", err
+	}
+
+	// Obtain lock
+	lock, err := database.GetRedisDB().Locker.Obtain(w.Ctx, fmt.Sprintf("acl:%s", acc.Address), time.Second*10, &database.LockRetryStrategy)
+	if err != nil {
+		return "", database.ErrLockNotObtained
+	}
+	defer lock.Release(w.Ctx)
+
+	sb, err := w.createChangeBlock(wallet, acc, representative, work, bpowKey)
+	if err != nil {
+		return "", err
+	}
+
+	// Publish block
+	subtype := "change"
+	resp, err := w.RpcClient.MakeProcessRequest(requests.ProcessRequest{
+		BaseRequest: requests.BaseRequest{
+			Action: "process",
+		},
+		Subtype:   &subtype,
+		JsonBlock: true,
+		Block:     *sb,
+	})
+	if err != nil || !utils.Validate64HexHash(resp.Hash) {
+		return "", err
 	}
 
 	return resp.Hash, nil

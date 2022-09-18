@@ -9,6 +9,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/appditto/pippin_nano_wallet/libs/config"
 	"github.com/appditto/pippin_nano_wallet/libs/database"
 	"github.com/appditto/pippin_nano_wallet/libs/pow"
 	"github.com/appditto/pippin_nano_wallet/libs/rpc"
@@ -30,6 +31,10 @@ func TestMain(m *testing.M) {
 func testMainWrapper(m *testing.M) int {
 	os.Setenv("MOCK_REDIS", "true")
 	defer os.Unsetenv("MOCK_REDIS")
+	os.Setenv("HOME", ".testdata")
+	defer os.Unsetenv("HOME")
+	defer os.RemoveAll(".testdata")
+	config, _ := config.ParsePippinConfig()
 	// We use an in-memory sqlite database for testing
 	ctx := context.Background()
 	dbconn, err := database.GetSqlDbConn(true)
@@ -52,9 +57,14 @@ func testMainWrapper(m *testing.M) int {
 
 	// Setup nano wallet
 	wallet := wallet.NanoWallet{
-		DB:     entClient,
-		Ctx:    ctx,
-		Banano: false,
+		DB:         entClient,
+		Ctx:        ctx,
+		Banano:     false,
+		Config:     config,
+		WorkClient: pow.NewPippinPow([]string{}, "", ""),
+		RpcClient: &rpc.RPCClient{
+			Url: "http://localhost:123456",
+		},
 	}
 
 	MockController = &HttpController{

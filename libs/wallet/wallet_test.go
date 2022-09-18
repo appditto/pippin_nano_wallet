@@ -50,12 +50,14 @@ func testMainWrapper(m *testing.M) int {
 		Config:     config,
 	}
 	bananoWallet = &NanoWallet{
-		DB:        client,
-		Ctx:       context.TODO(),
-		Banano:    true,
-		RpcClient: rpcclient,
-		Config:    config,
+		DB:         client,
+		Ctx:        context.TODO(),
+		Banano:     true,
+		RpcClient:  rpcclient,
+		Config:     config,
+		WorkClient: powClient,
 	}
+
 	return m.Run()
 }
 

@@ -138,3 +138,48 @@ func (hc *HttpController) HandleSendRequest(rawRequest *map[string]interface{}, 
 	render.Status(r, http.StatusOK)
 	render.JSON(w, r, &blockResponse)
 }
+
+// Handle rep change
+func (hc *HttpController) HandleAccountRepresentativeSetRequest(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+	var changeRequest requests.AccountRepresentativeSetRequest
+	if err := mapstructure.Decode(rawRequest, &changeRequest); err != nil {
+		klog.Errorf("Error unmarshalling receive request %s", err)
+		ErrUnableToParseJson(w, r)
+		return
+	} else if changeRequest.Wallet == "" || changeRequest.Action == "" || changeRequest.Representative == "" {
+		ErrUnableToParseJson(w, r)
+		return
+	}
+
+	// See if wallet exists
+	dbWallet := hc.WalletExists(changeRequest.Wallet, w, r)
+	if dbWallet == nil {
+		return
+	}
+
+	// Validate accounts
+	_, err := utils.AddressToPub(changeRequest.Account, hc.Wallet.Config.Wallet.Banano)
+	if err != nil {
+		ErrBadRequest(w, r, "Invalid account")
+		return
+	}
+	_, err = utils.AddressToPub(changeRequest.Representative, hc.Wallet.Config.Wallet.Banano)
+	if err != nil {
+		ErrBadRequest(w, r, "Invalid representative account")
+		return
+	}
+
+	// Do the send
+	resp, err := hc.Wallet.CreateAndPublishChangeBlock(dbWallet, changeRequest.Account, changeRequest.Representative, changeRequest.Work, changeRequest.BpowKey)
+	if err != nil {
+		ErrBadRequest(w, r, err.Error())
+		return
+	}
+
+	blockResponse := responses.BlockResponse{
+		Block: resp,
+	}
+
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, &blockResponse)
+}

@@ -3,8 +3,11 @@ package wallet
 import (
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"math/big"
+	"time"
 
+	"github.com/appditto/pippin_nano_wallet/libs/database"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent"
 	entblock "github.com/appditto/pippin_nano_wallet/libs/database/ent/block"
 	nanorpc "github.com/appditto/pippin_nano_wallet/libs/rpc"
@@ -54,7 +57,7 @@ func (w *NanoWallet) GetBlockFromDatabase(wallet *ent.Wallet, address string, se
 }
 
 // ** Low level block creations, not intended for use by the user **
-func (w *NanoWallet) createReceiveBlock(wallet *ent.Wallet, receiver *ent.Account, hash string, precomputedWork *string) (*models.StateBlock, error) {
+func (w *NanoWallet) createReceiveBlock(wallet *ent.Wallet, receiver *ent.Account, hash string, precomputedWork *string, bpowKey *string) (*models.StateBlock, error) {
 	if wallet == nil {
 		return nil, ErrInvalidWallet
 	} else if receiver == nil {
@@ -111,23 +114,27 @@ func (w *NanoWallet) createReceiveBlock(wallet *ent.Wallet, receiver *ent.Accoun
 	}
 
 	var balance *big.Int
-	curB, ok := big.NewInt(0).SetString(blockInfo.Amount, 10)
+	receiveAmount, ok := big.NewInt(0).SetString(blockInfo.Amount, 10)
 	if !ok {
 		return nil, errors.New("Unable to parse balance")
 	}
 	if !isOpen {
-		balance = curB
+		balance = receiveAmount
 	} else {
-		receiveAmount, ok := big.NewInt(0).SetString(blockInfo.Amount, 10)
+		currentBalance, ok := big.NewInt(0).SetString(accountInfo.Balance, 10)
 		if !ok {
-			return nil, errors.New("Unable to block info amount")
+			return nil, errors.New("Unable to parse confirmed balance")
 		}
-		balance = big.NewInt(0).Add(receiveAmount, curB)
+		balance = big.NewInt(0).Add(receiveAmount, currentBalance)
 	}
 
 	var work string
 	if precomputedWork == nil {
-		work, err = w.WorkClient.WorkGenerateMeta(workbase, 1, true, false, "")
+		key := ""
+		if bpowKey != nil {
+			key = *bpowKey
+		}
+		work, err = w.WorkClient.WorkGenerateMeta(workbase, 1, true, false, key)
 		if err != nil {
 			return nil, err
 		}
@@ -170,7 +177,105 @@ func (w *NanoWallet) createReceiveBlock(wallet *ent.Wallet, receiver *ent.Accoun
 	return stateBlock, nil
 }
 
-func (w *NanoWallet) CreateAndPublishSendBlock(wallet *ent.Wallet, amount big.Int, source string, destination string, id string, work string, bpowKy string) (string, error) {
+// The user facing APIs intended to be  for block creation/publishing
+// They are done in a locked context
+
+// Receive single block
+func (w *NanoWallet) CreateAndPublishReceiveBlock(wallet *ent.Wallet, source string, hash string, work *string, bpowKey *string) (string, error) {
+	if wallet == nil {
+		return "", ErrInvalidWallet
+	}
+
+	acc, err := w.GetAccount(wallet, source)
+	if err != nil {
+		return "", err
+	}
+
+	// Obtain lock
+	lock, err := database.GetRedisDB().Locker.Obtain(w.Ctx, fmt.Sprintf("acl:%s", acc.Address), time.Second*10, &database.LockRetryStrategy)
+	if err != nil {
+		return "", database.ErrLockNotObtained
+	}
+	defer lock.Release(w.Ctx)
+
+	sb, err := w.createReceiveBlock(wallet, acc, hash, work, bpowKey)
+	if err != nil {
+		return "", err
+	}
+
+	// Publish block
+	subtype := "receive"
+	resp, err := w.RpcClient.MakeProcessRequest(requests.ProcessRequest{
+		BaseRequest: requests.BaseRequest{
+			Action: "process",
+		},
+		Subtype:   &subtype,
+		JsonBlock: true,
+		Block:     *sb,
+	})
+	if err != nil || !utils.Validate64HexHash(resp.Hash) {
+		return "", err
+	}
+	return resp.Hash, nil
+}
+
+// Receive all blocks in all accounts on wallet, respecting receive minimum
+func (w *NanoWallet) ReceiveAllBlocks(wallet *ent.Wallet, source string, bpowKey *string) (int, error) {
+	receivedCount := 0
+	if wallet == nil {
+		return receivedCount, ErrInvalidWallet
+	}
+
+	acc, err := w.GetAccount(wallet, source)
+	if err != nil {
+		return receivedCount, err
+	}
+
+	// Obtain lock
+	lock, err := database.GetRedisDB().Locker.Obtain(w.Ctx, fmt.Sprintf("acl:%s", acc.Address), time.Second*10, &database.LockRetryStrategy)
+	if err != nil {
+		return receivedCount, database.ErrLockNotObtained
+	}
+	defer lock.Release(w.Ctx)
+
+	// Get pending
+	pending, err := w.RpcClient.MakeReceivableRequest(acc.Address, w.Config.Wallet.ReceiveMinimum)
+	if err != nil {
+		return receivedCount, err
+	}
+	if len(pending.Blocks) == 0 {
+		return receivedCount, nil
+	}
+
+	// Create and publish blocks
+	for hash := range pending.Blocks {
+		sb, err := w.createReceiveBlock(wallet, acc, hash, nil, bpowKey)
+		if err != nil {
+			return receivedCount, err
+		}
+
+		// Publish block
+		subtype := "receive"
+		resp, err := w.RpcClient.MakeProcessRequest(requests.ProcessRequest{
+			BaseRequest: requests.BaseRequest{
+				Action: "process",
+			},
+			Subtype:   &subtype,
+			JsonBlock: true,
+			Block:     *sb,
+		})
+		if err != nil || !utils.Validate64HexHash(resp.Hash) {
+			return receivedCount, err
+		}
+		receivedCount++
+	}
+	return receivedCount, nil
+}
+
+func (w *NanoWallet) CreateAndPublishSendBlock(wallet *ent.Wallet, amount big.Int, source string, destination string, id string, work string, bpowKey string) (string, error) {
+	if wallet == nil {
+		return "", ErrInvalidWallet
+	}
 	_, err := w.GetAccount(wallet, source)
 	if err != nil {
 		return "", err

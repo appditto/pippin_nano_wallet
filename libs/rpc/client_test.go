@@ -245,3 +245,33 @@ func TestMakeAccountInfoRequest(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.ErrorIs(t, err, ErrAccountNotFound)
 }
+
+func TestMakeReceivableRequest(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("POST", "http://localhost:123456",
+		func(req *http.Request) (*http.Response, error) {
+			var pr requests.ReceivableRequest
+			json.NewDecoder(req.Body).Decode(&pr)
+			if pr.Account == "abcd1234" {
+				var js map[string]interface{}
+				json.Unmarshal([]byte(mocks.ReceivableResponseStr), &js)
+				resp, err := httpmock.NewJsonResponse(200, js)
+				return resp, err
+			}
+			var js map[string]interface{}
+			json.Unmarshal([]byte(mocks.ReceivableResponseEmptyStr), &js)
+			resp, err := httpmock.NewJsonResponse(200, js)
+			return resp, err
+		},
+	)
+
+	resp, err := MockRpcClient.MakeReceivableRequest("abcd1234", "1")
+	assert.Nil(t, err)
+	assert.Equal(t, "6000000000000000000000000000000", resp.Blocks["000D1BAEC8EC208142C99059B393051BAC8380F9B5A2E6B2489A277D81789F3F"])
+
+	resp, err = MockRpcClient.MakeReceivableRequest("abcd12345", "1")
+	assert.Nil(t, err)
+	assert.Len(t, resp.Blocks, 0)
+}

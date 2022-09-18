@@ -26,4 +26,5 @@ func TestDecodeAccountInfoResponse(t *testing.T) {
 	assert.Equal(t, "0", decoded.Receivable)
 	assert.Equal(t, "0", decoded.ConfirmedPending)
 	assert.Equal(t, "0", decoded.ConfirmedReceivable)
+	assert.Equal(t, "11999999999999999918751838129509869131", decoded.ConfirmedBalance)
 }

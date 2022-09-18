@@ -78,16 +78,18 @@ func main() {
 		Url: conf.Server.NodeRpcUrl,
 	}
 
-	// Setup nano wallet instance with DB, options, etc.
-	nanoWallet := wallet.NanoWallet{
-		DB:        entClient,
-		Ctx:       ctx,
-		Banano:    conf.Wallet.Banano,
-		RpcClient: &rpcClient,
-	}
-
 	// Setup pow client
 	pow := pow.NewPippinPow(conf.Wallet.WorkPeers, utils.GetEnv("BPOW_KEY", ""), utils.GetEnv("BPOW_URL", ""))
+
+	// Setup nano wallet instance with DB, options, etc.
+	nanoWallet := wallet.NanoWallet{
+		DB:         entClient,
+		Ctx:        ctx,
+		Banano:     conf.Wallet.Banano,
+		RpcClient:  &rpcClient,
+		WorkClient: pow,
+		Config:     conf,
+	}
 
 	// Create app
 	app := chi.NewRouter()

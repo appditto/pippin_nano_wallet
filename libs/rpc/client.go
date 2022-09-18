@@ -321,3 +321,53 @@ func (client *RPCClient) MakeAccountInfoRequest(account string) (*responses.Acco
 
 	return &decoded, nil
 }
+
+func (client *RPCClient) MakeReceivableRequest(account string, threshold string) (*responses.ReceivableResponse, error) {
+	request := requests.ReceivableRequest{
+		BaseRequest: requests.BaseRequest{
+			Action: "receivable",
+		},
+		Account:              account,
+		Threshold:            threshold,
+		IncludeOnlyConfirmed: true,
+	}
+	response, err := client.MakeRequest(request)
+	if err != nil {
+		klog.Errorf("Error making request %s", err)
+		return nil, err
+	}
+	var resp map[string]interface{}
+	err = json.Unmarshal(response, &resp)
+	if err != nil {
+		klog.Errorf("Error unmarshalling response %s", err)
+		return nil, err
+	}
+	// See if contains an error
+	if val, ok := resp["error"]; ok {
+		errStr, ok := val.(string)
+		if ok {
+			if strings.ToLower(errStr) == "account not found" {
+				return nil, ErrAccountNotFound
+			}
+			return nil, errors.New(errStr)
+		}
+		return nil, errors.New("Unknown error")
+	}
+	// The node is inconsistent and will give an empty string if nothing is here
+	if val, ok := resp["blocks"]; ok {
+		if val == "" {
+			return &responses.ReceivableResponse{
+				Blocks: make(map[string]string),
+			}, nil
+		}
+	}
+	// Decode properly
+	var decoded responses.ReceivableResponse
+	err = mapstructure.Decode(resp, &decoded)
+	if err != nil {
+		klog.Errorf("Error decoding response %s", err)
+		return nil, err
+	}
+
+	return &decoded, nil
+}

@@ -16,6 +16,7 @@ type AccountInfoResponse struct {
 	ConfirmedHeight            string `json:"confirmed_height" mapstructure:"confirmed_height"`
 	ConfirmedFrontier          string `json:"confirmed_frontier" mapstructure:"confirmed_frontier"`
 	Receivable                 string `json:"receivable" mapstructure:"receivable"`
+	ConfirmedBalance           string `json:"confirmed_balance" mapstructure:"confirmed_balance"`
 	ConfirmedPending           string `json:"confirmed_pending" mapstructure:"confirmed_pending"`
 	ConfirmedReceivable        string `json:"confirmed_receivable" mapstructure:"confirmed_receivable"`
 }

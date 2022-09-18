@@ -235,6 +235,21 @@ func TestAccountsList(t *testing.T) {
 	assert.Contains(t, accts, "nano_13687htr3rp5wxfyxpjjzctydd46rca6cpm377ce9eccctpy5ht3zb79b444")
 	assert.Contains(t, accts, "nano_1bzpyc67m6hzhm8egshbnyseowohs11d7hkcw4ksz8guetsyegkx3r1ns6s4")
 
+	// 0 removes the limit clause
+	accts, err = MockWallet.AccountsList(wallet, 0)
+	assert.Nil(t, err)
+	// We actually have 7 accounts because WalletCreate implicitly creates the first one
+	// So this isn't a mistake
+	assert.Len(t, accts, 7)
+
+	assert.Contains(t, accts, "nano_1g7kfyzdqggtmoop8kwiwu4kh7camtaukpc6gkt8mybm4ezx457wjoxyhiwb")
+	assert.Contains(t, accts, "nano_1ucbt3tm7y65tbz4pgxmnkce3ycgpiqcp8un7cybc3cxtapeangti3i9apbx")
+	assert.Contains(t, accts, "nano_3pws13shsun9b5o1febnzj8bb1nqa99no9fe9t3hm5r6ehi1mznzp31ri11s")
+	assert.Contains(t, accts, "nano_1og8yj39i88nc48qseiofnt3raxi7ttsomiz6n6nbo5qmfh954hynzzfhjk7")
+	assert.Contains(t, accts, "nano_1xbhmnrt6x1ji4pf6u1m3fckxifxusbmpsp6nuyhhpnfj719ja8z4aubfmud")
+	assert.Contains(t, accts, "nano_13687htr3rp5wxfyxpjjzctydd46rca6cpm377ce9eccctpy5ht3zb79b444")
+	assert.Contains(t, accts, "nano_1bzpyc67m6hzhm8egshbnyseowohs11d7hkcw4ksz8guetsyegkx3r1ns6s4")
+
 	// Check that it fails if wallet is locked
 	MockWallet.EncryptWallet(wallet, "password")
 	_, err = MockWallet.AccountsList(wallet, 100)

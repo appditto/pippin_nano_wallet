@@ -238,9 +238,17 @@ func (w *NanoWallet) AccountsList(wallet *ent.Wallet, limit int) ([]string, erro
 	}
 
 	// Get accounts
-	accounts, err := w.DB.Account.Query().Where(account.WalletID(wallet.ID)).Limit(limit).All(w.Ctx)
-	if err != nil {
-		return nil, err
+	var accounts []*ent.Account
+	if limit > 0 {
+		accounts, err = w.DB.Account.Query().Where(account.WalletID(wallet.ID)).Limit(limit).All(w.Ctx)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		accounts, err = w.DB.Account.Query().Where(account.WalletID(wallet.ID)).All(w.Ctx)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Concatenate them together as an array of addresses

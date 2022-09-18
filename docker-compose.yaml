@@ -54,6 +54,9 @@ services:
         entrypoint: /bin/zsh
         stdin_open: true
         tty: true
+        depends_on:
+            - db
+            - redis
         networks: [ 'app-network' ]
 
 networks:

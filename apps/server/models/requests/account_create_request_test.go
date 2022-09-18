@@ -14,7 +14,7 @@ func TestDecodeAccountCreateRequest(t *testing.T) {
 	json.Unmarshal([]byte(encoded), &decoded)
 	assert.Equal(t, "account_create", decoded.Action)
 	assert.Equal(t, "1234", decoded.Wallet)
-	assert.Equal(t, 1, *decoded.Index)
+	assert.Equal(t, 1.0, *decoded.Index)
 }
 
 func TestMapStructureDecodeAccountCreateRequest(t *testing.T) {

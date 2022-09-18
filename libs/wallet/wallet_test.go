@@ -95,7 +95,7 @@ func TestWalletCreate(t *testing.T) {
 	account, err := MockWallet.DB.Account.Query().Where(account.WalletID(wallet.ID)).First(MockWallet.Ctx)
 	assert.Nil(t, err)
 	assert.Equal(t, "nano_1efa1gxbitary1urzix9h13nkzadtz71n3auyj7uztb8i4qbtipu8cxz61ee", account.Address)
-	assert.Equal(t, 0, account.AccountIndex)
+	assert.Equal(t, 0, *account.AccountIndex)
 	assert.Equal(t, true, account.Work)
 }
 

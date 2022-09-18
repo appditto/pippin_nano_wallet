@@ -481,3 +481,40 @@ func (hc *HttpController) HandleWalletRepresentativeRequest(rawRequest *map[stri
 		Representative: representative,
 	})
 }
+
+func (hc *HttpController) HandleWalletChangeSeedRequest(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+	var changeRequest requests.WalletChangeSeedRequest
+	if err := mapstructure.Decode(rawRequest, &changeRequest); err != nil {
+		klog.Errorf("Error unmarshalling change seed request %s", err)
+		ErrUnableToParseJson(w, r)
+		return
+	} else if changeRequest.Wallet == "" || changeRequest.Action == "" || changeRequest.Seed == "" {
+		ErrUnableToParseJson(w, r)
+		return
+	}
+
+	// See if wallet exists
+	dbWallet := hc.WalletExists(changeRequest.Wallet, w, r)
+	if dbWallet == nil {
+		return
+	}
+
+	// Change the seed
+	newest, err := hc.Wallet.WalletChangeSeed(dbWallet, changeRequest.Seed)
+	if errors.Is(err, wallet.ErrWalletLocked) || errors.Is(err, wallet.ErrInvalidWallet) {
+		ErrWalletLocked(w, r)
+		return
+	} else if errors.Is(err, wallet.ErrInvalidSeed) {
+		ErrBadRequest(w, r, err.Error())
+	} else if err != nil {
+		ErrInternalServerError(w, r, err.Error())
+		return
+	}
+
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, &responses.WalletChangeSeedResponse{
+		Success:             "",
+		LastRestoredAccount: newest.Address,
+		RestoredCount:       *newest.AccountIndex + 1,
+	})
+}

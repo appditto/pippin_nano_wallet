@@ -624,3 +624,57 @@ func TestWalletRepresentative(t *testing.T) {
 
 	assert.Equal(t, "wallet locked", errEsp["error"])
 }
+
+func TestWalletChangeSeed(t *testing.T) {
+	newSeed, _ := utils.GenerateSeed(strings.NewReader("addf0e0b362aaf49f68ae75caff32cdcd05a5e7a444f5befdb9759e2069c076b"))
+	wallet, _ := MockController.Wallet.WalletCreate(newSeed)
+	// Request JSON
+	reqBody := map[string]interface{}{
+		"action": "wallet_change_seed",
+		"wallet": wallet.ID.String(),
+		"seed":   "c37bd1bce9bd8b69c401577773c610e4e84461f9d67b6bc2e9a2b3786b84a8fe",
+	}
+	body, _ := json.Marshal(reqBody)
+	w := httptest.NewRecorder()
+	// Build request
+	req := httptest.NewRequest("POST", "/", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	MockController.Gateway(w, req)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var respJson responses.WalletChangeSeedResponse
+	respBody, _ := io.ReadAll(resp.Body)
+	json.Unmarshal(respBody, &respJson)
+
+	_, err := utils.AddressToPub(respJson.LastRestoredAccount, MockController.Wallet.Banano)
+	assert.Nil(t, err)
+	assert.Equal(t, "", respJson.Success)
+	assert.Equal(t, "nano_3w7gw4dhgbnjjxphdezseufjihxfwgm8pyuouuxb4zkfrnfmgnjdfp7ujt75", respJson.LastRestoredAccount)
+	assert.Equal(t, 1, respJson.RestoredCount)
+
+	// Bad request
+	// Encrypt the wallet
+	MockController.Wallet.EncryptWallet(wallet, "password")
+	reqBody = map[string]interface{}{
+		"action": "wallet_change_seed",
+		"wallet": wallet.ID.String(),
+		"seed":   "a6a7ea08f4b3e4e8a27ef21c61c4c8b18e57f435c2e0d964e60ff1d5d9e9e4d7",
+	}
+	body, _ = json.Marshal(reqBody)
+	w = httptest.NewRecorder()
+	// Build request
+	req = httptest.NewRequest("POST", "/", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	MockController.Gateway(w, req)
+	resp = w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, 400, resp.StatusCode)
+
+	var errEsp map[string]interface{}
+	respBody, _ = io.ReadAll(resp.Body)
+	json.Unmarshal(respBody, &errEsp)
+
+	assert.Equal(t, "wallet locked", errEsp["error"])
+}

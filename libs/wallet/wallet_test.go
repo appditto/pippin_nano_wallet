@@ -203,3 +203,39 @@ func TestWalletRepresentativeSet(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "nano_1efa1gxbitary1urzix9h13nkzadtz71n3auyj7uztb8i4qbtipu8cxz61ee", *wallet.Representative)
 }
+
+func TestWalletChangeSeed(t *testing.T) {
+	// Create a test wallet
+	seed, _ := utils.GenerateSeed(strings.NewReader("94e6c473cf3d539822e073f64d31a248621ef28be595fc497adf322f29a3d9e4"))
+	wallet, err := MockWallet.WalletCreate(seed)
+	assert.Nil(t, err)
+
+	wallet, err = MockWallet.GetWallet(wallet.ID.String())
+	assert.Nil(t, err)
+
+	acc, err := MockWallet.AccountCreate(wallet, nil)
+	assert.Nil(t, err)
+	oldAddress := acc.Address
+
+	// Change seed
+	newest, err := MockWallet.WalletChangeSeed(wallet, "c0e319472702d7cbe728ad05647395498a6ad498b9ae7e36a33cc37fef60f27a")
+	assert.Nil(t, err)
+	assert.Equal(t, "nano_33fj9exam1ppgzaco6hjd7z1nnapnf4gh3ech4fbfkr6eotb7bui3qzukt73", newest.Address)
+	assert.NotEqual(t, oldAddress, newest.Address)
+
+	// Test with locked wallet
+	_, err = MockWallet.EncryptWallet(wallet, "password")
+	assert.Nil(t, err)
+
+	_, err = MockWallet.WalletChangeSeed(wallet, "0c07c237c3e4254aeb2cae8ddd48eb9f13f393a99aefa3f012231e9688641e58")
+	assert.ErrorIs(t, ErrWalletLocked, err)
+
+	// Unlock wallet
+	_, err = MockWallet.UnlockWallet(wallet, "password")
+	assert.Nil(t, err)
+
+	// Change seed
+	newest, err = MockWallet.WalletChangeSeed(wallet, "e0e87bf97ac01f4428864aa752a2d7acb9c2ca99ea2e69296c8507d5d71408fb")
+	assert.Nil(t, err)
+	assert.Equal(t, "nano_16rxu414wbt34tyn7yugup99s4xt1htrfufkwjce19ezfwfbmzrf343ynyoi", newest.Address)
+}

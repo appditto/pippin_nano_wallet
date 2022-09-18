@@ -182,3 +182,51 @@ func (w *NanoWallet) WalletRepresentativeSet(wallet *ent.Wallet, representative 
 	}
 	return nil
 }
+
+// Change the seed of the wallet, will decrypt it if encrypted
+// Will return the newest account of the changed wallet (the one with the highest index)
+func (w *NanoWallet) WalletChangeSeed(wallet *ent.Wallet, newSeed string) (*ent.Account, error) {
+	if wallet == nil {
+		return nil, ErrInvalidWallet
+	} else if !utils.Validate64HexHash(newSeed) {
+		return nil, ErrInvalidSeed
+	}
+
+	// Get seed
+	_, err := GetDecryptedKeyFromStorage(wallet, "seed")
+	if err != nil {
+		return nil, err
+	}
+
+	if wallet.Encrypted {
+		// Decrypt wallet
+		_, err = w.EncryptWallet(wallet, "")
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Loop all accounts, update their address with new derived address
+	accounts, err := w.DB.Account.Query().Where(account.WalletID(wallet.ID), account.AccountIndexNotNil()).All(w.Ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, account := range accounts {
+		pub, _, err := utils.KeypairFromSeed(newSeed, uint32(*account.AccountIndex))
+		if err != nil {
+			return nil, err
+		}
+		address := utils.PubKeyToAddress(pub, w.Banano)
+		_, err = account.Update().SetAddress(address).Save(w.Ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	newest, err := w.DB.Account.Query().Where(account.WalletID(wallet.ID), account.AccountIndexNotNil()).Order(ent.Desc(account.FieldAccountIndex)).First(w.Ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return newest, nil
+}

@@ -206,7 +206,7 @@ func (hc *HttpController) HandleWalletBalances(rawRequest *map[string]interface{
 	}
 
 	// Get accounts on wallet
-	accounts, err := hc.Wallet.AccountsList(dbWallet, math.MaxInt)
+	_, accounts, err := hc.Wallet.AccountsList(dbWallet, math.MaxInt)
 	if err != nil {
 		ErrInternalServerError(w, r, err.Error())
 		return
@@ -237,7 +237,7 @@ func (hc *HttpController) HandleWalletFrontiers(rawRequest *map[string]interface
 	}
 
 	// Get accounts on wallet
-	accounts, err := hc.Wallet.AccountsList(dbWallet, math.MaxInt)
+	_, accounts, err := hc.Wallet.AccountsList(dbWallet, math.MaxInt)
 	if err != nil {
 		ErrInternalServerError(w, r, err.Error())
 		return
@@ -268,7 +268,7 @@ func (hc *HttpController) HandleWalletPending(rawRequest *map[string]interface{}
 	}
 
 	// Get accounts on wallet
-	accounts, err := hc.Wallet.AccountsList(dbWallet, math.MaxInt)
+	_, accounts, err := hc.Wallet.AccountsList(dbWallet, math.MaxInt)
 	if err != nil {
 		ErrInternalServerError(w, r, err.Error())
 		return
@@ -299,7 +299,7 @@ func (hc *HttpController) HandleWalletInfo(rawRequest *map[string]interface{}, w
 	}
 
 	// Get accounts on wallet
-	accounts, err := hc.Wallet.AccountsList(dbWallet, math.MaxInt)
+	_, accounts, err := hc.Wallet.AccountsList(dbWallet, math.MaxInt)
 	if err != nil {
 		ErrInternalServerError(w, r, err.Error())
 		return
@@ -399,4 +399,45 @@ func (hc *HttpController) HandleWalletContains(rawRequest *map[string]interface{
 	// Return balances
 	render.Status(r, http.StatusOK)
 	render.JSON(w, r, resp)
+}
+
+func (hc *HttpController) HandleWalletRepresentativeSetRequest(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+	var changeRequest requests.WalletRepresentativeSetRequest
+	if err := mapstructure.Decode(rawRequest, &changeRequest); err != nil {
+		klog.Errorf("Error unmarshalling receive request %s", err)
+		ErrUnableToParseJson(w, r)
+		return
+	} else if changeRequest.Wallet == "" || changeRequest.Action == "" || changeRequest.Representative == "" {
+		ErrUnableToParseJson(w, r)
+		return
+	}
+
+	// See if wallet exists
+	dbWallet := hc.WalletExists(changeRequest.Wallet, w, r)
+	if dbWallet == nil {
+		return
+	}
+
+	// Validate account
+	_, err := utils.AddressToPub(changeRequest.Representative, hc.Wallet.Config.Wallet.Banano)
+	if err != nil {
+		ErrBadRequest(w, r, "Invalid representative account")
+		return
+	}
+
+	// Parse as bool
+	updateExisting := false
+	if changeRequest.UpdateExistingAccounts != nil {
+		updateExisting, err = utils.ToBool(*changeRequest.UpdateExistingAccounts)
+	}
+
+	err = hc.Wallet.WalletRepresentativeSet(dbWallet, changeRequest.Representative, updateExisting, changeRequest.BpowKey)
+	setResponse := responses.SetResponse{
+		Set: "1",
+	}
+	if err != nil {
+		setResponse.Set = "0"
+	}
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, setResponse)
 }

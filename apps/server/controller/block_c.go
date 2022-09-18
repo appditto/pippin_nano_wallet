@@ -67,7 +67,7 @@ func (hc *HttpController) HandleReceiveAllRequest(rawRequest *map[string]interfa
 	}
 
 	// Accounts list
-	accounts, err := hc.Wallet.AccountsList(dbWallet, 0)
+	_, accounts, err := hc.Wallet.AccountsList(dbWallet, 0)
 	if errors.Is(err, wallet.ErrWalletLocked) {
 		ErrWalletLocked(w, r)
 		return
@@ -170,7 +170,7 @@ func (hc *HttpController) HandleAccountRepresentativeSetRequest(rawRequest *map[
 	}
 
 	// Do the send
-	resp, err := hc.Wallet.CreateAndPublishChangeBlock(dbWallet, changeRequest.Account, changeRequest.Representative, changeRequest.Work, changeRequest.BpowKey)
+	resp, err := hc.Wallet.CreateAndPublishChangeBlock(dbWallet, changeRequest.Account, changeRequest.Representative, changeRequest.Work, changeRequest.BpowKey, false)
 	if err != nil {
 		ErrBadRequest(w, r, err.Error())
 		return

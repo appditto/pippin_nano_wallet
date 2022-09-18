@@ -185,3 +185,21 @@ func TestWalletInfo(t *testing.T) {
 	assert.Equal(t, info.DeterministicCount, 11)
 	assert.Equal(t, info.DeterministicIndex, 10)
 }
+
+func TestWalletRepresentativeSet(t *testing.T) {
+	// Create a test wallet
+	seed, _ := utils.GenerateSeed(strings.NewReader("1f447808006c0c50d0193eda500ff482d08effa9187dfe2d57a1c5009b2d5f6c"))
+	wallet, err := MockWallet.WalletCreate(seed)
+	assert.Nil(t, err)
+
+	wallet, err = MockWallet.GetWallet(wallet.ID.String())
+	assert.Nil(t, err)
+
+	err = MockWallet.WalletRepresentativeSet(wallet, "nano_1efa1gxbitary1urzix9h13nkzadtz71n3auyj7uztb8i4qbtipu8cxz61ee", false, nil)
+	assert.Nil(t, err)
+
+	// Retrieve wallet
+	wallet, err = MockWallet.GetWallet(wallet.ID.String())
+	assert.Nil(t, err)
+	assert.Equal(t, "nano_1efa1gxbitary1urzix9h13nkzadtz71n3auyj7uztb8i4qbtipu8cxz61ee", *wallet.Representative)
+}

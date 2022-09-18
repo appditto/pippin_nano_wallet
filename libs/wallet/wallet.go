@@ -153,3 +153,32 @@ func (w *NanoWallet) WalletInfo(wallet *ent.Wallet) (*models.WalletInfo, error) 
 		DeterministicIndex: currentIndex,
 	}, nil
 }
+
+func (w *NanoWallet) WalletRepresentativeSet(wallet *ent.Wallet, representative string, changeExisting bool, bpowKey *string) error {
+	if wallet == nil {
+		return ErrInvalidWallet
+	}
+
+	// Update wallet with representative
+	wallet, err := wallet.Update().SetRepresentative(representative).Save(w.Ctx)
+	if err != nil {
+		return err
+	}
+
+	if !changeExisting {
+		return nil
+	}
+
+	// Create and publish change blocks for every account on the wallet.
+	_, addresses, err := w.AccountsList(wallet, 0)
+	if err != nil {
+		return err
+	}
+	for _, address := range addresses {
+		_, err := w.CreateAndPublishChangeBlock(wallet, address, representative, nil, bpowKey, true)
+		if err != nil && !errors.Is(err, ErrSameRepresentative) && !errors.Is(err, nanorpc.ErrAccountNotFound) {
+			return err
+		}
+	}
+	return nil
+}

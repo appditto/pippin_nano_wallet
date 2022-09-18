@@ -226,15 +226,15 @@ func (w *NanoWallet) AdhocAccountCreate(wallet *ent.Wallet, privKey ed25519.Priv
 }
 
 // Retrieve list of accounts on a wallet, if not locked
-func (w *NanoWallet) AccountsList(wallet *ent.Wallet, limit int) ([]string, error) {
+func (w *NanoWallet) AccountsList(wallet *ent.Wallet, limit int) ([]*ent.Account, []string, error) {
 	if wallet == nil {
-		return nil, ErrInvalidWallet
+		return nil, nil, ErrInvalidWallet
 	}
 
 	// Determine if wallet is locked or not
 	_, err := GetDecryptedKeyFromStorage(wallet, "seed")
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Get accounts
@@ -242,12 +242,12 @@ func (w *NanoWallet) AccountsList(wallet *ent.Wallet, limit int) ([]string, erro
 	if limit > 0 {
 		accounts, err = w.DB.Account.Query().Where(account.WalletID(wallet.ID)).Limit(limit).All(w.Ctx)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	} else {
 		accounts, err = w.DB.Account.Query().Where(account.WalletID(wallet.ID)).All(w.Ctx)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
@@ -257,7 +257,7 @@ func (w *NanoWallet) AccountsList(wallet *ent.Wallet, limit int) ([]string, erro
 		addresses = append(addresses, acct.Address)
 	}
 
-	return addresses, nil
+	return accounts, addresses, nil
 }
 
 func (w *NanoWallet) AccountExists(wallet *ent.Wallet, address string) (bool, error) {

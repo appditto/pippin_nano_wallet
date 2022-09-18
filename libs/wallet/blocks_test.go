@@ -187,9 +187,9 @@ func TestChangeBlockCreate(t *testing.T) {
 		},
 	)
 
-	_, err := MockWallet.createChangeBlock(nil, nil, "", nil, nil)
+	_, err := MockWallet.createChangeBlock(nil, nil, "", nil, nil, true)
 	assert.ErrorIs(t, err, ErrInvalidWallet)
-	_, err = MockWallet.createChangeBlock(&ent.Wallet{}, nil, "", nil, nil)
+	_, err = MockWallet.createChangeBlock(&ent.Wallet{}, nil, "", nil, nil, true)
 	assert.ErrorIs(t, err, ErrInvalidAccount)
 
 	// Create a wallet
@@ -204,7 +204,7 @@ func TestChangeBlockCreate(t *testing.T) {
 
 	// Receive a block
 	work := "0000000000000000"
-	block, err := MockWallet.createChangeBlock(wallet, acc, "nano_3o7uzba8b9e1wqu5ziwpruteyrs3scyqr761x7ke6w1xctohxfh5du75qgaj", &work, nil)
+	block, err := MockWallet.createChangeBlock(wallet, acc, "nano_3o7uzba8b9e1wqu5ziwpruteyrs3scyqr761x7ke6w1xctohxfh5du75qgaj", &work, nil, false)
 	assert.Nil(t, err)
 	assert.Equal(t, "61595310547a16b7b7240eb65b09eb1b6994143ba74596f6e64883c5e3342150", block.Hash)
 	assert.Equal(t, "state", block.Type)
@@ -212,4 +212,9 @@ func TestChangeBlockCreate(t *testing.T) {
 	assert.Equal(t, "0000000000000000000000000000000000000000000000000000000000000000", block.Link)
 	assert.Equal(t, "80A6745762493FA21A22718ABFA4F635656A707B48B3324198AC7F3938DE6D4F", block.Previous)
 	assert.Equal(t, "0000000000000000", block.Work)
+
+	// Test only if different
+	// nano_1gyeqc6u5j3oaxbe5qy1hyz3q745a318kh8h9ocnpan7fuxnq85cxqboapu5
+	block, err = MockWallet.createChangeBlock(wallet, acc, "nano_1gyeqc6u5j3oaxbe5qy1hyz3q745a318kh8h9ocnpan7fuxnq85cxqboapu5", &work, nil, true)
+	assert.ErrorIs(t, err, ErrSameRepresentative)
 }

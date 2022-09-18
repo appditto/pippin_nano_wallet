@@ -165,8 +165,7 @@ func (p *PippinPow) WorkGenerateMeta(hash string, difficultyMultiplier int, vali
 			go WorkCancelAPIRequest(peer, hash)
 		}
 		return *result, nil
-	// 30
-	case <-time.After(10 * time.Second):
+	case <-time.After(30 * time.Second):
 		// Send work cancel
 		for _, peer := range p.WorkPeers {
 			go WorkCancelAPIRequest(peer, hash)

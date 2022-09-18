@@ -221,7 +221,7 @@ func TestAccountsList(t *testing.T) {
 	_, err = MockWallet.AdhocAccountCreate(wallet, priv)
 
 	// List accounts
-	accts, err := MockWallet.AccountsList(wallet, 100)
+	_, accts, err := MockWallet.AccountsList(wallet, 100)
 	assert.Nil(t, err)
 	// We actually have 7 accounts because WalletCreate implicitly creates the first one
 	// So this isn't a mistake
@@ -236,7 +236,7 @@ func TestAccountsList(t *testing.T) {
 	assert.Contains(t, accts, "nano_1bzpyc67m6hzhm8egshbnyseowohs11d7hkcw4ksz8guetsyegkx3r1ns6s4")
 
 	// 0 removes the limit clause
-	accts, err = MockWallet.AccountsList(wallet, 0)
+	_, accts, err = MockWallet.AccountsList(wallet, 0)
 	assert.Nil(t, err)
 	// We actually have 7 accounts because WalletCreate implicitly creates the first one
 	// So this isn't a mistake
@@ -252,7 +252,7 @@ func TestAccountsList(t *testing.T) {
 
 	// Check that it fails if wallet is locked
 	MockWallet.EncryptWallet(wallet, "password")
-	_, err = MockWallet.AccountsList(wallet, 100)
+	_, _, err = MockWallet.AccountsList(wallet, 100)
 	assert.ErrorIs(t, ErrWalletLocked, err)
 }
 

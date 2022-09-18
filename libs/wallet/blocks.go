@@ -22,6 +22,7 @@ import (
 
 var ErrBlockNotFound = errors.New("block not found")
 var ErrInsufficientBalance = errors.New("insufficient balance")
+var ErrSameRepresentative = errors.New("same representative")
 
 // The core that creates and publishes send, receive, and change blocks
 // See: https://docs.nano.org/protocol-design/blocks/
@@ -351,7 +352,7 @@ func (w *NanoWallet) createSendBlock(wallet *ent.Wallet, sender *ent.Account, am
 	return stateBlock, nil
 }
 
-func (w *NanoWallet) createChangeBlock(wallet *ent.Wallet, changer *ent.Account, representative string, precomputedWork *string, bpowKey *string) (*models.StateBlock, error) {
+func (w *NanoWallet) createChangeBlock(wallet *ent.Wallet, changer *ent.Account, representative string, precomputedWork *string, bpowKey *string, onlyIfDifferent bool) (*models.StateBlock, error) {
 	if wallet == nil {
 		return nil, ErrInvalidWallet
 	} else if changer == nil {
@@ -362,6 +363,10 @@ func (w *NanoWallet) createChangeBlock(wallet *ent.Wallet, changer *ent.Account,
 	accountInfo, err := w.RpcClient.MakeAccountInfoRequest(changer.Address)
 	if err != nil {
 		return nil, err
+	}
+
+	if onlyIfDifferent && accountInfo.Representative == representative {
+		return nil, ErrSameRepresentative
 	}
 
 	workbase := accountInfo.Frontier
@@ -438,7 +443,7 @@ func (w *NanoWallet) CreateAndPublishReceiveBlock(wallet *ent.Wallet, source str
 	}
 
 	// Obtain lock
-	lock, err := database.GetRedisDB().Locker.Obtain(w.Ctx, fmt.Sprintf("acl:%s", acc.Address), time.Second*10, &database.LockRetryStrategy)
+	lock, err := database.GetRedisDB().Locker.Obtain(w.Ctx, fmt.Sprintf("acl:%s", acc.Address), time.Second*30, &database.LockRetryStrategy)
 	if err != nil {
 		return "", database.ErrLockNotObtained
 	}
@@ -477,7 +482,7 @@ func (w *NanoWallet) ReceiveAllBlocks(wallet *ent.Wallet, source string, bpowKey
 	}
 
 	// Obtain lock
-	lock, err := database.GetRedisDB().Locker.Obtain(w.Ctx, fmt.Sprintf("acl:%s", acc.Address), time.Second*10, &database.LockRetryStrategy)
+	lock, err := database.GetRedisDB().Locker.Obtain(w.Ctx, fmt.Sprintf("acl:%s", acc.Address), time.Second*30, &database.LockRetryStrategy)
 	if err != nil {
 		return 0, database.ErrLockNotObtained
 	}
@@ -496,7 +501,7 @@ func (w *NanoWallet) CreateAndPublishSendBlock(wallet *ent.Wallet, amount string
 	}
 
 	// Obtain lock
-	lock, err := database.GetRedisDB().Locker.Obtain(w.Ctx, fmt.Sprintf("acl:%s", acc.Address), time.Second*10, &database.LockRetryStrategy)
+	lock, err := database.GetRedisDB().Locker.Obtain(w.Ctx, fmt.Sprintf("acl:%s", acc.Address), time.Second*30, &database.LockRetryStrategy)
 	if err != nil {
 		return "", database.ErrLockNotObtained
 	}
@@ -560,7 +565,7 @@ func (w *NanoWallet) CreateAndPublishSendBlock(wallet *ent.Wallet, amount string
 	return resp.Hash, nil
 }
 
-func (w *NanoWallet) CreateAndPublishChangeBlock(wallet *ent.Wallet, address string, representative string, work *string, bpowKey *string) (string, error) {
+func (w *NanoWallet) CreateAndPublishChangeBlock(wallet *ent.Wallet, address string, representative string, work *string, bpowKey *string, onlyIfDifferent bool) (string, error) {
 	if wallet == nil {
 		return "", ErrInvalidWallet
 	}
@@ -570,13 +575,13 @@ func (w *NanoWallet) CreateAndPublishChangeBlock(wallet *ent.Wallet, address str
 	}
 
 	// Obtain lock
-	lock, err := database.GetRedisDB().Locker.Obtain(w.Ctx, fmt.Sprintf("acl:%s", acc.Address), time.Second*10, &database.LockRetryStrategy)
+	lock, err := database.GetRedisDB().Locker.Obtain(w.Ctx, fmt.Sprintf("acl:%s", acc.Address), time.Second*30, &database.LockRetryStrategy)
 	if err != nil {
 		return "", database.ErrLockNotObtained
 	}
 	defer lock.Release(w.Ctx)
 
-	sb, err := w.createChangeBlock(wallet, acc, representative, work, bpowKey)
+	sb, err := w.createChangeBlock(wallet, acc, representative, work, bpowKey, onlyIfDifferent)
 	if err != nil {
 		return "", err
 	}

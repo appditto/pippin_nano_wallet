@@ -31,7 +31,7 @@ var ErrLockNotObtained = errors.New("couldn't obtain lock")
 
 // Retry every 100ms, for up-to 3x
 var LockRetryStrategy = redislock.Options{
-	RetryStrategy: redislock.LimitRetry(redislock.LinearBackoff(100*time.Millisecond), 3),
+	RetryStrategy: redislock.LimitRetry(redislock.LinearBackoff(2*time.Second), 3),
 }
 
 var singleton *redisManager

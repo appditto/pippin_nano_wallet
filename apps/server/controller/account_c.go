@@ -102,7 +102,7 @@ func (hc *HttpController) HandleAccountList(rawRequest *map[string]interface{}, 
 	}
 
 	// Accounts list
-	accounts, err := hc.Wallet.AccountsList(dbWallet, count)
+	_, accounts, err := hc.Wallet.AccountsList(dbWallet, count)
 	if errors.Is(err, wallet.ErrWalletLocked) {
 		ErrWalletLocked(w, r)
 		return

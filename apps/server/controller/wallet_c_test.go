@@ -527,3 +527,51 @@ func TestWalletContains(t *testing.T) {
 
 	assert.Equal(t, "0", respJson.Exists)
 }
+
+func TestWalletRepresentativeSet(t *testing.T) {
+	newSeed, _ := utils.GenerateSeed(strings.NewReader("b40ee7fa4a110bb17e7706e30eeed3bc360f571ddde6b436d7926ed3e77449f2"))
+	wallet, _ := MockController.Wallet.WalletCreate(newSeed)
+	// Request JSON
+	reqBody := map[string]interface{}{
+		"action":         "wallet_representative_set",
+		"wallet":         wallet.ID.String(),
+		"representative": "nano_1jtx5p8141zjtukz4msp1x93st7nh475f74odj8673qqm96xczmtcnanos1o",
+	}
+	body, _ := json.Marshal(reqBody)
+	w := httptest.NewRecorder()
+	// Build request
+	req := httptest.NewRequest("POST", "/", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	MockController.Gateway(w, req)
+	resp := w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var respJson responses.SetResponse
+	respBody, _ := io.ReadAll(resp.Body)
+	json.Unmarshal(respBody, &respJson)
+
+	assert.Equal(t, "1", respJson.Set)
+
+	// Bad request
+	reqBody = map[string]interface{}{
+		"action":         "wallet_representative_set",
+		"wallet":         wallet.ID.String(),
+		"representative": "1234",
+	}
+	body, _ = json.Marshal(reqBody)
+	w = httptest.NewRecorder()
+	// Build request
+	req = httptest.NewRequest("POST", "/", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	MockController.Gateway(w, req)
+	resp = w.Result()
+	defer resp.Body.Close()
+	assert.Equal(t, 400, resp.StatusCode)
+
+	var errEsp map[string]interface{}
+	respBody, _ = io.ReadAll(resp.Body)
+	json.Unmarshal(respBody, &errEsp)
+
+	assert.Equal(t, "Invalid representative account", errEsp["error"])
+}

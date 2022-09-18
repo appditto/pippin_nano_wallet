@@ -2,9 +2,11 @@ package wallet
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
+	"strings"
 	"time"
 
 	"github.com/appditto/pippin_nano_wallet/libs/database"
@@ -19,6 +21,7 @@ import (
 )
 
 var ErrBlockNotFound = errors.New("block not found")
+var ErrInsufficientBalance = errors.New("insufficient balance")
 
 // The core that creates and publishes send, receive, and change blocks
 // See: https://docs.nano.org/protocol-design/blocks/
@@ -82,7 +85,7 @@ func (w *NanoWallet) createReceiveBlock(wallet *ent.Wallet, receiver *ent.Accoun
 	if isOpen {
 		workbase = accountInfo.Frontier
 	} else {
-		pub, err := utils.AddressToPub(receiver.Address)
+		pub, err := utils.AddressToPub(receiver.Address, w.Config.Wallet.Banano)
 		if err != nil {
 			return nil, err
 		}
@@ -150,6 +153,7 @@ func (w *NanoWallet) createReceiveBlock(wallet *ent.Wallet, receiver *ent.Accoun
 		Balance:        balance.String(),
 		Link:           hash,
 		Work:           work,
+		Banano:         w.Config.Wallet.Banano,
 	}
 
 	// Get the private key for this account
@@ -166,6 +170,180 @@ func (w *NanoWallet) createReceiveBlock(wallet *ent.Wallet, receiver *ent.Accoun
 			return nil, err
 		}
 		_, priv, _ = utils.KeypairFromSeed(sd, uint32(*receiver.AccountIndex))
+	}
+
+	// Sign the block
+	err = stateBlock.Sign(priv)
+	if err != nil {
+		return nil, err
+	}
+
+	return stateBlock, nil
+}
+
+// Receive all without locking the wallet
+func (w *NanoWallet) receiveAll(wallet *ent.Wallet, acc *ent.Account, bpowKey *string) (int, error) {
+	if wallet == nil {
+		return 0, ErrInvalidWallet
+	} else if acc == nil {
+		return 0, ErrInvalidAccount
+	}
+	receivedCount := 0
+	// Get pending
+	pending, err := w.RpcClient.MakeReceivableRequest(acc.Address, w.Config.Wallet.ReceiveMinimum)
+	if err != nil {
+		return receivedCount, err
+	}
+	if len(pending.Blocks) == 0 {
+		return receivedCount, nil
+	}
+
+	// Create and publish blocks
+	for hash := range pending.Blocks {
+		sb, err := w.createReceiveBlock(wallet, acc, hash, nil, bpowKey)
+		if err != nil {
+			return receivedCount, err
+		}
+
+		// Publish block
+		subtype := "receive"
+		resp, err := w.RpcClient.MakeProcessRequest(requests.ProcessRequest{
+			BaseRequest: requests.BaseRequest{
+				Action: "process",
+			},
+			Subtype:   &subtype,
+			JsonBlock: true,
+			Block:     *sb,
+		})
+		if err != nil || !utils.Validate64HexHash(resp.Hash) {
+			return receivedCount, err
+		}
+		receivedCount++
+	}
+	return receivedCount, nil
+}
+
+func (w *NanoWallet) createSendBlock(wallet *ent.Wallet, sender *ent.Account, amount string, destination string, precomputedWork *string, bpowKey *string) (*models.StateBlock, error) {
+	if wallet == nil {
+		return nil, ErrInvalidWallet
+	} else if sender == nil {
+		return nil, ErrInvalidAccount
+	}
+
+	sendAmount, ok := big.NewInt(0).SetString(amount, 10)
+	if !ok {
+		return nil, errors.New("Unable to parse send amount")
+	}
+
+	// Check balance
+	balance, err := w.RpcClient.MakeAccountBalanceRequest(sender.Address)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert balance to big int
+	balanceBigInt, ok := big.NewInt(0).SetString(balance.Balance, 10)
+	if !ok {
+		return nil, errors.New("Unable to parse balance")
+	}
+
+	// Check if balance is sufficient
+	if sendAmount.Cmp(balanceBigInt) < 0 {
+		if w.Config.Wallet.AutoReceiveOnSend == nil || !*w.Config.Wallet.AutoReceiveOnSend {
+			return nil, ErrInsufficientBalance
+		}
+		// Automatically receive blocks to see if we can make up the difference
+		receivedCount, _ := w.receiveAll(wallet, sender, bpowKey)
+		if receivedCount > 0 {
+			// Re-check balance
+			balance, err = w.RpcClient.MakeAccountBalanceRequest(sender.Address)
+			if err != nil {
+				return nil, err
+			}
+			balanceBigInt, ok = big.NewInt(0).SetString(balance.Balance, 10)
+			if !ok {
+				return nil, errors.New("Unable to parse balance")
+			}
+			if sendAmount.Cmp(balanceBigInt) < 0 {
+				return nil, ErrInsufficientBalance
+			}
+		}
+	}
+
+	// Get account info
+	accountInfo, err := w.RpcClient.MakeAccountInfoRequest(sender.Address)
+	if err != nil {
+		return nil, err
+	}
+
+	workbase := accountInfo.Frontier
+
+	// Build other block fields
+	previous := accountInfo.Frontier
+
+	var representative string
+	if wallet.Representative != nil {
+		representative = *wallet.Representative
+	} else {
+		rep, err := w.Config.GetRandomRep()
+		if err != nil {
+			return nil, err
+		}
+		representative = rep
+	}
+
+	// Calculate new balance, subtracing sendAmount from balanceBigInt
+	newBalance := balanceBigInt.Sub(balanceBigInt, sendAmount)
+
+	var work string
+	if precomputedWork == nil {
+		key := ""
+		if bpowKey != nil {
+			key = *bpowKey
+		}
+		difficulty := 1
+		if !w.Config.Wallet.Banano {
+			difficulty = 64
+		}
+		work, err = w.WorkClient.WorkGenerateMeta(workbase, difficulty, true, false, key)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		work = *precomputedWork
+	}
+
+	// Link is pubkey of destination
+	link, err := utils.AddressToPub(destination, w.Config.Wallet.Banano)
+	if err != nil {
+		return nil, errors.New("Invalid destination address")
+	}
+
+	stateBlock := &models.StateBlock{
+		Type:           "state",
+		Account:        sender.Address,
+		Previous:       previous,
+		Representative: representative,
+		Balance:        newBalance.String(),
+		Link:           hex.EncodeToString(link),
+		Work:           work,
+		Banano:         w.Config.Wallet.Banano,
+	}
+
+	// Get the private key for this account
+	var priv ed25519.PrivateKey
+	if sender.PrivateKey != nil {
+		decoded, err := hex.DecodeString(*sender.PrivateKey)
+		if err != nil {
+			return nil, err
+		}
+		priv = ed25519.PrivateKey(decoded)
+	} else {
+		sd, err := GetDecryptedKeyFromStorage(wallet, "seed")
+		if err != nil {
+			return nil, err
+		}
+		_, priv, _ = utils.KeypairFromSeed(sd, uint32(*sender.AccountIndex))
 	}
 
 	// Sign the block
@@ -221,70 +399,45 @@ func (w *NanoWallet) CreateAndPublishReceiveBlock(wallet *ent.Wallet, source str
 
 // Receive all blocks in all accounts on wallet, respecting receive minimum
 func (w *NanoWallet) ReceiveAllBlocks(wallet *ent.Wallet, source string, bpowKey *string) (int, error) {
-	receivedCount := 0
 	if wallet == nil {
-		return receivedCount, ErrInvalidWallet
+		return 0, ErrInvalidWallet
 	}
 
 	acc, err := w.GetAccount(wallet, source)
 	if err != nil {
-		return receivedCount, err
+		return 0, err
 	}
 
 	// Obtain lock
 	lock, err := database.GetRedisDB().Locker.Obtain(w.Ctx, fmt.Sprintf("acl:%s", acc.Address), time.Second*10, &database.LockRetryStrategy)
 	if err != nil {
-		return receivedCount, database.ErrLockNotObtained
+		return 0, database.ErrLockNotObtained
 	}
 	defer lock.Release(w.Ctx)
 
-	// Get pending
-	pending, err := w.RpcClient.MakeReceivableRequest(acc.Address, w.Config.Wallet.ReceiveMinimum)
-	if err != nil {
-		return receivedCount, err
-	}
-	if len(pending.Blocks) == 0 {
-		return receivedCount, nil
-	}
-
-	// Create and publish blocks
-	for hash := range pending.Blocks {
-		sb, err := w.createReceiveBlock(wallet, acc, hash, nil, bpowKey)
-		if err != nil {
-			return receivedCount, err
-		}
-
-		// Publish block
-		subtype := "receive"
-		resp, err := w.RpcClient.MakeProcessRequest(requests.ProcessRequest{
-			BaseRequest: requests.BaseRequest{
-				Action: "process",
-			},
-			Subtype:   &subtype,
-			JsonBlock: true,
-			Block:     *sb,
-		})
-		if err != nil || !utils.Validate64HexHash(resp.Hash) {
-			return receivedCount, err
-		}
-		receivedCount++
-	}
-	return receivedCount, nil
+	return w.receiveAll(wallet, acc, bpowKey)
 }
 
-func (w *NanoWallet) CreateAndPublishSendBlock(wallet *ent.Wallet, amount big.Int, source string, destination string, id string, work string, bpowKey string) (string, error) {
+func (w *NanoWallet) CreateAndPublishSendBlock(wallet *ent.Wallet, amount string, source string, destination string, id *string, work *string, bpowKey *string) (string, error) {
 	if wallet == nil {
 		return "", ErrInvalidWallet
 	}
-	_, err := w.GetAccount(wallet, source)
+	acc, err := w.GetAccount(wallet, source)
 	if err != nil {
 		return "", err
 	}
 
+	// Obtain lock
+	lock, err := database.GetRedisDB().Locker.Obtain(w.Ctx, fmt.Sprintf("acl:%s", acc.Address), time.Second*10, &database.LockRetryStrategy)
+	if err != nil {
+		return "", database.ErrLockNotObtained
+	}
+	defer lock.Release(w.Ctx)
+
 	// This is our idempotent send test, we don't create a new send block if a send with this ID has already been created from this account
-	if id != "" {
-		block, err := w.GetBlockFromDatabase(wallet, source, id)
-		if !ent.IsNotFound(err) && err != nil {
+	if id != nil {
+		block, err := w.GetBlockFromDatabase(wallet, source, *id)
+		if !errors.Is(err, ErrBlockNotFound) && err != nil {
 			return "", err
 		} else if block != nil {
 			// Now we can just republish...
@@ -293,7 +446,8 @@ func (w *NanoWallet) CreateAndPublishSendBlock(wallet *ent.Wallet, amount big.In
 				return "", err
 			}
 			subtype := "send"
-			resp, err := w.RpcClient.MakeProcessRequest(requests.ProcessRequest{
+			// Call process with same block
+			w.RpcClient.MakeProcessRequest(requests.ProcessRequest{
 				BaseRequest: requests.BaseRequest{
 					Action: "process",
 				},
@@ -301,63 +455,39 @@ func (w *NanoWallet) CreateAndPublishSendBlock(wallet *ent.Wallet, amount big.In
 				JsonBlock: true,
 				Block:     sb,
 			})
-			if err != nil {
-				return "", err
-			}
-			return resp.Hash, nil
+			return strings.ToUpper(sb.Hash), nil
 		}
 	}
-	// # Get account info
-	// account_balance = await RPCClient.instance().account_balance(self.account.address)
-	// if account_balance is None:
-	// 		return None
 
-	// # Check balance
-	// if amount > int(account_balance['balance']):
-	// 		# Auto-receive blocks if they have it pending
-	// 		if config.Config.instance().auto_receive_on_send and int(account_balance['balance']) + int(account_balance['pending']) >= amount:
-	// 				await self._receive_all()
-	// 				account_info = await RPCClient.instance().account_info(self.account.address)
-	// 				if account_info is None:
-	// 						return None
-	// 				if amount > int(account_info['balance']):
-	// 						raise InsufficientBalance(account_info['balance'])
-	// 		else:
-	// 				raise InsufficientBalance(account_balance['balance'])
+	sb, err := w.createSendBlock(wallet, acc, amount, destination, work, bpowKey)
+	if err != nil {
+		return "", err
+	}
 
-	return "", nil
+	// If the ID is set save it in database for indempotency
+	if id != nil {
+		var asInterface map[string]interface{}
+		inrec, _ := json.Marshal(sb)
+		json.Unmarshal(inrec, &asInterface)
+		_, err := w.DB.Block.Create().SetAccount(acc).SetBlock(asInterface).SetBlockHash(sb.Hash).SetSubtype("send").SetSendID(*id).Save(w.Ctx)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	// Publish block
+	subtype := "send"
+	resp, err := w.RpcClient.MakeProcessRequest(requests.ProcessRequest{
+		BaseRequest: requests.BaseRequest{
+			Action: "process",
+		},
+		Subtype:   &subtype,
+		JsonBlock: true,
+		Block:     *sb,
+	})
+	if err != nil || !utils.Validate64HexHash(resp.Hash) {
+		return "", err
+	}
+
+	return resp.Hash, nil
 }
-
-// async def send(self, amount: int, destination: str, id: str = None, work: str = None, bpow_key: str = None) -> dict:
-// """Create a send block and return hash of published block
-// 		amount is in RAW"""
-
-// async with await (await RedisDB.instance().get_lock_manager()).lock(f"pippin:{self.account.address}") as lock:
-// 		# See if block exists, if ID specified
-// 		# If so just rebroadcast it and return the hash
-// 		if id is not None:
-// 				if not self.adhoc():
-// 						block = await Block.filter(send_id=id, account=self.account).first()
-// 				else:
-// 						block = await Block.filter(send_id=id, adhoc_account=self.account).first()
-// 				if block is not None:
-// 						await RPCClient.instance().process(block.block)
-// 						return {"block": block.block_hash.upper()}
-// 		# Create block
-// 		state_block = await self._send_block_create(amount, destination, id=id, work=work, bpow_key=bpow_key)
-// 		# Publish block
-// 		resp = await self.publish(state_block, subtype='send')
-// 		# Cache if ID specified
-// 		if resp is not None and 'block' in resp:
-// 				# Cache block in database if it has id specified
-// 				if id is not None:
-// 						block = Block(
-// 								account=self.account if not self.adhoc() else None,
-// 								adhoc_account=self.account if self.adhoc() else None,
-// 								block_hash=nanopy.block_hash(state_block),
-// 								block=state_block,
-// 								send_id=id,
-// 								subtype='send'
-// 						)
-// 						await block.save()
-// 		return resp

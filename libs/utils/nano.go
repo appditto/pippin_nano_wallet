@@ -15,15 +15,15 @@ const EncodeNano = "13456789abcdefghijkmnopqrstuwxyz"
 
 var NanoEncoding = base32.NewEncoding(EncodeNano)
 
-func AddressToPub(account string) (public_key []byte, err error) {
+func AddressToPub(account string, banano bool) (public_key []byte, err error) {
 	if len(account) < 64 {
 		return nil, errors.New("Invalid account length")
 	}
 	address := string(account)
 
-	if address[:4] == "xrb_" || address[:4] == "ban_" {
+	if (!banano && address[:4] == "xrb_") || (banano && address[:4] == "ban_") {
 		address = address[4:]
-	} else if address[:5] == "nano_" {
+	} else if !banano && address[:5] == "nano_" {
 		address = address[5:]
 	} else {
 		return nil, errors.New("Invalid address format")

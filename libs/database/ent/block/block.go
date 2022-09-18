@@ -15,8 +15,6 @@ const (
 	FieldID = "id"
 	// FieldAccountID holds the string denoting the account_id field in the database.
 	FieldAccountID = "account_id"
-	// FieldAdhocAccountID holds the string denoting the adhoc_account_id field in the database.
-	FieldAdhocAccountID = "adhoc_account_id"
 	// FieldBlockHash holds the string denoting the block_hash field in the database.
 	FieldBlockHash = "block_hash"
 	// FieldBlock holds the string denoting the block field in the database.
@@ -44,7 +42,6 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldAccountID,
-	FieldAdhocAccountID,
 	FieldBlockHash,
 	FieldBlock,
 	FieldSendID,

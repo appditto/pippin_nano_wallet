@@ -48,7 +48,6 @@ var (
 	// BlocksColumns holds the columns for the "blocks" table.
 	BlocksColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "adhoc_account_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "block_hash", Type: field.TypeString, Unique: true, Size: 64},
 		{Name: "block", Type: field.TypeJSON},
 		{Name: "send_id", Type: field.TypeString, Nullable: true, Size: 256},
@@ -64,7 +63,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "blocks_accounts_blocks",
-				Columns:    []*schema.Column{BlocksColumns[7]},
+				Columns:    []*schema.Column{BlocksColumns[6]},
 				RefColumns: []*schema.Column{AccountsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -73,7 +72,7 @@ var (
 			{
 				Name:    "block_account_id_send_id",
 				Unique:  true,
-				Columns: []*schema.Column{BlocksColumns[7], BlocksColumns[4]},
+				Columns: []*schema.Column{BlocksColumns[6], BlocksColumns[3]},
 			},
 		},
 	}

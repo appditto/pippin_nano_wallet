@@ -31,7 +31,6 @@ func (Block) Fields() []ent.Field {
 			Default(uuid.New),
 		// account id from accounts
 		field.UUID("account_id", uuid.UUID{}).Nillable().Optional(),
-		field.UUID("adhoc_account_id", uuid.UUID{}).Nillable().Optional(),
 		field.String("block_hash").MaxLen(64).Unique().Immutable(),
 		// TODO use a proper struct, not map[string]interface{}
 		field.JSON("block", map[string]interface{}{}).Immutable(),

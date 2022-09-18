@@ -21,8 +21,6 @@ type Block struct {
 	ID uuid.UUID `json:"id,omitempty"`
 	// AccountID holds the value of the "account_id" field.
 	AccountID *uuid.UUID `json:"account_id,omitempty"`
-	// AdhocAccountID holds the value of the "adhoc_account_id" field.
-	AdhocAccountID *uuid.UUID `json:"adhoc_account_id,omitempty"`
 	// BlockHash holds the value of the "block_hash" field.
 	BlockHash string `json:"block_hash,omitempty"`
 	// Block holds the value of the "block" field.
@@ -65,7 +63,7 @@ func (*Block) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case block.FieldAccountID, block.FieldAdhocAccountID:
+		case block.FieldAccountID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case block.FieldBlock:
 			values[i] = new([]byte)
@@ -102,13 +100,6 @@ func (b *Block) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				b.AccountID = new(uuid.UUID)
 				*b.AccountID = *value.S.(*uuid.UUID)
-			}
-		case block.FieldAdhocAccountID:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field adhoc_account_id", values[i])
-			} else if value.Valid {
-				b.AdhocAccountID = new(uuid.UUID)
-				*b.AdhocAccountID = *value.S.(*uuid.UUID)
 			}
 		case block.FieldBlockHash:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -178,11 +169,6 @@ func (b *Block) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", b.ID))
 	if v := b.AccountID; v != nil {
 		builder.WriteString("account_id=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
-	if v := b.AdhocAccountID; v != nil {
-		builder.WriteString("adhoc_account_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")

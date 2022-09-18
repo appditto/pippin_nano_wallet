@@ -18,6 +18,7 @@ func TestComputeBlockHash(t *testing.T) {
 		Representative: "xrb_3px37c9f6w361j65yoasrcs6wh3hmmyb6eacpis7dwzp8th4hbb9izgba51j",
 		Balance:        "1000000000000000000000000000000",
 		Link:           "d9dd06646f96474a46c57c13677812305120be228f39964e222c06ab89f63745",
+		Banano:         false,
 	}
 
 	// Hash
@@ -33,6 +34,42 @@ func TestSignBlock(t *testing.T) {
 		Representative: "xrb_3px37c9f6w361j65yoasrcs6wh3hmmyb6eacpis7dwzp8th4hbb9izgba51j",
 		Balance:        "1000000000000000000000000000000",
 		Link:           "d9dd06646f96474a46c57c13677812305120be228f39964e222c06ab89f63745",
+		Banano:         false,
+	}
+
+	// private key
+	_, priv, err := ed25519.GenerateKey(strings.NewReader("9f729340e07eee69abac049c2fdd4a3c4b50e4672a2fabdf1ae295f2b4f3040b"))
+	assert.Nil(t, err)
+	err = sb.Sign(priv)
+	assert.Nil(t, err)
+	assert.Equal(t, "8ebeb9534a14e0b17b3cd4639721387dedac80789278b540ddbde2a0b267b6d0", sb.Hash)
+	assert.Equal(t, "b580fa76c0b763aa8a8a90af8592155c9478554ce04c87b5fb115baae624eafa116e04fffb273405c0ffcff6dfb021526292ac4418f3988d7684e15e486f1409", sb.Signature)
+}
+
+func TestComputeBlockHashBanano(t *testing.T) {
+	sb := StateBlock{
+		Account:        "ban_3px37c9f6w361j65yoasrcs6wh3hmmyb6eacpis7dwzp8th4hbb9izgba51j",
+		Previous:       "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		Representative: "ban_3px37c9f6w361j65yoasrcs6wh3hmmyb6eacpis7dwzp8th4hbb9izgba51j",
+		Balance:        "1000000000000000000000000000000",
+		Link:           "d9dd06646f96474a46c57c13677812305120be228f39964e222c06ab89f63745",
+		Banano:         true,
+	}
+
+	// Hash
+	err := sb.computeHash()
+	assert.Nil(t, err)
+	assert.Equal(t, "8ebeb9534a14e0b17b3cd4639721387dedac80789278b540ddbde2a0b267b6d0", sb.Hash)
+}
+
+func TestSignBlockBanano(t *testing.T) {
+	sb := StateBlock{
+		Account:        "ban_3px37c9f6w361j65yoasrcs6wh3hmmyb6eacpis7dwzp8th4hbb9izgba51j",
+		Previous:       "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		Representative: "ban_3px37c9f6w361j65yoasrcs6wh3hmmyb6eacpis7dwzp8th4hbb9izgba51j",
+		Balance:        "1000000000000000000000000000000",
+		Link:           "d9dd06646f96474a46c57c13677812305120be228f39964e222c06ab89f63745",
+		Banano:         true,
 	}
 
 	// private key

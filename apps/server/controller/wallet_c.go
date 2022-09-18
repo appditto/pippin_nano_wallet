@@ -372,7 +372,7 @@ func (hc *HttpController) HandleWalletContains(rawRequest *map[string]interface{
 	}
 
 	// Validate account
-	_, err := utils.AddressToPub(request.Account)
+	_, err := utils.AddressToPub(request.Account, hc.Wallet.Banano)
 	if err != nil {
 		ErrInvalidAccount(w, r)
 		return

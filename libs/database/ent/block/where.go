@@ -89,13 +89,6 @@ func AccountID(v uuid.UUID) predicate.Block {
 	})
 }
 
-// AdhocAccountID applies equality check predicate on the "adhoc_account_id" field. It's identical to AdhocAccountIDEQ.
-func AdhocAccountID(v uuid.UUID) predicate.Block {
-	return predicate.Block(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldAdhocAccountID), v))
-	})
-}
-
 // BlockHash applies equality check predicate on the "block_hash" field. It's identical to BlockHashEQ.
 func BlockHash(v string) predicate.Block {
 	return predicate.Block(func(s *sql.Selector) {
@@ -171,84 +164,6 @@ func AccountIDIsNil() predicate.Block {
 func AccountIDNotNil() predicate.Block {
 	return predicate.Block(func(s *sql.Selector) {
 		s.Where(sql.NotNull(s.C(FieldAccountID)))
-	})
-}
-
-// AdhocAccountIDEQ applies the EQ predicate on the "adhoc_account_id" field.
-func AdhocAccountIDEQ(v uuid.UUID) predicate.Block {
-	return predicate.Block(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldAdhocAccountID), v))
-	})
-}
-
-// AdhocAccountIDNEQ applies the NEQ predicate on the "adhoc_account_id" field.
-func AdhocAccountIDNEQ(v uuid.UUID) predicate.Block {
-	return predicate.Block(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldAdhocAccountID), v))
-	})
-}
-
-// AdhocAccountIDIn applies the In predicate on the "adhoc_account_id" field.
-func AdhocAccountIDIn(vs ...uuid.UUID) predicate.Block {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Block(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldAdhocAccountID), v...))
-	})
-}
-
-// AdhocAccountIDNotIn applies the NotIn predicate on the "adhoc_account_id" field.
-func AdhocAccountIDNotIn(vs ...uuid.UUID) predicate.Block {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Block(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldAdhocAccountID), v...))
-	})
-}
-
-// AdhocAccountIDGT applies the GT predicate on the "adhoc_account_id" field.
-func AdhocAccountIDGT(v uuid.UUID) predicate.Block {
-	return predicate.Block(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldAdhocAccountID), v))
-	})
-}
-
-// AdhocAccountIDGTE applies the GTE predicate on the "adhoc_account_id" field.
-func AdhocAccountIDGTE(v uuid.UUID) predicate.Block {
-	return predicate.Block(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldAdhocAccountID), v))
-	})
-}
-
-// AdhocAccountIDLT applies the LT predicate on the "adhoc_account_id" field.
-func AdhocAccountIDLT(v uuid.UUID) predicate.Block {
-	return predicate.Block(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldAdhocAccountID), v))
-	})
-}
-
-// AdhocAccountIDLTE applies the LTE predicate on the "adhoc_account_id" field.
-func AdhocAccountIDLTE(v uuid.UUID) predicate.Block {
-	return predicate.Block(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldAdhocAccountID), v))
-	})
-}
-
-// AdhocAccountIDIsNil applies the IsNil predicate on the "adhoc_account_id" field.
-func AdhocAccountIDIsNil() predicate.Block {
-	return predicate.Block(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldAdhocAccountID)))
-	})
-}
-
-// AdhocAccountIDNotNil applies the NotNil predicate on the "adhoc_account_id" field.
-func AdhocAccountIDNotNil() predicate.Block {
-	return predicate.Block(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldAdhocAccountID)))
 	})
 }
 

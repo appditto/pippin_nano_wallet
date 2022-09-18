@@ -36,20 +36,6 @@ func (bc *BlockCreate) SetNillableAccountID(u *uuid.UUID) *BlockCreate {
 	return bc
 }
 
-// SetAdhocAccountID sets the "adhoc_account_id" field.
-func (bc *BlockCreate) SetAdhocAccountID(u uuid.UUID) *BlockCreate {
-	bc.mutation.SetAdhocAccountID(u)
-	return bc
-}
-
-// SetNillableAdhocAccountID sets the "adhoc_account_id" field if the given value is not nil.
-func (bc *BlockCreate) SetNillableAdhocAccountID(u *uuid.UUID) *BlockCreate {
-	if u != nil {
-		bc.SetAdhocAccountID(*u)
-	}
-	return bc
-}
-
 // SetBlockHash sets the "block_hash" field.
 func (bc *BlockCreate) SetBlockHash(s string) *BlockCreate {
 	bc.mutation.SetBlockHash(s)
@@ -266,14 +252,6 @@ func (bc *BlockCreate) createSpec() (*Block, *sqlgraph.CreateSpec) {
 	if id, ok := bc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
-	}
-	if value, ok := bc.mutation.AdhocAccountID(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeUUID,
-			Value:  value,
-			Column: block.FieldAdhocAccountID,
-		})
-		_node.AdhocAccountID = &value
 	}
 	if value, ok := bc.mutation.BlockHash(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{

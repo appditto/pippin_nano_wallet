@@ -41,19 +41,19 @@ func init() {
 	blockFields := schema.Block{}.Fields()
 	_ = blockFields
 	// blockDescBlockHash is the schema descriptor for block_hash field.
-	blockDescBlockHash := blockFields[3].Descriptor()
+	blockDescBlockHash := blockFields[2].Descriptor()
 	// block.BlockHashValidator is a validator for the "block_hash" field. It is called by the builders before save.
 	block.BlockHashValidator = blockDescBlockHash.Validators[0].(func(string) error)
 	// blockDescSendID is the schema descriptor for send_id field.
-	blockDescSendID := blockFields[5].Descriptor()
+	blockDescSendID := blockFields[4].Descriptor()
 	// block.SendIDValidator is a validator for the "send_id" field. It is called by the builders before save.
 	block.SendIDValidator = blockDescSendID.Validators[0].(func(string) error)
 	// blockDescSubtype is the schema descriptor for subtype field.
-	blockDescSubtype := blockFields[6].Descriptor()
+	blockDescSubtype := blockFields[5].Descriptor()
 	// block.SubtypeValidator is a validator for the "subtype" field. It is called by the builders before save.
 	block.SubtypeValidator = blockDescSubtype.Validators[0].(func(string) error)
 	// blockDescCreatedAt is the schema descriptor for created_at field.
-	blockDescCreatedAt := blockFields[7].Descriptor()
+	blockDescCreatedAt := blockFields[6].Descriptor()
 	// block.DefaultCreatedAt holds the default value on creation for the created_at field.
 	block.DefaultCreatedAt = blockDescCreatedAt.Default.(func() time.Time)
 	// blockDescID is the schema descriptor for id field.

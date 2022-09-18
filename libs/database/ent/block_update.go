@@ -49,26 +49,6 @@ func (bu *BlockUpdate) ClearAccountID() *BlockUpdate {
 	return bu
 }
 
-// SetAdhocAccountID sets the "adhoc_account_id" field.
-func (bu *BlockUpdate) SetAdhocAccountID(u uuid.UUID) *BlockUpdate {
-	bu.mutation.SetAdhocAccountID(u)
-	return bu
-}
-
-// SetNillableAdhocAccountID sets the "adhoc_account_id" field if the given value is not nil.
-func (bu *BlockUpdate) SetNillableAdhocAccountID(u *uuid.UUID) *BlockUpdate {
-	if u != nil {
-		bu.SetAdhocAccountID(*u)
-	}
-	return bu
-}
-
-// ClearAdhocAccountID clears the value of the "adhoc_account_id" field.
-func (bu *BlockUpdate) ClearAdhocAccountID() *BlockUpdate {
-	bu.mutation.ClearAdhocAccountID()
-	return bu
-}
-
 // SetSubtype sets the "subtype" field.
 func (bu *BlockUpdate) SetSubtype(s string) *BlockUpdate {
 	bu.mutation.SetSubtype(s)
@@ -179,19 +159,6 @@ func (bu *BlockUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
-	if value, ok := bu.mutation.AdhocAccountID(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeUUID,
-			Value:  value,
-			Column: block.FieldAdhocAccountID,
-		})
-	}
-	if bu.mutation.AdhocAccountIDCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeUUID,
-			Column: block.FieldAdhocAccountID,
-		})
-	}
 	if bu.mutation.SendIDCleared() {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -276,26 +243,6 @@ func (buo *BlockUpdateOne) SetNillableAccountID(u *uuid.UUID) *BlockUpdateOne {
 // ClearAccountID clears the value of the "account_id" field.
 func (buo *BlockUpdateOne) ClearAccountID() *BlockUpdateOne {
 	buo.mutation.ClearAccountID()
-	return buo
-}
-
-// SetAdhocAccountID sets the "adhoc_account_id" field.
-func (buo *BlockUpdateOne) SetAdhocAccountID(u uuid.UUID) *BlockUpdateOne {
-	buo.mutation.SetAdhocAccountID(u)
-	return buo
-}
-
-// SetNillableAdhocAccountID sets the "adhoc_account_id" field if the given value is not nil.
-func (buo *BlockUpdateOne) SetNillableAdhocAccountID(u *uuid.UUID) *BlockUpdateOne {
-	if u != nil {
-		buo.SetAdhocAccountID(*u)
-	}
-	return buo
-}
-
-// ClearAdhocAccountID clears the value of the "adhoc_account_id" field.
-func (buo *BlockUpdateOne) ClearAdhocAccountID() *BlockUpdateOne {
-	buo.mutation.ClearAdhocAccountID()
 	return buo
 }
 
@@ -438,19 +385,6 @@ func (buo *BlockUpdateOne) sqlSave(ctx context.Context) (_node *Block, err error
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := buo.mutation.AdhocAccountID(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeUUID,
-			Value:  value,
-			Column: block.FieldAdhocAccountID,
-		})
-	}
-	if buo.mutation.AdhocAccountIDCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeUUID,
-			Column: block.FieldAdhocAccountID,
-		})
 	}
 	if buo.mutation.SendIDCleared() {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{

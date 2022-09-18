@@ -101,13 +101,13 @@ func (c *PippinConfig) Validate() error {
 	// Validate representatives
 	if c.Wallet.Banano {
 		for _, rep := range c.Wallet.PreconfiguredRepresentativesBanano {
-			if _, err := utils.AddressToPub(rep); err != nil {
+			if _, err := utils.AddressToPub(rep, true); err != nil {
 				return errors.New("invalid preconfigured representative: " + rep)
 			}
 		}
 	} else {
-		for _, rep := range c.Wallet.PreconfiguredRepresentativesBanano {
-			if _, err := utils.AddressToPub(rep); err != nil {
+		for _, rep := range c.Wallet.PreconfiguredRepresentativesNano {
+			if _, err := utils.AddressToPub(rep, false); err != nil {
 				return errors.New("invalid preconfigured representative: " + rep)
 			}
 		}

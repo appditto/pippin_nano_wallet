@@ -838,21 +838,20 @@ func (m *AccountMutation) ResetEdge(name string) error {
 // BlockMutation represents an operation that mutates the Block nodes in the graph.
 type BlockMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *uuid.UUID
-	adhoc_account_id *uuid.UUID
-	block_hash       *string
-	block            *map[string]interface{}
-	send_id          *string
-	subtype          *string
-	created_at       *time.Time
-	clearedFields    map[string]struct{}
-	account          *uuid.UUID
-	clearedaccount   bool
-	done             bool
-	oldValue         func(context.Context) (*Block, error)
-	predicates       []predicate.Block
+	op             Op
+	typ            string
+	id             *uuid.UUID
+	block_hash     *string
+	block          *map[string]interface{}
+	send_id        *string
+	subtype        *string
+	created_at     *time.Time
+	clearedFields  map[string]struct{}
+	account        *uuid.UUID
+	clearedaccount bool
+	done           bool
+	oldValue       func(context.Context) (*Block, error)
+	predicates     []predicate.Block
 }
 
 var _ ent.Mutation = (*BlockMutation)(nil)
@@ -1006,55 +1005,6 @@ func (m *BlockMutation) AccountIDCleared() bool {
 func (m *BlockMutation) ResetAccountID() {
 	m.account = nil
 	delete(m.clearedFields, block.FieldAccountID)
-}
-
-// SetAdhocAccountID sets the "adhoc_account_id" field.
-func (m *BlockMutation) SetAdhocAccountID(u uuid.UUID) {
-	m.adhoc_account_id = &u
-}
-
-// AdhocAccountID returns the value of the "adhoc_account_id" field in the mutation.
-func (m *BlockMutation) AdhocAccountID() (r uuid.UUID, exists bool) {
-	v := m.adhoc_account_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAdhocAccountID returns the old "adhoc_account_id" field's value of the Block entity.
-// If the Block object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BlockMutation) OldAdhocAccountID(ctx context.Context) (v *uuid.UUID, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAdhocAccountID is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAdhocAccountID requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAdhocAccountID: %w", err)
-	}
-	return oldValue.AdhocAccountID, nil
-}
-
-// ClearAdhocAccountID clears the value of the "adhoc_account_id" field.
-func (m *BlockMutation) ClearAdhocAccountID() {
-	m.adhoc_account_id = nil
-	m.clearedFields[block.FieldAdhocAccountID] = struct{}{}
-}
-
-// AdhocAccountIDCleared returns if the "adhoc_account_id" field was cleared in this mutation.
-func (m *BlockMutation) AdhocAccountIDCleared() bool {
-	_, ok := m.clearedFields[block.FieldAdhocAccountID]
-	return ok
-}
-
-// ResetAdhocAccountID resets all changes to the "adhoc_account_id" field.
-func (m *BlockMutation) ResetAdhocAccountID() {
-	m.adhoc_account_id = nil
-	delete(m.clearedFields, block.FieldAdhocAccountID)
 }
 
 // SetBlockHash sets the "block_hash" field.
@@ -1295,12 +1245,9 @@ func (m *BlockMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BlockMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 6)
 	if m.account != nil {
 		fields = append(fields, block.FieldAccountID)
-	}
-	if m.adhoc_account_id != nil {
-		fields = append(fields, block.FieldAdhocAccountID)
 	}
 	if m.block_hash != nil {
 		fields = append(fields, block.FieldBlockHash)
@@ -1327,8 +1274,6 @@ func (m *BlockMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case block.FieldAccountID:
 		return m.AccountID()
-	case block.FieldAdhocAccountID:
-		return m.AdhocAccountID()
 	case block.FieldBlockHash:
 		return m.BlockHash()
 	case block.FieldBlock:
@@ -1350,8 +1295,6 @@ func (m *BlockMutation) OldField(ctx context.Context, name string) (ent.Value, e
 	switch name {
 	case block.FieldAccountID:
 		return m.OldAccountID(ctx)
-	case block.FieldAdhocAccountID:
-		return m.OldAdhocAccountID(ctx)
 	case block.FieldBlockHash:
 		return m.OldBlockHash(ctx)
 	case block.FieldBlock:
@@ -1377,13 +1320,6 @@ func (m *BlockMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetAccountID(v)
-		return nil
-	case block.FieldAdhocAccountID:
-		v, ok := value.(uuid.UUID)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAdhocAccountID(v)
 		return nil
 	case block.FieldBlockHash:
 		v, ok := value.(string)
@@ -1453,9 +1389,6 @@ func (m *BlockMutation) ClearedFields() []string {
 	if m.FieldCleared(block.FieldAccountID) {
 		fields = append(fields, block.FieldAccountID)
 	}
-	if m.FieldCleared(block.FieldAdhocAccountID) {
-		fields = append(fields, block.FieldAdhocAccountID)
-	}
 	if m.FieldCleared(block.FieldSendID) {
 		fields = append(fields, block.FieldSendID)
 	}
@@ -1476,9 +1409,6 @@ func (m *BlockMutation) ClearField(name string) error {
 	case block.FieldAccountID:
 		m.ClearAccountID()
 		return nil
-	case block.FieldAdhocAccountID:
-		m.ClearAdhocAccountID()
-		return nil
 	case block.FieldSendID:
 		m.ClearSendID()
 		return nil
@@ -1492,9 +1422,6 @@ func (m *BlockMutation) ResetField(name string) error {
 	switch name {
 	case block.FieldAccountID:
 		m.ResetAccountID()
-		return nil
-	case block.FieldAdhocAccountID:
-		m.ResetAdhocAccountID()
 		return nil
 	case block.FieldBlockHash:
 		m.ResetBlockHash()

@@ -22,6 +22,7 @@ type StateBlock struct {
 	LinkAsAccount  string `json:"link_as_account,omitempty" mapstructure:"link_as_account,omitempty"`
 	Work           string `json:"work" mapstructure:"work"`
 	Signature      string `json:"signature" mapstructure:"signature"`
+	Banano         bool   `json:"-"`
 }
 
 func (b *StateBlock) computeHash() error {
@@ -31,7 +32,7 @@ func (b *StateBlock) computeHash() error {
 	}
 	h.Write(make([]byte, 31))
 	h.Write([]byte{6})
-	pubkey, err := utils.AddressToPub(b.Account)
+	pubkey, err := utils.AddressToPub(b.Account, b.Banano)
 	if err != nil {
 		return err
 	}
@@ -41,7 +42,7 @@ func (b *StateBlock) computeHash() error {
 		return err
 	}
 	h.Write(previous)
-	pubkey, err = utils.AddressToPub(b.Representative)
+	pubkey, err = utils.AddressToPub(b.Representative, b.Banano)
 	if err != nil {
 		return err
 	}

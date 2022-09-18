@@ -60,7 +60,7 @@ func TestAccountCreate(t *testing.T) {
 
 	// Make sure address is valid
 	assert.Contains(t, respJson, "account")
-	_, err = utils.AddressToPub(respJson["account"].(string))
+	_, err = utils.AddressToPub(respJson["account"].(string), false)
 	assert.Nil(t, err)
 	assert.Equal(t, "nano_13coy8t4jzd516m5ydw8a7mdfguttcm6nkm4t69fwd1dzm87mgj5p8ijge8w", respJson["account"].(string))
 
@@ -90,7 +90,7 @@ func TestAccountCreate(t *testing.T) {
 
 	// Make sure address is valid
 	assert.Contains(t, respJson, "account")
-	_, err = utils.AddressToPub(respJson["account"].(string))
+	_, err = utils.AddressToPub(respJson["account"].(string), false)
 	assert.Nil(t, err)
 	assert.Equal(t, addr, respJson["account"].(string))
 }
@@ -145,7 +145,7 @@ func TestAccountsCreate(t *testing.T) {
 	accounts := respJson["accounts"].([]interface{})
 	assert.Equal(t, 2, len(accounts))
 	for _, account := range accounts {
-		_, err = utils.AddressToPub(account.(string))
+		_, err = utils.AddressToPub(account.(string), false)
 		assert.Nil(t, err)
 	}
 }
@@ -182,7 +182,7 @@ func TestAccountList(t *testing.T) {
 	accounts := respJson["accounts"].([]interface{})
 	assert.Equal(t, 2, len(accounts))
 	for _, account := range accounts {
-		_, err := utils.AddressToPub(account.(string))
+		_, err := utils.AddressToPub(account.(string), false)
 		assert.Nil(t, err)
 	}
 }

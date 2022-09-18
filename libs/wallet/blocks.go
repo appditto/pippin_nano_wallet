@@ -126,7 +126,7 @@ func (w *NanoWallet) createReceiveBlock(wallet *ent.Wallet, receiver *ent.Accoun
 	} else {
 		currentBalance, ok := big.NewInt(0).SetString(accountInfo.Balance, 10)
 		if !ok {
-			return nil, errors.New("Unable to parse confirmed balance")
+			return nil, errors.New("Unable to parse balance")
 		}
 		balance = big.NewInt(0).Add(receiveAmount, currentBalance)
 	}
@@ -235,20 +235,20 @@ func (w *NanoWallet) createSendBlock(wallet *ent.Wallet, sender *ent.Account, am
 		return nil, errors.New("Unable to parse send amount")
 	}
 
-	// Check balance
-	balance, err := w.RpcClient.MakeAccountBalanceRequest(sender.Address)
+	// Get account info
+	accountInfo, err := w.RpcClient.MakeAccountInfoRequest(sender.Address)
 	if err != nil {
 		return nil, err
 	}
 
 	// Convert balance to big int
-	balanceBigInt, ok := big.NewInt(0).SetString(balance.Balance, 10)
+	balanceBigInt, ok := big.NewInt(0).SetString(accountInfo.Balance, 10)
 	if !ok {
 		return nil, errors.New("Unable to parse balance")
 	}
 
 	// Check if balance is sufficient
-	if sendAmount.Cmp(balanceBigInt) < 0 {
+	if sendAmount.Cmp(balanceBigInt) > 0 {
 		if w.Config.Wallet.AutoReceiveOnSend == nil || !*w.Config.Wallet.AutoReceiveOnSend {
 			return nil, ErrInsufficientBalance
 		}
@@ -256,24 +256,20 @@ func (w *NanoWallet) createSendBlock(wallet *ent.Wallet, sender *ent.Account, am
 		receivedCount, _ := w.receiveAll(wallet, sender, bpowKey)
 		if receivedCount > 0 {
 			// Re-check balance
-			balance, err = w.RpcClient.MakeAccountBalanceRequest(sender.Address)
+			accountInfo, err = w.RpcClient.MakeAccountInfoRequest(sender.Address)
 			if err != nil {
 				return nil, err
 			}
-			balanceBigInt, ok = big.NewInt(0).SetString(balance.Balance, 10)
+			balanceBigInt, ok = big.NewInt(0).SetString(accountInfo.Balance, 10)
 			if !ok {
 				return nil, errors.New("Unable to parse balance")
 			}
-			if sendAmount.Cmp(balanceBigInt) < 0 {
+			if sendAmount.Cmp(balanceBigInt) > 0 {
 				return nil, ErrInsufficientBalance
 			}
+		} else {
+			return nil, ErrInsufficientBalance
 		}
-	}
-
-	// Get account info
-	accountInfo, err := w.RpcClient.MakeAccountInfoRequest(sender.Address)
-	if err != nil {
-		return nil, err
 	}
 
 	workbase := accountInfo.Frontier
@@ -464,17 +460,6 @@ func (w *NanoWallet) CreateAndPublishSendBlock(wallet *ent.Wallet, amount string
 		return "", err
 	}
 
-	// If the ID is set save it in database for indempotency
-	if id != nil {
-		var asInterface map[string]interface{}
-		inrec, _ := json.Marshal(sb)
-		json.Unmarshal(inrec, &asInterface)
-		_, err := w.DB.Block.Create().SetAccount(acc).SetBlock(asInterface).SetBlockHash(sb.Hash).SetSubtype("send").SetSendID(*id).Save(w.Ctx)
-		if err != nil {
-			return "", err
-		}
-	}
-
 	// Publish block
 	subtype := "send"
 	resp, err := w.RpcClient.MakeProcessRequest(requests.ProcessRequest{
@@ -487,6 +472,17 @@ func (w *NanoWallet) CreateAndPublishSendBlock(wallet *ent.Wallet, amount string
 	})
 	if err != nil || !utils.Validate64HexHash(resp.Hash) {
 		return "", err
+	}
+
+	// If the ID is set save it in database for indempotency
+	if id != nil {
+		var asInterface map[string]interface{}
+		inrec, _ := json.Marshal(sb)
+		json.Unmarshal(inrec, &asInterface)
+		_, err := w.DB.Block.Create().SetAccount(acc).SetBlock(asInterface).SetBlockHash(resp.Hash).SetSubtype("send").SetSendID(*id).Save(w.Ctx)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	return resp.Hash, nil

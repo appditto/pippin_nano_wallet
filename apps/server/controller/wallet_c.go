@@ -441,3 +441,43 @@ func (hc *HttpController) HandleWalletRepresentativeSetRequest(rawRequest *map[s
 	render.Status(r, http.StatusOK)
 	render.JSON(w, r, setResponse)
 }
+
+func (hc *HttpController) HandleWalletRepresentativeRequest(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
+	request := hc.DecodeBaseRequest(rawRequest, w, r)
+	if request == nil {
+		return
+	}
+
+	// See if wallet exists
+	dbWallet := hc.WalletExists(request.Wallet, w, r)
+	if dbWallet == nil {
+		return
+	}
+
+	// See if wallet locked
+	_, err := wallet.GetDecryptedKeyFromStorage(dbWallet, "seed")
+	if errors.Is(err, wallet.ErrWalletLocked) || errors.Is(err, wallet.ErrInvalidWallet) {
+		ErrWalletLocked(w, r)
+		return
+	} else if err != nil {
+		ErrInternalServerError(w, r, err.Error())
+		return
+	}
+
+	var representative string
+	if dbWallet.Representative == nil {
+		// Just get a random one since we don't have one set
+		representative, err = hc.Wallet.Config.GetRandomRep()
+		if err != nil {
+			ErrInternalServerError(w, r, err.Error())
+			return
+		}
+	} else {
+		representative = *dbWallet.Representative
+	}
+
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, &responses.RepresentativeResponse{
+		Representative: representative,
+	})
+}

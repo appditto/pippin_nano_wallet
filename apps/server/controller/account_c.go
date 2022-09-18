@@ -29,6 +29,7 @@ func (hc *HttpController) HandleAccountCreate(rawRequest *map[string]interface{}
 	newAccount, err := hc.Wallet.AccountCreate(dbWallet, idx)
 	if errors.Is(err, wallet.ErrWalletLocked) || errors.Is(err, wallet.ErrInvalidWallet) {
 		ErrWalletLocked(w, r)
+		return
 	} else if errors.Is(err, wallet.ErrAccountExists) {
 		ErrBadRequest(w, r, "Account already exists")
 		return
@@ -66,6 +67,7 @@ func (hc *HttpController) HandleAccountsCreate(rawRequest *map[string]interface{
 	newAccounts, err := hc.Wallet.AccountsCreate(dbWallet, count)
 	if errors.Is(err, wallet.ErrWalletLocked) || errors.Is(err, wallet.ErrInvalidWallet) {
 		ErrWalletLocked(w, r)
+		return
 	} else if err != nil {
 		ErrInternalServerError(w, r, err.Error())
 		return

@@ -98,5 +98,8 @@ func (hc *HttpController) Gateway(w http.ResponseWriter, r *http.Request) {
 	case "wallet_representative_set":
 		hc.HandleWalletRepresentativeSetRequest(&baseRequest, w, r)
 		return
+	case "wallet_representative":
+		hc.HandleWalletRepresentativeRequest(&baseRequest, w, r)
+		return
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"syscall"
 
 	"github.com/appditto/pippin_nano_wallet/libs/config"
 	"github.com/appditto/pippin_nano_wallet/libs/database"
@@ -16,7 +17,9 @@ import (
 	"github.com/appditto/pippin_nano_wallet/libs/pow"
 	"github.com/appditto/pippin_nano_wallet/libs/rpc"
 	"github.com/appditto/pippin_nano_wallet/libs/utils"
+	"github.com/appditto/pippin_nano_wallet/libs/utils/ed25519"
 	"github.com/appditto/pippin_nano_wallet/libs/wallet"
+	"golang.org/x/term"
 	"k8s.io/klog/v2"
 )
 
@@ -73,6 +76,42 @@ func RequireID(id *string, msg string) {
 	}
 }
 
+func PasswordPrompt() string {
+	for {
+		var password string
+
+		fmt.Print("➡️ Enter Password: ")
+		bytePassword, err := term.ReadPassword(int(syscall.Stdin))
+
+		if err != nil {
+			fmt.Printf("\n⚠️ Error reading password\n")
+			continue
+		}
+
+		password = strings.TrimSpace(string(bytePassword))
+
+		var confirmedPassword string
+
+		fmt.Print("\n➡️ Confirm Password: ")
+		bytePassword, err = term.ReadPassword(int(syscall.Stdin))
+		if err != nil {
+			fmt.Printf("\n⚠️ Error reading password\n")
+			continue
+		}
+
+		confirmedPassword = strings.TrimSpace(string(bytePassword))
+
+		if password != confirmedPassword {
+			fmt.Printf("\n⚠️ Passwords do not match\n")
+			continue
+		}
+
+		fmt.Println()
+		return password
+	}
+
+}
+
 func RequireUnlockedWallet(nanoWallet *wallet.NanoWallet, w *ent.Wallet, password *string) (alreadyUnlocked bool) {
 	_, err := wallet.GetDecryptedKeyFromStorage(w, "seed")
 	if errors.Is(err, wallet.ErrWalletLocked) {
@@ -104,6 +143,8 @@ func main() {
 	walletCreate := walletCmd.Bool("create", false, "Create a new wallet")
 	walletChangeSeed := walletCmd.Bool("change-seed", false, "Change the seed of a wallet")
 	walletViewSeed := walletCmd.Bool("view-seed", false, "View the seed of a wallet (unsafe)")
+	walletEncrypt := walletCmd.Bool("encrypt", false, "Encrypt a wallet with a password")
+	walletDecryt := walletCmd.Bool("decrypt", false, "Decrypt a wallet, remove password requirement")
 	// Options that may apply to multiple commands
 	walletId := walletCmd.String("id", "", "Target wallet ID")
 	walletSeed := walletCmd.String("seed", "", "Specify a seed to use when creating/changing wallet (optional for create)")
@@ -113,8 +154,11 @@ func main() {
 	// For accounts
 	accountCreate := accountCmd.Bool("create", false, "Create a new account")
 	// Options that may apply to multiple commands
-	accountWalletId := accountCmd.String("wallet-id", "", "Target wallet ID")
+	accountWalletId := accountCmd.String("id", "", "Target wallet ID")
 	accountWalletPassword := accountCmd.String("password", "", "Specify a password to use if the wallet is locked")
+	accountIndex := accountCmd.Int("index", 0, "Specify an index to use when creating account (optional, cannot be used with --count)")
+	accountCount := accountCmd.Int("count", 0, "Specify how many accounts to create (optional, cannot be used with --index)")
+	accountKey := accountCmd.String("key", "", "Specify a private key to use when creating account (optional, cannot be used with --index or --count)")
 
 	if *showHelp {
 		usage()
@@ -250,6 +294,7 @@ func main() {
 				os.Exit(1)
 			}
 			fmt.Printf("Wallet seed changed, newest account: %s with index %d\n", newest.Address, *newest.AccountIndex)
+			// ** wallet --view-seed --id
 		} else if *walletViewSeed {
 			RequireID(walletId, "--id is required for --view-seed")
 			w := getWallet(&nanoWallet, *walletId)
@@ -294,17 +339,122 @@ func main() {
 				asStr := strings.ToUpper(*a.PrivateKey)[:64]
 				fmt.Printf("Account: %s PrivKey: %s\n", a.Address, asStr)
 			}
+			// ** --encrypt --id
+		} else if *walletEncrypt {
+			RequireID(walletId, "--id is required for --encrypt")
+			w := getWallet(&nanoWallet, *walletId)
+			if w.Encrypted {
+				fmt.Println("Wallet is already encrypted")
+				os.Exit(1)
+			}
+			// Prompt for username and password
+			password := PasswordPrompt()
+			if password == "" {
+				fmt.Println("Password cannot be empty")
+				os.Exit(1)
+			}
+			// Encrypt wallet
+			ok, err := nanoWallet.EncryptWallet(w, password)
+			if err != nil || !ok {
+				fmt.Printf("Failed to encrypt wallet: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Println("Wallet encrypted")
+		} else if *walletDecryt {
+			RequireID(walletId, "--id is required for --decrypt")
+			w := getWallet(&nanoWallet, *walletId)
+			if !w.Encrypted {
+				fmt.Println("Wallet is not encrypted")
+				os.Exit(1)
+			}
+			// Prompt for username and password
+			password := PasswordPrompt()
+			if password == "" {
+				fmt.Println("Password cannot be empty")
+				os.Exit(1)
+			}
+			// Decrypt wallet
+			RequireUnlockedWallet(&nanoWallet, w, &password)
+			ok, err := nanoWallet.EncryptWallet(w, "")
+			if err != nil || !ok {
+				fmt.Printf("Failed to decrypt wallet: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Println("Wallet decrypted")
 		} else {
 			usage()
 		}
 	case "account":
 		accountCmd.Parse(os.Args[2:])
-		// ** account --create (--wallet-id --index)
+		// ** account --create (--id --index --count --key)
 		if *accountCreate {
-			RequireID(accountWalletId, "--wallet-id is required for --create")
+			RequireID(accountWalletId, "--id is required for --create")
 			w := getWallet(&nanoWallet, *accountWalletId)
-			RequireUnlockedWallet(&nanoWallet, w, accountWalletPassword)
-
+			if *accountIndex > 0 && *accountCount > 0 {
+				fmt.Println("Cannot specify both --index and --count")
+				os.Exit(1)
+			}
+			if *accountIndex > 0 && *accountKey != "" {
+				fmt.Println("Cannot specify both --index and --key")
+				os.Exit(1)
+			}
+			if *accountCount > 0 && *accountKey != "" {
+				fmt.Println("Cannot specify both --count and --key")
+				os.Exit(1)
+			}
+			alreadyUnlocked := RequireUnlockedWallet(&nanoWallet, w, accountWalletPassword)
+			if !alreadyUnlocked {
+				defer nanoWallet.LockWallet(w)
+			}
+			// Determine type
+			if *accountIndex > 0 {
+				// Create account at index
+				acc, err := nanoWallet.AccountCreate(w, accountIndex)
+				if err != nil {
+					fmt.Printf("Failed to create account: %v\n", err)
+					os.Exit(1)
+				}
+				fmt.Printf("Account created: %s\n", acc.Address)
+			} else if *accountCount > 0 {
+				accs, err := nanoWallet.AccountsCreate(w, *accountCount)
+				if err != nil {
+					fmt.Printf("Failed to create accounts: %v\n", err)
+					os.Exit(1)
+				}
+				for _, acc := range accs {
+					fmt.Printf("Account %d created: %s\n", *acc.AccountIndex, acc.Address)
+				}
+			} else if *accountKey != "" {
+				if !utils.Validate64HexHash(*accountKey) {
+					fmt.Println("Invalid private key")
+					os.Exit(1)
+				}
+				asByte, err := hex.DecodeString(*accountKey)
+				if err != nil {
+					fmt.Printf("Failed to decode private key: %v\n", err)
+					os.Exit(1)
+				}
+				priv, err := ed25519.NewKeyFromSeed(asByte)
+				if err != nil {
+					fmt.Printf("Failed to create private key: %v\n", err)
+					os.Exit(1)
+				}
+				// Create adhoc account
+				acc, err := nanoWallet.AdhocAccountCreate(w, priv)
+				if err != nil {
+					fmt.Printf("Failed to create adhoc account: %v\n", err)
+					os.Exit(1)
+				}
+				fmt.Printf("Adhoc account created: %s\n", acc.Address)
+			} else {
+				// Create account
+				acc, err := nanoWallet.AccountCreate(w, nil)
+				if err != nil {
+					fmt.Printf("Failed to create account: %v\n", err)
+					os.Exit(1)
+				}
+				fmt.Printf("Account %d created: %s\n", *acc.AccountIndex, acc.Address)
+			}
 		}
 	default:
 		fmt.Println("expected 'foo' or 'bar' subcommands")

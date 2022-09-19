@@ -7,7 +7,13 @@ import (
 )
 
 func GetPippinConfigurationRoot() (string, error) {
-	homeDir, err := os.UserHomeDir()
+	var homeDir string
+	var err error
+	if GetEnv("PIPPIN_HOME", "") == "" {
+		homeDir, err = os.UserHomeDir()
+	} else {
+		homeDir = GetEnv("PIPPIN_HOME", "")
+	}
 	if err != nil {
 		return "", err
 	}

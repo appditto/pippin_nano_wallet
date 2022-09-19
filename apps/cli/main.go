@@ -10,6 +10,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/appditto/pippin_nano_wallet/apps/server"
 	"github.com/appditto/pippin_nano_wallet/libs/config"
 	"github.com/appditto/pippin_nano_wallet/libs/database"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent"
@@ -136,6 +137,11 @@ func RequireUnlockedWallet(nanoWallet *wallet.NanoWallet, w *ent.Wallet, passwor
 func main() {
 	showHelp := flag.Bool("help", false, "Show help")
 	version := flag.Bool("version", false, "Display the version")
+	startServer := flag.Bool("start-server", false, "Start the pippin server")
+	klog.InitFlags(nil)
+	flag.Set("logtostderr", "true")
+	flag.Set("stderrthreshold", "INFO")
+	flag.Set("v", "3")
 
 	flag.Parse()
 
@@ -167,6 +173,11 @@ func main() {
 
 	if *version {
 		fmt.Printf("Pippin version: %s\n", Version)
+		os.Exit(0)
+	}
+
+	if *startServer {
+		server.StartPippinServer()
 		os.Exit(0)
 	}
 

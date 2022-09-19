@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -54,11 +55,13 @@ func GetRedisDB() *redisManager {
 		} else {
 			redis_port, err := strconv.Atoi(utils.GetEnv("REDIS_PORT", "6379"))
 			if err != nil {
-				panic("Invalid REDIS_PORT specified")
+				klog.Fatal("Invalid REDIS_PORT specified")
+				os.Exit(1)
 			}
 			redis_db, err := strconv.Atoi(utils.GetEnv("REDIS_DB", "0"))
 			if err != nil {
-				panic("Invalid REDIS_DB specified")
+				klog.Fatal("Invalid REDIS_DB specified")
+				os.Exit(1)
 			}
 			client := redis.NewClient(&redis.Options{
 				Addr: fmt.Sprintf("%s:%d", utils.GetEnv("REDIS_HOST", "localhost"), redis_port),

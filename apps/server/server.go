@@ -1,8 +1,7 @@
-package main
+package server
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"math/big"
 	"net/http"
@@ -21,32 +20,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-var Version = "dev"
-
-func usage() {
-	flag.PrintDefaults()
-	os.Exit(2)
-}
-
-func main() {
-	// Server options
-	flag.Usage = usage
-	klog.InitFlags(nil)
-	flag.Set("logtostderr", "true")
-	flag.Set("stderrthreshold", "INFO")
-	flag.Set("v", "3")
-	// if utils.GetEnv("ENVIRONMENT", "development") == "development" {
-	// 	flag.Set("stderrthreshold", "INFO")
-	// 	flag.Set("v", "3")
-	// }
-	version := flag.Bool("version", false, "Display the version")
-	flag.Parse()
-
-	if *version {
-		fmt.Printf("Pippin version: %s\n", Version)
-		os.Exit(0)
-	}
-
+func StartPippinServer() {
 	// Read yaml configuration
 	conf, err := config.ParsePippinConfig()
 	if err != nil {

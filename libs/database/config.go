@@ -105,7 +105,7 @@ func GetSqlDbConn(mock bool) (SqlDBConn, error) {
 	if err != nil {
 		return nil, err
 	}
-	sqliteDb := path.Join(pippinPath, "pippin.db")
+	sqliteDb := path.Join(pippinPath, "pippingo.db")
 	klog.V(3).Infof("Using SQLite database at %s", sqliteDb)
 	return &SqliteConn{
 		FileName: sqliteDb,

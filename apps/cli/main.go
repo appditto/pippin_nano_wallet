@@ -22,7 +22,7 @@ func usage() {
 	fmt.Println("General commands:")
 	fmt.Printf("Usage %s [options]\n", os.Args[0])
 	flag.PrintDefaults()
-	fmt.Println("\nWallet commands:")
+	fmt.Println("\n\nWallet commands:")
 	fmt.Printf("Usage: %s wallet [options]\n", os.Args[0])
 	fmt.Println("Options:")
 	walletCmd.PrintDefaults()
@@ -40,6 +40,8 @@ func main() {
 	flag.Parse()
 
 	walletList := walletCmd.Bool("list", false, "List all wallets along with their accounts")
+	walletCreate := walletCmd.Bool("create", false, "Create a new wallet")
+	walletCreateSeed := walletCmd.String("seed", "", "Specify a seed to use when creating a new wallet (optional)")
 
 	if *showHelp {
 		usage()
@@ -126,6 +128,39 @@ func main() {
 					fmt.Println("----------------------------")
 				}
 			}
+		} else if *walletCreate {
+			var seed string
+			if *walletCreateSeed == "" {
+				fmt.Println("Generating secure seed...")
+				seed, err = utils.GenerateSeed(nil)
+				if err != nil {
+					fmt.Printf("Secue random source may not be available on your OS\n")
+					fmt.Printf("Failed to generate seed: %v\n", err)
+					os.Exit(1)
+				}
+			} else {
+				seed = *walletCreateSeed
+			}
+			if !utils.Validate64HexHash(seed) {
+				fmt.Printf("Invalid seed: %s\n", seed)
+				os.Exit(1)
+			}
+			// Create wallet
+			w, err := nanoWallet.WalletCreate(seed)
+			if err != nil {
+				fmt.Printf("Failed to create wallet: %v\n", err)
+				os.Exit(1)
+			}
+			// Retrieve wallet
+			w, err = nanoWallet.GetWallet(w.ID.String())
+			acct, err := w.QueryAccounts().First(ctx)
+			if err != nil {
+				fmt.Printf("Failed to get account for wallet: %v\n", err)
+				os.Exit(1)
+			}
+			//print(f"Wallet created, ID: {wallet.id}\nFirst account: {new_acct}")
+			fmt.Printf("Wallet created, ID: %s\n", w.ID.String())
+			fmt.Printf("First account: %s\n", acct.Address)
 		} else {
 			usage()
 		}

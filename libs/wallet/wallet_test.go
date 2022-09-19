@@ -83,6 +83,22 @@ func TestGetWallet(t *testing.T) {
 	assert.ErrorIs(t, ErrWalletNotFound, err)
 }
 
+func TestGetWallets(t *testing.T) {
+	// Predictable seed
+	seed, _ := utils.GenerateSeed(strings.NewReader("c1cc82790c35cc98de93958555eea5691754b6d97f841725238717f9ae5e43bb"))
+
+	wallet, err := MockWallet.WalletCreate(seed)
+	assert.Nil(t, err)
+
+	assert.Equal(t, false, wallet.Encrypted)
+	assert.Equal(t, seed, wallet.Seed)
+
+	// Retrieve wallets
+	gotten, err := MockWallet.GetWallets()
+	assert.Nil(t, err)
+	assert.Equal(t, gotten[0].ID, wallet.ID)
+}
+
 func TestWalletCreate(t *testing.T) {
 	// Predictable seed
 	seed, _ := utils.GenerateSeed(strings.NewReader("8d729340e07eee69abac049c2fdd4a3c4b50e4672a2fabdf1ae295f2b4f3040b"))

@@ -49,6 +49,15 @@ func (w *NanoWallet) GetWallet(walletID string) (*ent.Wallet, error) {
 	return wallet, nil
 }
 
+func (w *NanoWallet) GetWallets() ([]*ent.Wallet, error) {
+	wallets, err := w.DB.Wallet.Query().All(w.Ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return wallets, nil
+}
+
 // Creates a new wallet with provided seed
 func (w *NanoWallet) WalletCreate(seed string) (*ent.Wallet, error) {
 	if !utils.Validate64HexHash(seed) {

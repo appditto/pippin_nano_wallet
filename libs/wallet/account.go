@@ -41,6 +41,19 @@ func (w *NanoWallet) GetAccount(wallet *ent.Wallet, address string) (*ent.Accoun
 	return acc, nil
 }
 
+func (w *NanoWallet) GetAccountByAddress(address string) (*ent.Account, error) {
+	// Check if account exists
+	acc, err := w.DB.Account.Query().Where(account.Address(address)).First(w.Ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, ErrAccountNotFound
+		}
+		return nil, err
+	}
+
+	return acc, nil
+}
+
 // Create the next account in sequence, or at index
 func (w *NanoWallet) AccountCreate(wallet *ent.Wallet, index *int) (*ent.Account, error) {
 	if wallet == nil {

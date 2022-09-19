@@ -96,7 +96,12 @@ func TestGetWallets(t *testing.T) {
 	// Retrieve wallets
 	gotten, err := MockWallet.GetWallets()
 	assert.Nil(t, err)
-	assert.Equal(t, gotten[0].ID, wallet.ID)
+	// Creat a list of UUID strings based on result
+	var walletIDs []string
+	for _, w := range gotten {
+		walletIDs = append(walletIDs, w.ID.String())
+	}
+	assert.Contains(t, walletIDs, wallet.ID.String())
 }
 
 func TestWalletCreate(t *testing.T) {

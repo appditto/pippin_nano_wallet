@@ -38,8 +38,16 @@ func TestGetAccount(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, adhocAcct.Address, retrievedAdhoc.Address)
 
+	// Retrieve by address
+	retrieved, err = MockWallet.GetAccountByAddress(account.Address)
+	assert.Nil(t, err)
+	assert.Equal(t, account.Address, retrieved.Address)
+
 	// Retrieve unknown account
 	_, err = MockWallet.GetAccount(wallet, "nano_1efa1gxbitary1urzix9h13nkzadtz71n3auyj7uztb8i4qbtipu8cxz61ee")
+	assert.ErrorIs(t, ErrAccountNotFound, err)
+
+	_, err = MockWallet.GetAccountByAddress("nano_1efa1gxbitary1urzix9h13nkzadtz71n3auyj7uztb8i4qbtipu8cxz61ee")
 	assert.ErrorIs(t, ErrAccountNotFound, err)
 }
 

@@ -4,10 +4,13 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"math/big"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/appditto/pippin_nano_wallet/apps/server/controller"
+	"github.com/appditto/pippin_nano_wallet/apps/server/net"
 	"github.com/appditto/pippin_nano_wallet/libs/config"
 	"github.com/appditto/pippin_nano_wallet/libs/database"
 	"github.com/appditto/pippin_nano_wallet/libs/pow"
@@ -90,6 +93,56 @@ func main() {
 		WorkClient: pow,
 		Config:     conf,
 	}
+
+	// Setup nano WS client if configured
+	callbackChan := make(chan *net.WSCallbackMsg, 100)
+	if conf.Server.NodeWsUrl != "" {
+		go net.StartNanoWSClient(conf.Server.NodeWsUrl, &callbackChan)
+	}
+
+	// Read channel to automatically receive blocks
+	go func() {
+		for msg := range callbackChan {
+			func() {
+				// Lock each callback so we don't handle them on multiple instances
+				lock, err := database.GetRedisDB().Locker.Obtain(ctx, fmt.Sprintf("blocklock:%s", msg.Hash), time.Second*30, nil)
+				if err != nil {
+					return
+				}
+				defer lock.Release(ctx)
+				// Ignore non-sends
+				if msg.Block.Subtype != "send" || msg.IsSend != "true" {
+					return
+				}
+				amount, ok := big.NewInt(0).SetString(msg.Amount, 10)
+				if !ok {
+					return
+				}
+				// Compare to receive minimum
+				receiveMinimum, ok := big.NewInt(0).SetString(conf.Wallet.ReceiveMinimum, 10)
+				if !ok {
+					return
+				}
+				if amount.Cmp(receiveMinimum) < 0 {
+					return
+				}
+
+				// See if destination is in our wallet
+				dbAccount, err := nanoWallet.GetAccountByAddress(msg.Block.LinkAsAccount)
+				if err != nil {
+					return
+				}
+				wallet, err := dbAccount.QueryWallet().Only(ctx)
+				if err != nil {
+					return
+				}
+
+				// Actually receive the block
+				nanoWallet.CreateAndPublishReceiveBlock(wallet, dbAccount.Address, msg.Hash, nil, nil)
+			}()
+
+		}
+	}()
 
 	// Create app
 	app := chi.NewRouter()

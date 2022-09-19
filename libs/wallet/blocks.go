@@ -482,7 +482,8 @@ func (w *NanoWallet) ReceiveAllBlocks(wallet *ent.Wallet, source string, bpowKey
 	}
 
 	// Obtain lock
-	lock, err := database.GetRedisDB().Locker.Obtain(w.Ctx, fmt.Sprintf("acl:%s", acc.Address), time.Second*30, &database.LockRetryStrategy)
+	// Longer lock since this culd be long running
+	lock, err := database.GetRedisDB().Locker.Obtain(w.Ctx, fmt.Sprintf("acl:%s", acc.Address), time.Second*300, &database.LockRetryStrategy)
 	if err != nil {
 		return 0, database.ErrLockNotObtained
 	}

@@ -3,10 +3,15 @@ module github.com/appditto/pippin_nano_wallet/libs/wallet
 go 1.19
 
 require (
+	github.com/appditto/pippin_nano_wallet/libs/config v0.0.0-20220919152542-cc6bba29d4c1
 	github.com/appditto/pippin_nano_wallet/libs/database v0.0.0-20220910042023-acfa16d6fdd9
-	github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20220910042023-acfa16d6fdd9
+	github.com/appditto/pippin_nano_wallet/libs/pow v0.0.0-20220919152542-cc6bba29d4c1
+	github.com/appditto/pippin_nano_wallet/libs/rpc v0.0.0-20220919152542-cc6bba29d4c1
+	github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20220911213744-8822c2a7556c
 	github.com/go-redis/redis/v9 v9.0.0-beta.2
 	github.com/google/uuid v1.3.0
+	github.com/jarcoal/httpmock v1.2.0
+	github.com/mitchellh/mapstructure v1.5.0
 	github.com/stretchr/testify v1.8.0
 	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90
 )
@@ -18,8 +23,11 @@ require (
 	github.com/alicebob/gopher-json v0.0.0-20200520072559-a9ecdc9d1d3a // indirect
 	github.com/alicebob/miniredis/v2 v2.23.0 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
+	github.com/bbedward/go-opencl v0.0.0-20220912170320-f150bf21e6e1 // indirect
+	github.com/bbedward/nanopow v0.0.0-20220912170356-7b5d1c750d9b // indirect
 	github.com/bsm/redislock v0.8.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/creasty/defaults v1.6.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/go-logr/logr v1.2.0 // indirect
@@ -39,9 +47,11 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9 // indirect
 	github.com/zclconf/go-cty v1.8.0 // indirect
+	golang.org/x/exp v0.0.0-20220909182711-5c715a9e8561 // indirect
+	golang.org/x/exp/errors v0.0.0-20220722155223-a9213eeb770e // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
-	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab // indirect
+	golang.org/x/text v0.3.8 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/klog/v2 v2.80.1 // indirect
 )

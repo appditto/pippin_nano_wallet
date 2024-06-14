@@ -70,7 +70,7 @@ func StartPippinServer() {
 	// Setup nano WS client if configured
 	callbackChan := make(chan *net.WSCallbackMsg, 100)
 	if conf.Server.NodeWsUrl != "" {
-		go net.StartNanoWSClient(conf.Server.NodeWsUrl, &callbackChan)
+		go net.StartNanoWSClient(conf.Server.NodeWsUrl, &callbackChan, &nanoWallet)
 	}
 
 	// Read channel to automatically receive blocks

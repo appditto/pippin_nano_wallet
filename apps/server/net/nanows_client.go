@@ -11,6 +11,9 @@ import (
 	"github.com/appditto/pippin_nano_wallet/libs/log"
 	guuid "github.com/google/uuid"
 	"github.com/recws-org/recws"
+	"k8s.io/klog/v2"
+
+	"github.com/appditto/pippin_nano_wallet/libs/wallet"
 )
 
 type wsSubscribe struct {
@@ -50,22 +53,25 @@ type WSCallbackMsg struct {
 	Amount  string          `json:"amount"`
 }
 
-func StartNanoWSClient(wsUrl string, callbackChan *chan *WSCallbackMsg) {
+func StartNanoWSClient(wsUrl string, callbackChan *chan *WSCallbackMsg, w *wallet.NanoWallet) {
 	ctx, cancel := context.WithCancel(context.Background())
 	sentSubscribe := false
 	ws := recws.RecConn{}
+
+	addresses, err := w.GetAllAccountAddresses()
+	if err != nil {
+		// Handle error
+	}
+
 	// Nano subscription request
 	subRequest := wsSubscribe{
 		Action: "subscribe",
 		Topic:  "confirmation",
 		Ack:    false,
 		Id:     guuid.New().String(),
-		// ! TODO - subscribe to only connected acounts
-		// Options: map[string][]string{
-		// 	"accounts": {
-		// 		account,
-		// 	},
-		// },
+		Options: map[string][]string{
+			"accounts": addresses,
+		},
 	}
 	ws.Dial(wsUrl, nil)
 

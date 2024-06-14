@@ -53,7 +53,7 @@ type WSCallbackMsg struct {
 	Amount  string          `json:"amount"`
 }
 
-func StartNanoWSClient(wsUrl string, callbackChan *chan *WSCallbackMsg, w *wallet.NanoWallet) {
+func StartNanoWSClient(wsUrl string, callbackChan *chan *WSCallbackMsg, w *wallet.NanoWallet, newAccountChan <-chan string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	sentSubscribe := false
 	ws := recws.RecConn{}
@@ -84,6 +84,29 @@ func StartNanoWSClient(wsUrl string, callbackChan *chan *WSCallbackMsg, w *walle
 	defer func() {
 		signal.Stop(sigc)
 		cancel()
+	}()
+
+	// Goroutine to handle new account addresses
+	go func() {
+		for newAccount := range newAccountChan {
+			//todo: this should use action: "update", "accounts_add" from v21 but node rpc proxies don't support :(
+			addresses = append(addresses, newAccount)
+			// Send update message to WebSocket
+			updateRequest := wsSubscribe{
+				Action: "subscribe",
+				Topic:  "confirmation",
+				Ack:    false,
+				Id:     guuid.New().String(),
+				Options: map[string][]string{
+					"accounts": addresses,
+				},
+			}
+			if err := ws.WriteJSON(updateRequest); err != nil {
+				klog.Infof("Error sending update request %s", ws.GetURL())
+			} else {
+				klog.Infof("Successfully sent update request for new account %s", newAccount)
+			}
+		}
 	}()
 
 	for {

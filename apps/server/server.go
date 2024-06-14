@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/appditto/pippin_nano_wallet/libs/database/ent"
 	"math/big"
 	"net/http"
 	"os"
@@ -69,9 +70,30 @@ func StartPippinServer() {
 
 	// Setup nano WS client if configured
 	callbackChan := make(chan *net.WSCallbackMsg, 100)
+	newAccountChan := make(chan string)
 	if conf.Server.NodeWsUrl != "" {
-		go net.StartNanoWSClient(conf.Server.NodeWsUrl, &callbackChan, &nanoWallet)
+		go net.StartNanoWSClient(conf.Server.NodeWsUrl, &callbackChan, &nanoWallet, newAccountChan)
 	}
+
+	wsSubscribeToNewAccounts := func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			if m.Op().Is(ent.OpCreate) {
+				value, err := next.Mutate(ctx, m)
+				if err != nil {
+					return nil, err
+				}
+
+				if account, ok := value.(*ent.Account); ok {
+					newAccountChan <- account.Address
+				}
+
+				return value, nil
+			}
+			return next.Mutate(ctx, m)
+		})
+	}
+
+	entClient.Account.Use(wsSubscribeToNewAccounts)
 
 	// Read channel to automatically receive blocks
 	go func() {

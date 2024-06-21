@@ -1,10 +1,15 @@
 module github.com/appditto/pippin_nano_wallet/libs/utils
 
-go 1.19
+go 1.22
 
 require github.com/stretchr/testify v1.8.0
 
-require golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1 // indirect
+require (
+	github.com/kr/pretty v0.1.0 // indirect
+	github.com/kr/text v0.2.0 // indirect
+	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab // indirect
+	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

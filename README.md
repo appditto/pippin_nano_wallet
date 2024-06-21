@@ -61,13 +61,17 @@ Pippin is configured through a `yaml` style configuration for most things, but s
 
 The first step is to determine if you want to change the location where pippin stores its data, by default it will be in the users home directory (`~`)
 
-Which translates to `/home/<username>` on Linux, `/Users/<username>` on MacOS and `C:\Users\<username>`
+Which translates to `/home/<username>` on Linux, `/Users/<username>` on MacOS and `C:\Users\<username>` on Windows
 
 You can override this with the `PIPPIN_HOME` environment variable.
 
+```
+export PIPPIN_HOME=~
+```
+
 ### Configuring Pippin
 
-Pippin creates a `PippinData` directory in your home directory.
+Pippin creates a `PippinData` directory in your home directory, or `$PIPPIN_HOME`
 
 Run: `pippin --generate-config` to generate a sample in `~/PippinData/sample.config.yaml`
 
@@ -87,6 +91,7 @@ For MySQL
 % echo "MYSQL_USER=user_name" >> ~/PippinData/.env
 % echo "MYSQL_PASSWORD=mypassword" >> ~/PippinData/.env
 ```
+You can also override `MYSQL_HOST` and `MYSQL_PORT`, which default to `localhost` and `3306`
 
 For Postgres
 ```bash
@@ -94,6 +99,7 @@ For Postgres
 % echo "POSTGRES_USER=user_name" >> ~/PippinData/.env
 % echo "POSTGRES_PASSWORD=mypassword" >> ~/PippinData/.env
 ```
+You can also override `POSTGRES_HOST` and `POSTGRES_PORT`, which default to `localhost` and `5432`
 
 ### Configuring Redis
 
@@ -119,7 +125,7 @@ For BPoW:
 
 ### Using GPU/OpenCL To Generate PoW Locally
 
-The pre-compiled pippin distributions do not support GPU PoW out of the box, however Pippin can be compiled that way to enable it with something like:
+The pre-compiled pippin distributions do not support GPU PoW out of the box (only CPU), however Pippin can be compiled that way to enable it with something like:
 
 `go build -tags cl -o pippin ./apps/cli`
 

@@ -37,6 +37,9 @@ class WorkClient(object):
                 cls.bpow_client = GraphQLClient(
                     endpoint=BPOW_URL,
                 )
+            else:
+                cls.bpow_client = None
+                
 
         return cls._instance
 

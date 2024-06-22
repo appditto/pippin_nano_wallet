@@ -12,6 +12,7 @@ import (
 type SqlDBConn interface {
 	DSN() string
 	Dialect() string
+	Driver() string
 }
 
 type PostgresConn struct {
@@ -27,6 +28,10 @@ func (c *PostgresConn) DSN() string {
 }
 
 func (c *PostgresConn) Dialect() string {
+	return dialect.Postgres
+}
+
+func (c *PostgresConn) Driver() string {
 	return "pgx"
 }
 
@@ -46,6 +51,8 @@ func (c *MysqlConn) Dialect() string {
 	return dialect.MySQL
 }
 
+func (c *MysqlConn) Driver() string { return c.Dialect() }
+
 type SqliteConn struct {
 	FileName string
 	Mode     string
@@ -58,6 +65,8 @@ func (c *SqliteConn) DSN() string {
 func (c *SqliteConn) Dialect() string {
 	return dialect.SQLite
 }
+
+func (c *SqliteConn) Driver() string { return c.Dialect() }
 
 // Gets the DB connection information based on environment variables
 func GetSqlDbConn(mock bool) (SqlDBConn, error) {

@@ -10,7 +10,7 @@ import (
 )
 
 func NewEntClient(connInfo SqlDBConn) (*ent.Client, error) {
-	db, err := sql.Open(connInfo.Dialect(), connInfo.DSN())
+	db, err := sql.Open(connInfo.Driver(), connInfo.DSN())
 	if err != nil {
 		return nil, err
 	}

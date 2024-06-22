@@ -112,5 +112,12 @@ func (hc *HttpController) Gateway(w http.ResponseWriter, r *http.Request) {
 	case "wallet_change_seed":
 		hc.HandleWalletChangeSeedRequest(&baseRequest, w, r)
 		return
+	default:
+		resp, err := hc.RpcClient.MakeRequest(baseRequest)
+		if err != nil {
+			ErrInternalServerError(w, r, "Error forwarding request to node")
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(resp)
 	}
 }

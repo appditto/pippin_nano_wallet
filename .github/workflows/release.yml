@@ -60,3 +60,75 @@ jobs:
           push: true
           tags: bananocoin/pippin:latest,bananocoin/pippin:${{ env.VERSION }}
           build-args: VERSION=${{ env.VERSION }}
+
+      - name: Build amd64 binary
+        run: |
+          GOARCH=amd64 go build -a -ldflags "-s -w -X main.Version=${{ env.VERSION }}" -o pippin-amd64 ./apps/cli
+        env:
+          GOOS: linux
+
+      - name: Build arm64 binary
+        run: |
+          GOARCH=arm64 go build -a -ldflags "-s -w -X main.Version=${{ env.VERSION }}" -o pippin-arm64 ./apps/cli
+        env:
+          GOOS: linux
+
+      - name: Upload amd64 binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: pippin-amd64
+          path: pippin-amd64
+
+      - name: Upload arm64 binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: pippin-arm64
+          path: pippin-arm64
+
+  create_release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download amd64 binary
+        uses: actions/download-artifact@v2
+        with:
+          name: pippin-amd64
+          path: .
+
+      - name: Download arm64 binary
+        uses: actions/download-artifact@v2
+        with:
+          name: pippin-arm64
+          path: .
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.VERSION }}
+          release_name: Release ${{ env.VERSION }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./pippin-amd64
+          asset_name: pippin-amd64
+          asset_content_type: application/octet-stream
+
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./pippin-arm64
+          asset_name: pippin-arm64
+          asset_content_type: application/octet-stream

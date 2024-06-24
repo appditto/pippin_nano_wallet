@@ -26,7 +26,7 @@ require (
 	github.com/alicebob/miniredis/v2 v2.23.0 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
 	github.com/bbedward/go-opencl v0.0.0-20220912170320-f150bf21e6e1 // indirect
-	github.com/bbedward/nanopow v0.0.0-20240621224545-3d7d713e3493 // indirect
+	github.com/bbedward/nanopow v0.0.0-20240624234946-89fdce04d413 // indirect
 	github.com/bsm/redislock v0.8.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/creasty/defaults v1.7.0 // indirect

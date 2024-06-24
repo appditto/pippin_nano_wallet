@@ -1,5 +1,5 @@
-github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20240624152412-41e2fa598e9e h1:yTkMyZaiM9/ZtgcDwHvuVGd9dcGi3XjtDRpnSi8GRrA=
-github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20240624152412-41e2fa598e9e/go.mod h1:yYiInuaLMZxGLx6mo+yxJ5oSJU9kH0NF8pu4Rl9Fav0=
+github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20240624161726-32e13926afe3 h1:NeY7Wz3zc2P+TzyAJA9UXyzhYuXx4pp7id8EHQ5Or0E=
+github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20240624161726-32e13926afe3/go.mod h1:7XT7gjvmj8Fj3BoCHqSqYnf3bolXtLR9Ppg3SUq4+SU=
 github.com/creasty/defaults v1.7.0 h1:eNdqZvc5B509z18lD8yc212CAqJNvfT1Jq6L8WowdBA=
 github.com/creasty/defaults v1.7.0/go.mod h1:iGzKe6pbEHnpMPtfDXZEr0NVxWnPTjb1bbDy08fPzYM=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

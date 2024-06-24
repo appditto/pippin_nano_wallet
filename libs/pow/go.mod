@@ -3,8 +3,8 @@ module github.com/appditto/pippin_nano_wallet/libs/pow
 go 1.22
 
 require (
-	github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20240624152412-41e2fa598e9e
-	github.com/bbedward/nanopow v0.0.0-20240621224545-3d7d713e3493
+	github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20240624161726-32e13926afe3
+	github.com/bbedward/nanopow v0.0.0-20240624234946-89fdce04d413
 	github.com/jarcoal/httpmock v1.2.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/stretchr/testify v1.8.0

@@ -1,7 +1,7 @@
-github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20240624152412-41e2fa598e9e h1:yTkMyZaiM9/ZtgcDwHvuVGd9dcGi3XjtDRpnSi8GRrA=
-github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20240624152412-41e2fa598e9e/go.mod h1:yYiInuaLMZxGLx6mo+yxJ5oSJU9kH0NF8pu4Rl9Fav0=
-github.com/appditto/pippin_nano_wallet/libs/wallet v0.0.0-20240624152412-41e2fa598e9e h1:PSz3N2DLiBZPZi+riBW+FrTbaDtQtXQ3Yt5h5ZPdzzA=
-github.com/appditto/pippin_nano_wallet/libs/wallet v0.0.0-20240624152412-41e2fa598e9e/go.mod h1:fJ8CmvKoDQUXYHHO/1kqYBFMnoTqxu/74YrXGVrdMsk=
+github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20240624161726-32e13926afe3 h1:NeY7Wz3zc2P+TzyAJA9UXyzhYuXx4pp7id8EHQ5Or0E=
+github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20240624161726-32e13926afe3/go.mod h1:7XT7gjvmj8Fj3BoCHqSqYnf3bolXtLR9Ppg3SUq4+SU=
+github.com/appditto/pippin_nano_wallet/libs/wallet v0.0.0-20240624161726-32e13926afe3 h1:RYf7w9XdmTAJRkJ9Embb75GgFwV5rrIFlDpooVC3FC0=
+github.com/appditto/pippin_nano_wallet/libs/wallet v0.0.0-20240624161726-32e13926afe3/go.mod h1:yuRbDbObe5vkBGxORlwJAsPDjESHcxGU8sf8zIuUm5U=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

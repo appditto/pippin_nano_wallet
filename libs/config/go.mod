@@ -3,7 +3,7 @@ module github.com/appditto/pippin_nano_wallet/libs/config
 go 1.22
 
 require (
-	github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20240624152412-41e2fa598e9e
+	github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20240624161726-32e13926afe3
 	github.com/creasty/defaults v1.7.0
 	github.com/stretchr/testify v1.8.0
 	gopkg.in/yaml.v3 v3.0.1

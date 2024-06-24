@@ -1,9 +1,9 @@
-github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20240624152412-41e2fa598e9e h1:yTkMyZaiM9/ZtgcDwHvuVGd9dcGi3XjtDRpnSi8GRrA=
-github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20240624152412-41e2fa598e9e/go.mod h1:yYiInuaLMZxGLx6mo+yxJ5oSJU9kH0NF8pu4Rl9Fav0=
+github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20240624161726-32e13926afe3 h1:NeY7Wz3zc2P+TzyAJA9UXyzhYuXx4pp7id8EHQ5Or0E=
+github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20240624161726-32e13926afe3/go.mod h1:7XT7gjvmj8Fj3BoCHqSqYnf3bolXtLR9Ppg3SUq4+SU=
 github.com/bbedward/go-opencl v0.0.0-20220912170320-f150bf21e6e1 h1:LJbzmDTMLguoBWzaecCD8lBzlB7g32yPAw88bYhaTX8=
 github.com/bbedward/go-opencl v0.0.0-20220912170320-f150bf21e6e1/go.mod h1:rBtj7YWY5xZa+kp6l6ht9PBIpFTL3UE/IJuq3K4p6/Y=
-github.com/bbedward/nanopow v0.0.0-20240621224545-3d7d713e3493 h1:CAHgxgLg9D+BCeVYXGtldjPnvzDSZUJo3WI1dUukuws=
-github.com/bbedward/nanopow v0.0.0-20240621224545-3d7d713e3493/go.mod h1:Y8Hjy3WiN6GCuO5QMnKZob+SgBPXc6XM2x83f4tqvSc=
+github.com/bbedward/nanopow v0.0.0-20240624234946-89fdce04d413 h1:4znmPB6ST7iBnfhX3ZSYCo3k0zk0hZ1UF8HIsPg+yAg=
+github.com/bbedward/nanopow v0.0.0-20240624234946-89fdce04d413/go.mod h1:Y8Hjy3WiN6GCuO5QMnKZob+SgBPXc6XM2x83f4tqvSc=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

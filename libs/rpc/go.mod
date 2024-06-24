@@ -3,7 +3,7 @@ module github.com/appditto/pippin_nano_wallet/libs/rpc
 go 1.22
 
 require (
-	github.com/appditto/pippin_nano_wallet/libs/wallet v0.0.0-20240624152412-41e2fa598e9e
+	github.com/appditto/pippin_nano_wallet/libs/wallet v0.0.0-20240624161726-32e13926afe3
 	github.com/jarcoal/httpmock v1.2.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/stretchr/testify v1.8.0
@@ -11,7 +11,7 @@ require (
 )
 
 require (
-	github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20240624152412-41e2fa598e9e // indirect
+	github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20240624161726-32e13926afe3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

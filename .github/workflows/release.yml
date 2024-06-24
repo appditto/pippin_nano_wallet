@@ -37,10 +37,6 @@ jobs:
           VERSION=${VERSION#v}
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
-      - name: Install ocl-icd-opencl-dev
-        run: |
-          sudo apt-get update && sudo apt-get install -y ocl-icd-opencl-dev
-
       - name: Cache Go modules
         uses: actions/cache@v3
         with:
@@ -63,27 +59,27 @@ jobs:
 
       - name: Build amd64 binary
         run: |
-          GOARCH=amd64 go build -a -ldflags "-s -w -X main.Version=${{ env.VERSION }}" -o pippin-amd64 ./apps/cli
+          GOARCH=amd64 go build -a -ldflags "-s -w -X main.Version=${{ env.VERSION }}" -o pippin-nocl-amd64 ./apps/cli
         env:
           GOOS: linux
 
       - name: Build arm64 binary
         run: |
-          GOARCH=arm64 go build -a -ldflags "-s -w -X main.Version=${{ env.VERSION }}" -o pippin-arm64 ./apps/cli
+          GOARCH=arm64 go build -a -ldflags "-s -w -X main.Version=${{ env.VERSION }}" -o pippin-nocl-arm64 ./apps/cli
         env:
           GOOS: linux
 
       - name: Upload amd64 binary
         uses: actions/upload-artifact@v2
         with:
-          name: pippin-amd64
-          path: pippin-amd64
+          name: pippin-nocl-amd64
+          path: pippin-nocl-amd64
 
       - name: Upload arm64 binary
         uses: actions/upload-artifact@v2
         with:
-          name: pippin-arm64
-          path: pippin-arm64
+          name: pippin-nocl-arm64
+          path: pippin-nocl-arm64
 
   create_release:
     needs: build
@@ -93,13 +89,13 @@ jobs:
       - name: Download amd64 binary
         uses: actions/download-artifact@v2
         with:
-          name: pippin-amd64
+          name: pippin-nocl-amd64
           path: .
 
       - name: Download arm64 binary
         uses: actions/download-artifact@v2
         with:
-          name: pippin-arm64
+          name: pippin-nocl-arm64
           path: .
 
       - name: Create GitHub Release
@@ -119,8 +115,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./pippin-amd64
-          asset_name: pippin-amd64
+          asset_path: ./pippin-nocl-amd64
+          asset_name: pippin-nocl-amd64
           asset_content_type: application/octet-stream
 
       - name: Upload Release Assets
@@ -129,6 +125,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./pippin-arm64
-          asset_name: pippin-arm64
+          asset_path: ./pippin-nocl-arm64
+          asset_name: pippin-nocl-arm64
           asset_content_type: application/octet-stream

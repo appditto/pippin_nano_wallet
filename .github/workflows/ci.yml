@@ -13,9 +13,6 @@ jobs:
       - name: Check out code
         uses: actions/checkout@master
 
-      - name: Install ocl-icd-opencl-dev
-        run: apt-get update && apt-get install -y ocl-icd-opencl-dev
-
       - name: Run Tests
         run: |
           go test -v -parallel 1 $(go list -f '{{.Dir}}/...' -m | xargs)

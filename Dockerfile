@@ -6,13 +6,7 @@ ARG VERSION
 # Set the working directory inside the container
 WORKDIR /app
 
-# Install OpenCL headers and runtime
-RUN apt-get update && apt-get install -y \
-    ocl-icd-opencl-dev \
-    clinfo
-
 # Copy the workspace files
-COPY go.work go.work.sum ./
 COPY . .
 
 # Ensure dependencies are downloaded based on your workspace configuration
@@ -29,12 +23,6 @@ WORKDIR /root/
 
 # Copy the Pre-built binary file from the previous stage
 COPY --from=builder /app/pippin .
-
-# Install OpenCL runtime
-RUN apt-get update && apt-get install -y \
-    ocl-icd-libopencl1 \
-    clinfo && \
-    rm -rf /var/lib/apt/lists/*
 
 # Add ca-certificates in case your app makes external network requests
 RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*

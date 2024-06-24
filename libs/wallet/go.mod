@@ -3,14 +3,17 @@ module github.com/appditto/pippin_nano_wallet/libs/wallet
 go 1.22
 
 require (
+	github.com/appditto/pippin_nano_wallet/libs/config v0.0.0-20240624152412-41e2fa598e9e
 	github.com/appditto/pippin_nano_wallet/libs/database v0.0.0-20220910042023-acfa16d6fdd9
-	github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20220910042023-acfa16d6fdd9
+	github.com/appditto/pippin_nano_wallet/libs/pow v0.0.0-20240624152412-41e2fa598e9e
+	github.com/appditto/pippin_nano_wallet/libs/rpc v0.0.0-20240624152412-41e2fa598e9e
+	github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20220911213744-8822c2a7556c
 	github.com/go-redis/redis/v9 v9.0.0-beta.2
 	github.com/google/uuid v1.3.0
 	github.com/jarcoal/httpmock v1.2.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/stretchr/testify v1.8.0
-	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90
+	golang.org/x/crypto v0.24.0
 )
 
 require (
@@ -20,13 +23,16 @@ require (
 	github.com/alicebob/gopher-json v0.0.0-20200520072559-a9ecdc9d1d3a // indirect
 	github.com/alicebob/miniredis/v2 v2.23.0 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
+	github.com/bbedward/go-opencl v0.0.0-20220912170320-f150bf21e6e1 // indirect
+	github.com/bbedward/nanopow v0.0.0-20240621224545-3d7d713e3493 // indirect
 	github.com/bsm/redislock v0.8.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/creasty/defaults v1.7.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
-	github.com/go-logr/logr v1.2.0 // indirect
+	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-openapi/inflect v0.19.0 // indirect
-	github.com/google/go-cmp v0.5.8 // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.10.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.13.0 // indirect
@@ -41,11 +47,12 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9 // indirect
 	github.com/zclconf/go-cty v1.8.0 // indirect
-	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
-	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
-	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab // indirect
-	golang.org/x/text v0.3.7 // indirect
-	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
+	golang.org/x/exp v0.0.0-20240613232115-7f521ea00fb8 // indirect
+	golang.org/x/exp/errors v0.0.0-20240613232115-7f521ea00fb8 // indirect
+	golang.org/x/mod v0.18.0 // indirect
+	golang.org/x/net v0.26.0 // indirect
+	golang.org/x/sys v0.21.0 // indirect
+	golang.org/x/text v0.16.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/klog/v2 v2.80.1 // indirect
+	k8s.io/klog/v2 v2.130.1 // indirect
 )

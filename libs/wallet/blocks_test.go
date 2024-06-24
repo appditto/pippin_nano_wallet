@@ -90,6 +90,7 @@ func TestReceiveBlockCreate(t *testing.T) {
 	seed, err := utils.GenerateSeed(strings.NewReader("CA21ACED8B10297F40A3001BB97FC220B6E96AB236D36DC91D7B40A6852E05D1"))
 	assert.Nil(t, err)
 	wallet, err := MockWallet.WalletCreate(seed)
+	wallet.Representative = utils.ToPtr("nano_1x7biz69cem95oo7gxkrw6kzhfywq4x5dupw4z1bdzkb74dk9kpxwzjbdhhs")
 	assert.Nil(t, err)
 
 	// Create an account
@@ -143,6 +144,7 @@ func TestSendBlockCreate(t *testing.T) {
 	seed, err := utils.GenerateSeed(strings.NewReader("5F91A5BCC65ECE6912EBED8C33EE88048A0BD417B28553B513BC45C90D0FF1AB"))
 	assert.Nil(t, err)
 	wallet, err := MockWallet.WalletCreate(seed)
+	wallet.Representative = utils.ToPtr("nano_1x7biz69cem95oo7gxkrw6kzhfywq4x5dupw4z1bdzkb74dk9kpxwzjbdhhs")
 	assert.Nil(t, err)
 
 	// Create an account
@@ -153,7 +155,7 @@ func TestSendBlockCreate(t *testing.T) {
 	work := "0000000000000000"
 	block, err := MockWallet.createSendBlock(wallet, acc, "1", "nano_3o7uzba8b9e1wqu5ziwpruteyrs3scyqr761x7ke6w1xctohxfh5du75qgaj", &work, nil)
 	assert.Nil(t, err)
-	assert.Equal(t, "2d68dfea9879bffffb5b6dece2dd6e78221d01eab75d3726dc6791a244f073e3", block.Hash)
+	assert.Equal(t, "dd255940694bb18f525f827d8cc4ef2bf569a40a1afe6948c0c14e7aabc7a27f", block.Hash)
 	assert.Equal(t, "state", block.Type)
 	assert.Equal(t, acc.Address, block.Account)
 	assert.Equal(t, "d4bbfa50649d80e5f63fc396c6f4cf6321cabd7c1480e964c2701d56aafeb5e3", block.Link)

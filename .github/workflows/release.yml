@@ -9,6 +9,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    outputs:
+      version: ${{ steps.get_version.outputs.VERSION }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -35,7 +38,9 @@ jobs:
         run: |
           VERSION=${GITHUB_REF##*/}
           VERSION=${VERSION#v}
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "::set-output name=VERSION::${VERSION}"
+        env:
+          VERSION: ${{ github.ref }}
 
       - name: Cache Go modules
         uses: actions/cache@v3
@@ -54,18 +59,18 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: bananocoin/pippin:latest,bananocoin/pippin:${{ env.VERSION }}
-          build-args: VERSION=${{ env.VERSION }}
+          tags: bananocoin/pippin:latest,bananocoin/pippin:${{ steps.get_version.outputs.VERSION }}
+          build-args: VERSION=${{ steps.get_version.outputs.VERSION }}
 
       - name: Build amd64 binary
         run: |
-          GOARCH=amd64 go build -a -ldflags "-s -w -X main.Version=${{ env.VERSION }}" -o pippin-nocl-amd64 ./apps/cli
+          GOARCH=amd64 go build -a -ldflags "-s -w -X main.Version=${{ steps.get_version.outputs.VERSION }}" -o pippin-nocl-amd64 ./apps/cli
         env:
           GOOS: linux
 
       - name: Build arm64 binary
         run: |
-          GOARCH=arm64 go build -a -ldflags "-s -w -X main.Version=${{ env.VERSION }}" -o pippin-nocl-arm64 ./apps/cli
+          GOARCH=arm64 go build -a -ldflags "-s -w -X main.Version=${{ steps.get_version.outputs.VERSION }}" -o pippin-nocl-arm64 ./apps/cli
         env:
           GOOS: linux
 
@@ -104,8 +109,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ env.VERSION }}
-          release_name: Release ${{ env.VERSION }}
+          tag_name: ${{ needs.build.outputs.version }}
+          release_name: Pippin v${{ needs.build.outputs.version }}
           draft: false
           prerelease: false
 

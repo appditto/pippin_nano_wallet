@@ -6,7 +6,7 @@ import (
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent"
 	_ "github.com/jackc/pgx/v4/stdlib"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 func NewEntClient(connInfo SqlDBConn) (*ent.Client, error) {

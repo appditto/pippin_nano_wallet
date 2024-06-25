@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/appditto/pippin_nano_wallet/apps/server/controller"
+	"github.com/appditto/pippin_nano_wallet/apps/server/middleware"
 	"github.com/appditto/pippin_nano_wallet/apps/server/net"
 	"github.com/appditto/pippin_nano_wallet/libs/config"
 	"github.com/appditto/pippin_nano_wallet/libs/database"
@@ -125,6 +126,7 @@ func StartPippinServer() {
 	hc := controller.HttpController{Wallet: &nanoWallet, RpcClient: &rpcClient, PowClient: pow}
 
 	// HTTP Routes
+	app.Use(middleware.Logger)
 	app.Post("/", hc.Gateway)
 
 	http.ListenAndServe(fmt.Sprintf("%s:%d", conf.Server.Host, conf.Server.Port), app)

@@ -6,17 +6,17 @@ import (
 
 	"github.com/appditto/pippin_nano_wallet/apps/server/models/requests"
 	"github.com/appditto/pippin_nano_wallet/apps/server/models/responses"
+	"github.com/appditto/pippin_nano_wallet/libs/log"
 	"github.com/appditto/pippin_nano_wallet/libs/pow"
 	"github.com/appditto/pippin_nano_wallet/libs/utils"
 	"github.com/go-chi/render"
 	"github.com/mitchellh/mapstructure"
-	"k8s.io/klog/v2"
 )
 
 func (hc *HttpController) HandleWorkGenerate(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 	var workRequest requests.WorkGenerateRequest
 	if err := mapstructure.Decode(rawRequest, &workRequest); err != nil {
-		klog.Errorf("Error unmarshalling work_generate request %s", err)
+		log.Errorf("Error unmarshalling work_generate request %s", err)
 		ErrUnableToParseJson(w, r)
 		return
 	} else if workRequest.Action == "" || workRequest.Hash == "" {
@@ -58,7 +58,7 @@ func (hc *HttpController) HandleWorkGenerate(rawRequest *map[string]interface{},
 
 	work, err := hc.PowClient.WorkGenerateMeta(workRequest.Hash, difficulty, true, blockAward, workRequest.BpowKey)
 	if err != nil {
-		klog.Errorf("Error generating work %s", err)
+		log.Errorf("Error generating work %s", err)
 		ErrWorkFailed(w, r)
 		return
 	}

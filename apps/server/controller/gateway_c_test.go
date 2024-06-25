@@ -11,11 +11,11 @@ import (
 
 	"github.com/appditto/pippin_nano_wallet/libs/config"
 	"github.com/appditto/pippin_nano_wallet/libs/database"
+	"github.com/appditto/pippin_nano_wallet/libs/log"
 	"github.com/appditto/pippin_nano_wallet/libs/pow"
 	"github.com/appditto/pippin_nano_wallet/libs/rpc"
 	"github.com/appditto/pippin_nano_wallet/libs/wallet"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/klog/v2"
 )
 
 // ! These API tests are higher level integration tests that test the API as a whole
@@ -39,19 +39,19 @@ func testMainWrapper(m *testing.M) int {
 	ctx := context.Background()
 	dbconn, err := database.GetSqlDbConn(true)
 	if err != nil {
-		klog.Fatalf("Failed to connect to database: %v", err)
+		log.Fatalf("Failed to connect to database: %v", err)
 		os.Exit(1)
 	}
 	entClient, err := database.NewEntClient(dbconn)
 	defer entClient.Close()
 	if err != nil {
-		klog.Fatalf("Failed to create ent client: %v", err)
+		log.Fatalf("Failed to create ent client: %v", err)
 		os.Exit(1)
 	}
 
 	//Create schema
 	if err := entClient.Schema.Create(ctx); err != nil {
-		klog.Fatalf("Failed to run migrations: %v", err)
+		log.Fatalf("Failed to run migrations: %v", err)
 		os.Exit(1)
 	}
 

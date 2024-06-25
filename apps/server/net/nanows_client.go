@@ -8,9 +8,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/appditto/pippin_nano_wallet/libs/log"
 	guuid "github.com/google/uuid"
 	"github.com/recws-org/recws"
-	"k8s.io/klog/v2"
 )
 
 type wsSubscribe struct {
@@ -87,12 +87,12 @@ func StartNanoWSClient(wsUrl string, callbackChan *chan *WSCallbackMsg) {
 			return
 		case <-ctx.Done():
 			go ws.Close()
-			klog.Infof("Websocket closed %s", ws.GetURL())
+			log.Infof("Websocket closed %s", ws.GetURL())
 			return
 		default:
 			if !ws.IsConnected() {
 				sentSubscribe = false
-				klog.Infof("Websocket disconnected %s", ws.GetURL())
+				log.Infof("Websocket disconnected %s", ws.GetURL())
 				time.Sleep(2 * time.Second)
 				continue
 			}
@@ -100,7 +100,7 @@ func StartNanoWSClient(wsUrl string, callbackChan *chan *WSCallbackMsg) {
 			// Sent subscribe with ack
 			if !sentSubscribe {
 				if err := ws.WriteJSON(subRequest); err != nil {
-					klog.Infof("Error sending subscribe request %s", ws.GetURL())
+					log.Infof("Error sending subscribe request %s", ws.GetURL())
 					time.Sleep(2 * time.Second)
 					continue
 				} else {
@@ -111,7 +111,7 @@ func StartNanoWSClient(wsUrl string, callbackChan *chan *WSCallbackMsg) {
 			var confMessage ConfirmationResponse
 			err := ws.ReadJSON(&confMessage)
 			if err != nil {
-				klog.Infof("Error: ReadJSON %s", ws.GetURL())
+				log.Infof("Error: ReadJSON %s", ws.GetURL())
 				sentSubscribe = false
 				continue
 			}
@@ -121,11 +121,11 @@ func StartNanoWSClient(wsUrl string, callbackChan *chan *WSCallbackMsg) {
 				var deserialized WSCallbackMsg
 				serialized, err := json.Marshal(confMessage.Message)
 				if err != nil {
-					klog.Infof("Error: Marshal ws %v", err)
+					log.Infof("Error: Marshal ws %v", err)
 					continue
 				}
 				if err := json.Unmarshal(serialized, &deserialized); err != nil {
-					klog.Errorf("Error: decoding the callback to WSCallbackMsg %v", err)
+					log.Errorf("Error: decoding the callback to WSCallbackMsg %v", err)
 					continue
 				}
 				*callbackChan <- &deserialized

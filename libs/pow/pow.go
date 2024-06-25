@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/appditto/pippin_nano_wallet/libs/log"
 	"github.com/appditto/pippin_nano_wallet/libs/pow/net"
 	"github.com/appditto/pippin_nano_wallet/libs/utils"
 	"github.com/bbedward/nanopow"
-	"k8s.io/klog/v2"
 )
 
 type PippinPow struct {
@@ -58,7 +58,7 @@ func (p *PippinPow) workGenerateAPIRequest(ctx context.Context, url string, hash
 			p.SetWorkPeersFailing(false)
 			WriteChannelSafe(out, resp.Work)
 		} else {
-			klog.Errorf("Received invalid work %s for %s from %s", resp.Work, hash, url)
+			log.Errorf("Received invalid work %s for %s from %s", resp.Work, hash, url)
 		}
 	}
 }
@@ -72,7 +72,7 @@ func (p *PippinPow) workGenerateBpowRequest(ctx context.Context, hash string, di
 			p.SetWorkPeersFailing(false)
 			WriteChannelSafe(out, resp)
 		} else {
-			klog.Errorf("Received invalid work %s for %s from boompow", resp, hash)
+			log.Errorf("Received invalid work %s for %s from boompow", resp, hash)
 		}
 	}
 }
@@ -103,7 +103,7 @@ func (p *PippinPow) workGenerateLocal(ctx context.Context, hash string, difficul
 		if IsWorkValid(hash, difficultyMultiplier, work) || !validate {
 			WriteChannelSafe(out, work)
 		} else {
-			klog.Errorf("Received invalid work %s for %s from local", work, hash)
+			log.Errorf("Received invalid work %s for %s from local", work, hash)
 		}
 	}
 }

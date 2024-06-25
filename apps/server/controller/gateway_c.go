@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/appditto/pippin_nano_wallet/libs/log"
 	"golang.org/x/exp/slices"
-	"k8s.io/klog/v2"
 )
 
 var UNSUPPORTED_WALLET_ACTIONS = []string{"account_move", "account_remove", "receive_minimum", "receive_minimum_set", "search_pending", "search_pending_all", "wallet_add_watch", "wallet_export", "wallet_history", "wallet_ledger", "wallet_republish", "wallet_work_get", "work_get", "work_set"}
@@ -25,7 +25,7 @@ var UNSUPPORTED_WALLET_ACTIONS = []string{"account_move", "account_remove", "rec
 func (hc *HttpController) Gateway(w http.ResponseWriter, r *http.Request) {
 	var baseRequest map[string]interface{}
 	if err := json.NewDecoder(r.Body).Decode(&baseRequest); err != nil {
-		klog.Errorf("Error unmarshalling http base request %s", err)
+		log.Errorf("Error unmarshalling http base request %s", err)
 		ErrUnableToParseJson(w, r)
 		return
 	}

@@ -5,8 +5,8 @@ import (
 	"path"
 
 	"entgo.io/ent/dialect"
+	"github.com/appditto/pippin_nano_wallet/libs/log"
 	"github.com/appditto/pippin_nano_wallet/libs/utils"
-	"k8s.io/klog/v2"
 )
 
 type SqlDBConn interface {
@@ -82,7 +82,7 @@ func GetSqlDbConn(mock bool) (SqlDBConn, error) {
 	postgresPort := utils.GetEnv("POSTGRES_PORT", "5432")
 
 	if postgresDb != "" && postgresUser != "" && postgresPassword != "" {
-		klog.V(3).Infof("Using PostgreSQL database %s@%s:%s", postgresUser, postgresHost, postgresPort)
+		log.Infof("Using PostgreSQL database %s@%s:%s", postgresUser, postgresHost, postgresPort)
 		return &PostgresConn{
 			Host:     postgresHost,
 			Port:     postgresPort,
@@ -100,7 +100,7 @@ func GetSqlDbConn(mock bool) (SqlDBConn, error) {
 	mysqlPort := utils.GetEnv("MYSQL_PORT", "3306")
 
 	if mysqlDb != "" && mysqlUser != "" && mysqlPassword != "" {
-		klog.V(3).Infof("Using MySQL database %s@%s:%s", mysqlUser, mysqlHost, mysqlPort)
+		log.Infof("Using MySQL database %s@%s:%s", mysqlUser, mysqlHost, mysqlPort)
 		return &MysqlConn{
 			Host:     mysqlHost,
 			Port:     mysqlPort,
@@ -116,7 +116,7 @@ func GetSqlDbConn(mock bool) (SqlDBConn, error) {
 		return nil, err
 	}
 	sqliteDb := path.Join(pippinPath, "pippingo.db")
-	klog.V(3).Infof("Using SQLite database at %s", sqliteDb)
+	log.Infof("Using SQLite database at %s", sqliteDb)
 	return &SqliteConn{
 		FileName: sqliteDb,
 		Mode:     "rwc",

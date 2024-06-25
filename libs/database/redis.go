@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
+	"github.com/appditto/pippin_nano_wallet/libs/log"
 	"github.com/appditto/pippin_nano_wallet/libs/utils"
 	"github.com/bsm/redislock"
 	"github.com/go-redis/redis/v9"
-	"k8s.io/klog/v2"
 )
 
 var ctx = context.Background()
@@ -41,7 +41,7 @@ var once sync.Once
 func GetRedisDB() *redisManager {
 	once.Do(func() {
 		if utils.GetEnv("MOCK_REDIS", "false") == "true" {
-			klog.Infof("Using mock redis client because MOCK_REDIS=true is set in environment")
+			log.Infof("Using mock redis client because MOCK_REDIS=true is set in environment")
 			mr, _ := miniredis.Run()
 			client := redis.NewClient(&redis.Options{
 				Addr: mr.Addr(),
@@ -55,12 +55,12 @@ func GetRedisDB() *redisManager {
 		} else {
 			redis_port, err := strconv.Atoi(utils.GetEnv("REDIS_PORT", "6379"))
 			if err != nil {
-				klog.Fatal("Invalid REDIS_PORT specified")
+				log.Fatal("Invalid REDIS_PORT specified")
 				os.Exit(1)
 			}
 			redis_db, err := strconv.Atoi(utils.GetEnv("REDIS_DB", "0"))
 			if err != nil {
-				klog.Fatal("Invalid REDIS_DB specified")
+				log.Fatal("Invalid REDIS_DB specified")
 				os.Exit(1)
 			}
 			client := redis.NewClient(&redis.Options{

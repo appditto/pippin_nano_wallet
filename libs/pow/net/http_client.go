@@ -8,8 +8,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/appditto/pippin_nano_wallet/libs/log"
 	"github.com/appditto/pippin_nano_wallet/libs/pow/models"
-	"k8s.io/klog/v2"
 )
 
 // Base request
@@ -18,7 +18,7 @@ func MakeRequest(ctx context.Context, url string, request interface{}, authoriza
 	// HTTP post
 	httpRequest, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(requestBody))
 	if err != nil {
-		klog.Errorf("Error building request %s", err)
+		log.Errorf("Error building request %s", err)
 		return nil, err
 	}
 	httpRequest.Header.Add("Content-Type", "application/json")
@@ -29,14 +29,14 @@ func MakeRequest(ctx context.Context, url string, request interface{}, authoriza
 	client := &http.Client{}
 	resp, err := client.Do(httpRequest)
 	if err != nil {
-		klog.Errorf("Error making RPC request %s", err)
+		log.Errorf("Error making RPC request %s", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 	// Try to decode+deserialize
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		klog.Errorf("Error decoding response body %s", err)
+		log.Errorf("Error decoding response body %s", err)
 		return nil, err
 	}
 	return body, nil
@@ -52,13 +52,13 @@ func MakeWorkGenerateRequest(ctx context.Context, url string, hash string, diffi
 	}
 	response, err := MakeRequest(ctx, url, request, "")
 	if err != nil {
-		klog.Errorf("Error making request %s", err)
+		log.Errorf("Error making request %s", err)
 		return nil, err
 	}
 	var resp models.WorkGenerateResponse
 	err = json.Unmarshal(response, &resp)
 	if err != nil {
-		klog.Errorf("Error unmarshalling response %s", err)
+		log.Errorf("Error unmarshalling response %s", err)
 		return nil, err
 	}
 	// Check that it's not empty
@@ -77,7 +77,7 @@ func MakeWorkCancelRequest(ctx context.Context, url string, hash string) error {
 	}
 	_, err := MakeRequest(ctx, url, request, "")
 	if err != nil {
-		klog.Errorf("Error making request %s", err)
+		log.Errorf("Error making request %s", err)
 		return err
 	}
 	return nil
@@ -94,13 +94,13 @@ func MakeBoompowWorkGenerateRequest(ctx context.Context, url string, bpowKey str
 	}
 	response, err := MakeRequest(ctx, url, request, bpowKey)
 	if err != nil {
-		klog.Errorf("Error making request %s", err)
+		log.Errorf("Error making request %s", err)
 		return "", err
 	}
 	var resp models.BoompowResponse
 	err = json.Unmarshal(response, &resp)
 	if err != nil {
-		klog.Errorf("Error unmarshalling response %s", err)
+		log.Errorf("Error unmarshalling response %s", err)
 		return "", err
 	}
 	// Check that it's not empty

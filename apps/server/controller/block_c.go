@@ -6,18 +6,18 @@ import (
 
 	"github.com/appditto/pippin_nano_wallet/apps/server/models/requests"
 	"github.com/appditto/pippin_nano_wallet/apps/server/models/responses"
+	"github.com/appditto/pippin_nano_wallet/libs/log"
 	"github.com/appditto/pippin_nano_wallet/libs/utils"
 	"github.com/appditto/pippin_nano_wallet/libs/wallet"
 	"github.com/go-chi/render"
 	"github.com/mitchellh/mapstructure"
-	"k8s.io/klog/v2"
 )
 
 // Handle receive individual block
 func (hc *HttpController) HandleReceiveRequest(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 	var receiveRequest requests.ReceiveRequest
 	if err := mapstructure.Decode(rawRequest, &receiveRequest); err != nil {
-		klog.Errorf("Error unmarshalling receive request %s", err)
+		log.Errorf("Error unmarshalling receive request %s", err)
 		ErrUnableToParseJson(w, r)
 		return
 	} else if receiveRequest.Wallet == "" || receiveRequest.Action == "" || receiveRequest.Block == "" {
@@ -98,7 +98,7 @@ func (hc *HttpController) HandleReceiveAllRequest(rawRequest *map[string]interfa
 func (hc *HttpController) HandleSendRequest(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 	var sendRequest requests.SendRequest
 	if err := mapstructure.Decode(rawRequest, &sendRequest); err != nil {
-		klog.Errorf("Error unmarshalling receive request %s", err)
+		log.Errorf("Error unmarshalling receive request %s", err)
 		ErrUnableToParseJson(w, r)
 		return
 	} else if sendRequest.Wallet == "" || sendRequest.Action == "" || sendRequest.Amount == "" || sendRequest.Destination == "" {
@@ -143,7 +143,7 @@ func (hc *HttpController) HandleSendRequest(rawRequest *map[string]interface{}, 
 func (hc *HttpController) HandleAccountRepresentativeSetRequest(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 	var changeRequest requests.AccountRepresentativeSetRequest
 	if err := mapstructure.Decode(rawRequest, &changeRequest); err != nil {
-		klog.Errorf("Error unmarshalling receive request %s", err)
+		log.Errorf("Error unmarshalling receive request %s", err)
 		ErrUnableToParseJson(w, r)
 		return
 	} else if changeRequest.Wallet == "" || changeRequest.Action == "" || changeRequest.Representative == "" {

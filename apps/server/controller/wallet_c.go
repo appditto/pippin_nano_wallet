@@ -9,12 +9,12 @@ import (
 
 	"github.com/appditto/pippin_nano_wallet/apps/server/models/requests"
 	"github.com/appditto/pippin_nano_wallet/apps/server/models/responses"
+	"github.com/appditto/pippin_nano_wallet/libs/log"
 	"github.com/appditto/pippin_nano_wallet/libs/utils"
 	"github.com/appditto/pippin_nano_wallet/libs/utils/ed25519"
 	"github.com/appditto/pippin_nano_wallet/libs/wallet"
 	"github.com/go-chi/render"
 	"github.com/mitchellh/mapstructure"
-	"k8s.io/klog/v2"
 )
 
 // Wallet handlers, reserved for the handlers that directly interact with the wallet
@@ -24,7 +24,7 @@ func (hc *HttpController) HandleWalletCreate(request *map[string]interface{}, w 
 	// mapstructure decode
 	var walletCreateRequest requests.WalletCreateRequest
 	if err := mapstructure.Decode(request, &walletCreateRequest); err != nil {
-		klog.Errorf("Error unmarshalling wallet_create request %s", err)
+		log.Errorf("Error unmarshalling wallet_create request %s", err)
 		ErrUnableToParseJson(w, r)
 		return
 	}
@@ -64,7 +64,7 @@ func (hc *HttpController) HandleWalletAdd(request *map[string]interface{}, w htt
 	// mapstructure decode
 	var walletAddRequest requests.WalletAddRequest
 	if err := mapstructure.Decode(request, &walletAddRequest); err != nil {
-		klog.Errorf("Error unmarshalling wallet_add request %s", err)
+		log.Errorf("Error unmarshalling wallet_add request %s", err)
 		ErrUnableToParseJson(w, r)
 		return
 	}
@@ -357,7 +357,7 @@ func (hc *HttpController) HandleWalletInfo(rawRequest *map[string]interface{}, w
 func (hc *HttpController) HandleWalletContains(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 	var request requests.WalletContainsRequest
 	if err := mapstructure.Decode(rawRequest, &request); err != nil {
-		klog.Errorf("Error unmarshalling request %s", err)
+		log.Errorf("Error unmarshalling request %s", err)
 		ErrUnableToParseJson(w, r)
 		return
 	} else if request.Wallet == "" || request.Action == "" || request.Account == "" {
@@ -404,7 +404,7 @@ func (hc *HttpController) HandleWalletContains(rawRequest *map[string]interface{
 func (hc *HttpController) HandleWalletRepresentativeSetRequest(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 	var changeRequest requests.WalletRepresentativeSetRequest
 	if err := mapstructure.Decode(rawRequest, &changeRequest); err != nil {
-		klog.Errorf("Error unmarshalling receive request %s", err)
+		log.Errorf("Error unmarshalling receive request %s", err)
 		ErrUnableToParseJson(w, r)
 		return
 	} else if changeRequest.Wallet == "" || changeRequest.Action == "" || changeRequest.Representative == "" {
@@ -485,7 +485,7 @@ func (hc *HttpController) HandleWalletRepresentativeRequest(rawRequest *map[stri
 func (hc *HttpController) HandleWalletChangeSeedRequest(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 	var changeRequest requests.WalletChangeSeedRequest
 	if err := mapstructure.Decode(rawRequest, &changeRequest); err != nil {
-		klog.Errorf("Error unmarshalling change seed request %s", err)
+		log.Errorf("Error unmarshalling change seed request %s", err)
 		ErrUnableToParseJson(w, r)
 		return
 	} else if changeRequest.Wallet == "" || changeRequest.Action == "" || changeRequest.Seed == "" {

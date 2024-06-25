@@ -15,13 +15,13 @@ import (
 	"github.com/appditto/pippin_nano_wallet/libs/database"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
+	"github.com/appditto/pippin_nano_wallet/libs/log"
 	"github.com/appditto/pippin_nano_wallet/libs/pow"
 	"github.com/appditto/pippin_nano_wallet/libs/rpc"
 	"github.com/appditto/pippin_nano_wallet/libs/utils"
 	"github.com/appditto/pippin_nano_wallet/libs/utils/ed25519"
 	"github.com/appditto/pippin_nano_wallet/libs/wallet"
 	"golang.org/x/term"
-	"k8s.io/klog/v2"
 )
 
 var Version = "dev"
@@ -138,11 +138,6 @@ func main() {
 	showHelp := flag.Bool("help", false, "Show help")
 	version := flag.Bool("version", false, "Display the version")
 	startServer := flag.Bool("start-server", false, "Start the pippin server")
-	klog.InitFlags(nil)
-	flag.Set("logtostderr", "true")
-	flag.Set("stderrthreshold", "INFO")
-	flag.Set("v", "3")
-
 	flag.Parse()
 
 	walletList := walletCmd.Bool("list", false, "List all wallets along with their accounts")
@@ -189,7 +184,7 @@ func main() {
 	// Read yaml configuration
 	conf, err := config.ParsePippinConfig()
 	if err != nil {
-		klog.Fatalf("Failed to parse config: %v", err)
+		log.Fatalf("Failed to parse config: %v", err)
 		os.Exit(1)
 	}
 
@@ -197,7 +192,7 @@ func main() {
 	ctx := context.Background()
 	dbconn, err := database.GetSqlDbConn(false)
 	if err != nil {
-		klog.Fatalf("Failed to connect to database: %v", err)
+		log.Fatalf("Failed to connect to database: %v", err)
 		os.Exit(1)
 	}
 	entClient, err := database.NewEntClient(dbconn)

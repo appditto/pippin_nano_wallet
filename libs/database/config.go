@@ -59,6 +59,7 @@ type SqliteConn struct {
 }
 
 func (c *SqliteConn) DSN() string {
+	// https://github.com/ent/ent/discussions/1667#discussioncomment-4106910
 	return fmt.Sprintf("file:%s?cache=shared&mode=%s&_fk=1&_pragma=foreign_keys(1)", c.FileName, c.Mode)
 }
 

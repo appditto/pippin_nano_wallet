@@ -2,6 +2,7 @@ package controller
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/appditto/pippin_nano_wallet/apps/server/models/requests"
@@ -115,12 +116,12 @@ func (hc *HttpController) HandleSendRequest(rawRequest *map[string]interface{}, 
 	// Validate accounts
 	_, err := utils.AddressToPub(sendRequest.Source, hc.Wallet.Config.Wallet.Banano)
 	if err != nil {
-		ErrBadRequest(w, r, "Invalid source account")
+		ErrBadRequest(w, r, fmt.Sprintf("Invalid source account %s", sendRequest.Source))
 		return
 	}
 	_, err = utils.AddressToPub(sendRequest.Destination, hc.Wallet.Config.Wallet.Banano)
 	if err != nil {
-		ErrBadRequest(w, r, "Invalid destination account")
+		ErrBadRequest(w, r, fmt.Sprintf("Invalid destination account %s", sendRequest.Destination))
 		return
 	}
 

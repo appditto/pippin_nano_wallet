@@ -16,7 +16,7 @@ RUN go work sync
 RUN CGO_ENABLED=0 go build -a -ldflags "-s -w -X main.Version=${VERSION}" -o pippin ./apps/cli
 
 # Stage 2: Use a smaller base image
-FROM scratch
+FROM debian:bullseye-slim
 
 # Set the working directory inside the container
 WORKDIR /root/

@@ -34,4 +34,4 @@ data:
       banano: true
 
       work_peers:
-        - http://10.4.0.1:17072
+        - http://10.4.0.1:17076

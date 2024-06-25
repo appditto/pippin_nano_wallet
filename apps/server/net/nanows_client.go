@@ -11,6 +11,8 @@ import (
 	guuid "github.com/google/uuid"
 	"github.com/recws-org/recws"
 	"k8s.io/klog/v2"
+
+	"github.com/appditto/pippin_nano_wallet/libs/wallet"
 )
 
 type wsSubscribe struct {
@@ -50,22 +52,25 @@ type WSCallbackMsg struct {
 	Amount  string          `json:"amount"`
 }
 
-func StartNanoWSClient(wsUrl string, callbackChan *chan *WSCallbackMsg) {
+func StartNanoWSClient(wsUrl string, callbackChan *chan *WSCallbackMsg, w *wallet.NanoWallet, newAccountChan <-chan string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	sentSubscribe := false
 	ws := recws.RecConn{}
+
+	addresses, err := w.GetAllAccountAddresses()
+	if err != nil {
+		// Handle error
+	}
+
 	// Nano subscription request
 	subRequest := wsSubscribe{
 		Action: "subscribe",
 		Topic:  "confirmation",
 		Ack:    false,
 		Id:     guuid.New().String(),
-		// ! TODO - subscribe to only connected acounts
-		// Options: map[string][]string{
-		// 	"accounts": {
-		// 		account,
-		// 	},
-		// },
+		Options: map[string][]string{
+			"accounts": addresses,
+		},
 	}
 	ws.Dial(wsUrl, nil)
 
@@ -78,6 +83,29 @@ func StartNanoWSClient(wsUrl string, callbackChan *chan *WSCallbackMsg) {
 	defer func() {
 		signal.Stop(sigc)
 		cancel()
+	}()
+
+	// Goroutine to handle new account addresses
+	go func() {
+		for newAccount := range newAccountChan {
+			//todo: this should use action: "update", "accounts_add" from v21 but node rpc proxies don't support :(
+			addresses = append(addresses, newAccount)
+			// Send update message to WebSocket
+			updateRequest := wsSubscribe{
+				Action: "subscribe",
+				Topic:  "confirmation",
+				Ack:    false,
+				Id:     guuid.New().String(),
+				Options: map[string][]string{
+					"accounts": addresses,
+				},
+			}
+			if err := ws.WriteJSON(updateRequest); err != nil {
+				klog.Infof("Error sending update request %s", ws.GetURL())
+			} else {
+				klog.Infof("Successfully sent update request for new account %s", newAccount)
+			}
+		}
 	}()
 
 	for {

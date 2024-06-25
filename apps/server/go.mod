@@ -9,7 +9,7 @@ require (
 	github.com/appditto/pippin_nano_wallet/libs/rpc v0.0.0-20220913032807-bb837a90c28a
 	github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20220911213744-8822c2a7556c
 	github.com/appditto/pippin_nano_wallet/libs/wallet v0.0.0-20220910042023-acfa16d6fdd9
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.6.0
 	github.com/jarcoal/httpmock v1.2.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/stretchr/testify v1.8.0

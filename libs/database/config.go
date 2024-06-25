@@ -59,14 +59,15 @@ type SqliteConn struct {
 }
 
 func (c *SqliteConn) DSN() string {
-	return fmt.Sprintf("file:%s?cache=shared&mode=%s&_fk=1", c.FileName, c.Mode)
+	// https://github.com/ent/ent/discussions/1667#discussioncomment-4106910
+	return fmt.Sprintf("file:%s?cache=shared&mode=%s&_fk=1&_pragma=foreign_keys(1)", c.FileName, c.Mode)
 }
 
 func (c *SqliteConn) Dialect() string {
 	return dialect.SQLite
 }
 
-func (c *SqliteConn) Driver() string { return c.Dialect() }
+func (c *SqliteConn) Driver() string { return "sqlite" }
 
 // Gets the DB connection information based on environment variables
 func GetSqlDbConn(mock bool) (SqlDBConn, error) {

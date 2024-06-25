@@ -1,7 +1,3 @@
-# Work In Progress
-
-This is the active development rewrite of pippin, for the current version see the [legacy branch](https://github.com/appditto/pippin_nano_wallet/tree/legacy)
-
 [![Release](https://img.shields.io/github/v/release/appditto/pippin_nano_wallet)](https://github.com/appditto/pippin_nano_wallet/releases/latest) ![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/appditto/pippin_nano_wallet?filename=apps%2Fserver%2Fgo.mod) [![License](https://img.shields.io/github/license/appditto/pippin_nano_wallet)](https://github.com/appditto/pippin_nano_wallet/blob/master/LICENSE) [![CI](https://github.com/appditto/pippin_nano_wallet/workflows/CI/badge.svg)](https://github.com/appditto/pippin_nano_wallet/actions?query=workflow%3ACI)
 
 <p align="center">
@@ -39,10 +35,9 @@ Every wallet-related RPC gets intercepted by Pippin and handled internally. It b
 
 Every non-wallet related RPC gets proxied to the publishing node. Which means you can make all of your RPC requests directly to Pippin whether they are wallet-related or not.
 
-
 ## Components
 
-Pippin has a *server* and a *cli* interface. See the appropriate README for more details on each.
+Pippin has a _server_ and a _cli_ interface. See the appropriate README for more details on each.
 
 - [Server](https://github.com/appditto/pippin_nano_wallet/tree/master/apps/server)
 - [CLI](https://github.com/appditto/pippin_nano_wallet/tree/master/apps/cli)
@@ -86,19 +81,23 @@ Pippin also supports `MySQL` and `PostgreSQL` which is configured in the environ
 You can set these variables the same way that you normally set environment variables, but for convenience pippin will read `$PIPPIN_HOME/PippinData/.env`
 
 For MySQL
+
 ```bash
 % echo "MYSQL_DB=database_name" >> ~/PippinData/.env
 % echo "MYSQL_USER=user_name" >> ~/PippinData/.env
 % echo "MYSQL_PASSWORD=mypassword" >> ~/PippinData/.env
 ```
+
 You can also override `MYSQL_HOST` and `MYSQL_PORT`, which default to `localhost` and `3306`
 
 For Postgres
+
 ```bash
 % echo "POSTGRES_DB=database_name" >> ~/PippinData/.env
 % echo "POSTGRES_USER=user_name" >> ~/PippinData/.env
 % echo "POSTGRES_PASSWORD=mypassword" >> ~/PippinData/.env
 ```
+
 You can also override `POSTGRES_HOST` and `POSTGRES_PORT`, which default to `localhost` and `5432`
 
 ### Configuring Redis

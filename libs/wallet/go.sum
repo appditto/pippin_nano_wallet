@@ -30,6 +30,7 @@ github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20220911213744-8822c2a7
 github.com/bbedward/go-opencl v0.0.0-20220912170320-f150bf21e6e1 h1:LJbzmDTMLguoBWzaecCD8lBzlB7g32yPAw88bYhaTX8=
 github.com/bbedward/go-opencl v0.0.0-20220912170320-f150bf21e6e1/go.mod h1:rBtj7YWY5xZa+kp6l6ht9PBIpFTL3UE/IJuq3K4p6/Y=
 github.com/bbedward/nanopow v0.0.0-20240624234946-89fdce04d413 h1:4znmPB6ST7iBnfhX3ZSYCo3k0zk0hZ1UF8HIsPg+yAg=
+github.com/bbedward/nanopow v0.0.0-20240624234946-89fdce04d413/go.mod h1:Y8Hjy3WiN6GCuO5QMnKZob+SgBPXc6XM2x83f4tqvSc=
 github.com/bsm/redislock v0.8.0 h1:a0T+W/GjGzzvNUdj2yggvvcLf8lOLB1d3Kr5l0vDFW4=
 github.com/bsm/redislock v0.8.0/go.mod h1:/RQ+chuYmDkxIZOY65CF3hY9GRbaWpjax3tqytJ8V3c=
 github.com/cespare/xxhash/v2 v2.1.2 h1:YRXhKfTDauu4ajMg1TPgFO5jnlC2HCbmLXMcTG5cbYE=
@@ -72,6 +73,7 @@ github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
 github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
 github.com/google/renameio v0.1.0/go.mod h1:KWCgfxg9yswjAJkECMjeO8J8rahYeXnNhOm40UhjYkI=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
+github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/hashicorp/hcl/v2 v2.10.0 h1:1S1UnuhDGlv3gRFV4+0EdwB+znNP5HmcGbIqwnSCByg=
 github.com/hashicorp/hcl/v2 v2.10.0/go.mod h1:FwWsfWEjyV/CMj8s/gqAuiviY72rJ1/oayI9WftqcKg=
 github.com/jackc/chunkreader v1.0.0/go.mod h1:RT6O25fNZIuasFJRyZ4R/Y2BbhasbmZXF9QQ7T3kePo=

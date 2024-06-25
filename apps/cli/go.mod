@@ -1,17 +1,17 @@
 module github.com/appditto/pippin_nano_wallet/apps/cli
 
-go 1.22
+go 1.22.1
 
 require (
 	github.com/appditto/pippin_nano_wallet/apps/server v0.0.0-20240624152412-41e2fa598e9e
 	github.com/appditto/pippin_nano_wallet/libs/config v0.0.0-20240624152412-41e2fa598e9e
 	github.com/appditto/pippin_nano_wallet/libs/database v0.0.0-20240624152412-41e2fa598e9e
+	github.com/appditto/pippin_nano_wallet/libs/log v0.0.0-20240625194645-fc95391f0316
 	github.com/appditto/pippin_nano_wallet/libs/pow v0.0.0-20240624152412-41e2fa598e9e
 	github.com/appditto/pippin_nano_wallet/libs/rpc v0.0.0-20240624152412-41e2fa598e9e
 	github.com/appditto/pippin_nano_wallet/libs/utils v0.0.0-20240624152412-41e2fa598e9e
 	github.com/appditto/pippin_nano_wallet/libs/wallet v0.0.0-20240624152412-41e2fa598e9e
 	golang.org/x/term v0.21.0
-	k8s.io/klog/v2 v2.130.1
 )
 
 require (
@@ -22,14 +22,18 @@ require (
 	github.com/alicebob/gopher-json v0.0.0-20200520072559-a9ecdc9d1d3a // indirect
 	github.com/alicebob/miniredis/v2 v2.23.0 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
+	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/bbedward/go-opencl v0.0.0-20220912170320-f150bf21e6e1 // indirect
 	github.com/bbedward/nanopow v0.0.0-20240624234946-89fdce04d413 // indirect
 	github.com/bsm/redislock v0.8.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/charmbracelet/lipgloss v0.10.0 // indirect
+	github.com/charmbracelet/log v0.4.0 // indirect
 	github.com/creasty/defaults v1.7.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/go-chi/chi/v5 v5.0.7 // indirect
 	github.com/go-chi/render v1.0.2 // indirect
+	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-openapi/inflect v0.19.0 // indirect
 	github.com/go-redis/redis/v9 v9.0.0-beta.2 // indirect
@@ -46,10 +50,16 @@ require (
 	github.com/jackc/pgtype v1.12.0 // indirect
 	github.com/jackc/pgx/v4 v4.17.2 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
+	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
+	github.com/mattn/go-isatty v0.0.18 // indirect
+	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/mattn/go-sqlite3 v1.14.15 // indirect
 	github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/muesli/reflow v0.3.0 // indirect
+	github.com/muesli/termenv v0.15.2 // indirect
 	github.com/recws-org/recws v1.4.0 // indirect
+	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9 // indirect
 	github.com/zclconf/go-cty v1.8.0 // indirect
 	golang.org/x/crypto v0.24.0 // indirect
@@ -60,4 +70,5 @@ require (
 	golang.org/x/sys v0.21.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	k8s.io/klog/v2 v2.130.1 // indirect
 )

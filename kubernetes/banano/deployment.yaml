@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pippin-banano
+  namespace: pippin
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: pippin-banano
+  template:
+    metadata:
+      labels:
+        app: pippin-banano
+    spec:
+      containers:
+      - name: pippin-banano
+        image: bananocoin/pippin:3.0.6
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 500m
+            memory: 1500Mi
+        ports:
+        - containerPort: 11338
+          name: api
+        env:
+          - name: REDIS_HOST
+            value: redis.redis
+          - name: REDIS_DB
+            value: "0"
+          - name: POSTGRES_HOST
+            value: pg-pippinban.pippin
+          - name: POSTGRES_DB
+            value: postgres
+          - name: POSTGRES_USER
+            value: postgres
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: banano
+                key: postgres_password
+          - name: BPOW_KEY
+            valueFrom:
+              secretKeyRef:
+                name: banano
+                key: bpow_key
+          # - name: BPOW_URL
+          #   value: http://boompow-service.boompow-next:8080/graphql             
+        volumeMounts:
+        - name: conf
+          mountPath: /root/PippinData
+          readOnly: true
+      volumes:
+      - name: conf
+        configMap:
+          name: pippin-banano
+          defaultMode: 0755

@@ -34,7 +34,7 @@ require (
 	github.com/go-openapi/inflect v0.19.0 // indirect
 	github.com/go-redis/redis/v9 v9.0.0-beta.2 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
-	github.com/google/uuid v1.3.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.10.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect

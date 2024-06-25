@@ -186,7 +186,7 @@ func TestSend(t *testing.T) {
 	respBody, _ = io.ReadAll(resp.Body)
 	json.Unmarshal(respBody, &rawResp)
 
-	assert.Equal(t, "Invalid destination account", rawResp["error"])
+	assert.Equal(t, "Invalid destination account ban_1234", rawResp["error"])
 
 	// Request JSON
 	reqBody = map[string]interface{}{
@@ -211,7 +211,7 @@ func TestSend(t *testing.T) {
 	respBody, _ = io.ReadAll(resp.Body)
 	json.Unmarshal(respBody, &rawResp)
 
-	assert.Equal(t, "Invalid source account", rawResp["error"])
+	assert.Equal(t, "Invalid source account ban_1234", rawResp["error"])
 }
 
 func TestAccountRepresentativeSet(t *testing.T) {

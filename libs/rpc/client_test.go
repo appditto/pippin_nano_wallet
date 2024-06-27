@@ -21,7 +21,7 @@ func TestMain(m *testing.M) {
 
 func testMainWrapper(m *testing.M) int {
 	// Mock HTTP client
-	MockRpcClient = &RPCClient{Url: "http://localhost:123456"}
+	MockRpcClient = NewRPCClient("http://localhost:123456")
 	return m.Run()
 }
 

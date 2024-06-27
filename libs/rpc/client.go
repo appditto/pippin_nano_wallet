@@ -33,7 +33,11 @@ func NewRPCClient(url string) *RPCClient {
 
 // Base request
 func (client *RPCClient) MakeRequest(request interface{}) ([]byte, error) {
-	requestBody, _ := json.Marshal(request)
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		log.Errorf("Error marshalling request %s", err)
+		return nil, err
+	}
 	// HTTP post
 	resp, err := client.httpClient.Post(client.Url, "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {

@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/appditto/pippin_nano_wallet/libs/log"
 	"github.com/appditto/pippin_nano_wallet/libs/rpc/models/requests"
@@ -17,28 +18,31 @@ import (
 var ErrAccountNotFound = errors.New("Account not found")
 
 type RPCClient struct {
-	Url string
+	Url        string
+	httpClient *http.Client
+}
+
+func NewRPCClient(url string) *RPCClient {
+	return &RPCClient{
+		Url: url,
+		httpClient: &http.Client{
+			Timeout: time.Second * 30, // Set a timeout for all requests
+		},
+	}
 }
 
 // Base request
 func (client *RPCClient) MakeRequest(request interface{}) ([]byte, error) {
 	requestBody, _ := json.Marshal(request)
 	// HTTP post
-	httpRequest, err := http.NewRequest(http.MethodPost, client.Url, bytes.NewBuffer(requestBody))
-	if err != nil {
-		log.Errorf("Error building request %s", err)
-		return nil, err
-	}
-	httpRequest.Header.Add("Content-Type", "application/json")
-	httpC := &http.Client{}
-	resp, err := httpC.Do(httpRequest)
+	resp, err := client.httpClient.Post(client.Url, "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
 		log.Errorf("Error making RPC request %s", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 	// Try to decode+deserialize
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Errorf("Error decoding response body %s", err)
 		return nil, err

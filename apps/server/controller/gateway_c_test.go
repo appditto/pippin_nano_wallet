@@ -62,16 +62,12 @@ func testMainWrapper(m *testing.M) int {
 		Banano:     false,
 		Config:     config,
 		WorkClient: pow.NewPippinPow([]string{}, "", ""),
-		RpcClient: &rpc.RPCClient{
-			Url: "http://localhost:123456",
-		},
+		RpcClient:  rpc.NewRPCClient("http://localhost:123456"),
 	}
 
 	MockController = &HttpController{
-		Wallet: &wallet,
-		RpcClient: &rpc.RPCClient{
-			Url: "http://localhost:123456",
-		},
+		Wallet:    &wallet,
+		RpcClient: rpc.NewRPCClient("http://localhost:123456"),
 		PowClient: pow.NewPippinPow([]string{}, "", ""),
 	}
 	return m.Run()

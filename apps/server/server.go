@@ -52,9 +52,7 @@ func StartPippinServer() {
 	}
 
 	// Setup RPC handlers
-	rpcClient := rpc.RPCClient{
-		Url: conf.Server.NodeRpcUrl,
-	}
+	rpcClient := rpc.NewRPCClient(conf.Server.NodeRpcUrl)
 
 	// Setup pow client
 	pow := pow.NewPippinPow(conf.Wallet.WorkPeers, utils.GetEnv("BPOW_KEY", ""), utils.GetEnv("BPOW_URL", ""))
@@ -64,7 +62,7 @@ func StartPippinServer() {
 		DB:         entClient,
 		Ctx:        ctx,
 		Banano:     conf.Wallet.Banano,
-		RpcClient:  &rpcClient,
+		RpcClient:  rpcClient,
 		WorkClient: pow,
 		Config:     conf,
 	}
@@ -123,7 +121,7 @@ func StartPippinServer() {
 	app := chi.NewRouter()
 
 	// Setup controller
-	hc := controller.HttpController{Wallet: &nanoWallet, RpcClient: &rpcClient, PowClient: pow}
+	hc := controller.HttpController{Wallet: &nanoWallet, RpcClient: rpcClient, PowClient: pow}
 
 	// HTTP Routes
 	app.Use(middleware.Logger)

@@ -9,8 +9,8 @@ type SendRequest struct {
 	BaseRequest `mapstructure:",squash"`
 	Source      string          `json:"source" mapstructure:"source"`
 	Destination string          `json:"destination" mapstructure:"destination"`
-	Amount      string          `json:"-"` // Exclude from automatic unmarshalling
-	RawAmount   json.RawMessage `json:"amount" mapstructure:"amount"`
+	Amount      string          `json:"-" mapstructure:"amount"` // Exclude from automatic unmarshalling
+	RawAmount   json.RawMessage `json:"amount" mapstructure:"-"`
 	ID          *string         `json:"id,omitempty" mapstructure:"id,omitempty"`
 	Work        *string         `json:"work,omitempty" mapstructure:"work,omitempty"`
 }

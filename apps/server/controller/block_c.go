@@ -99,7 +99,7 @@ func (hc *HttpController) HandleReceiveAllRequest(rawRequest *map[string]interfa
 func (hc *HttpController) HandleSendRequest(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 	var sendRequest requests.SendRequest
 	if err := mapstructure.Decode(rawRequest, &sendRequest); err != nil {
-		log.Errorf("Error unmarshalling receive request %s", err)
+		log.Errorf("Error unmarshalling send request %s", err)
 		ErrUnableToParseJson(w, r)
 		return
 	} else if sendRequest.Wallet == "" || sendRequest.Action == "" || sendRequest.Amount == "" || sendRequest.Destination == "" {
@@ -144,7 +144,7 @@ func (hc *HttpController) HandleSendRequest(rawRequest *map[string]interface{}, 
 func (hc *HttpController) HandleAccountRepresentativeSetRequest(rawRequest *map[string]interface{}, w http.ResponseWriter, r *http.Request) {
 	var changeRequest requests.AccountRepresentativeSetRequest
 	if err := mapstructure.Decode(rawRequest, &changeRequest); err != nil {
-		log.Errorf("Error unmarshalling receive request %s", err)
+		log.Errorf("Error unmarshalling representative set request %s", err)
 		ErrUnableToParseJson(w, r)
 		return
 	} else if changeRequest.Wallet == "" || changeRequest.Action == "" || changeRequest.Representative == "" {

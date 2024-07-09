@@ -160,6 +160,7 @@ func main() {
 	accountIndex := accountCmd.Int("index", 0, "Specify an index to use when creating account (optional, cannot be used with --count)")
 	accountCount := accountCmd.Int("count", 0, "Specify how many accounts to create (optional, cannot be used with --index)")
 	accountKey := accountCmd.String("key", "", "Specify a private key to use when creating account (optional, cannot be used with --index or --count)")
+	repairAdhoc := accountCmd.Bool("repair-adhoc", false, "Repair adhoc accounts")
 
 	if *showHelp {
 		usage()
@@ -458,6 +459,36 @@ func main() {
 					os.Exit(1)
 				}
 				fmt.Printf("Account %d created: %s\n", *acc.AccountIndex, acc.Address)
+			}
+		} else if *repairAdhoc {
+			// Get all accounts with 64-length private keys
+			accounts, err := nanoWallet.DB.Account.Query().Where(account.PrivateKeyNotNil()).All(ctx)
+			if err != nil {
+				fmt.Printf("Failed to get accounts: %v\n", err)
+				os.Exit(1)
+			}
+			for _, a := range accounts {
+				if len(*a.PrivateKey) != 64 {
+					continue
+				}
+				// Convert to ed25519 key
+				asByte, err := hex.DecodeString(*a.PrivateKey)
+				if err != nil {
+					fmt.Printf("Failed to decode private key: %v\n", err)
+					os.Exit(1)
+				}
+				priv, err := ed25519.NewKeyFromSeed(asByte)
+				if err != nil {
+					fmt.Printf("Failed to create private key: %v\n", err)
+					os.Exit(1)
+				}
+				// Update account
+				_, err = nanoWallet.DB.Account.UpdateOneID(a.ID).SetPrivateKey(hex.EncodeToString(priv)).Save(ctx)
+				if err != nil {
+					fmt.Printf("Failed to update account: %v\n", err)
+					os.Exit(1)
+				}
+				fmt.Printf("Account %s repaired\n", a.Address)
 			}
 		}
 	default:

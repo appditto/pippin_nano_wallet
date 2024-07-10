@@ -238,7 +238,10 @@ func (w *NanoWallet) createSendBlock(wallet *ent.Wallet, sender *ent.Account, am
 
 	// Get account info
 	accountInfo, err := w.RpcClient.MakeAccountInfoRequest(sender.Address)
-	if errors.Is(err, nanorpc.ErrAccountNotFound) && w.Config.Wallet.AutoReceiveOnSend != nil && *w.Config.Wallet.AutoReceiveOnSend {
+	if errors.Is(err, ErrAccountNotFound) {
+		if w.Config.Wallet.AutoReceiveOnSend == nil || !*w.Config.Wallet.AutoReceiveOnSend {
+			return nil, ErrInsufficientBalance
+		}
 		// See if account has a pending balance to open the accountt
 		bal, err := w.RpcClient.MakeAccountBalanceRequest(sender.Address)
 		if err != nil {

@@ -238,7 +238,32 @@ func (w *NanoWallet) createSendBlock(wallet *ent.Wallet, sender *ent.Account, am
 
 	// Get account info
 	accountInfo, err := w.RpcClient.MakeAccountInfoRequest(sender.Address)
-	if err != nil {
+	if errors.Is(err, nanorpc.ErrAccountNotFound) && w.Config.Wallet.AutoReceiveOnSend != nil && *w.Config.Wallet.AutoReceiveOnSend {
+		// See if account has a pending balance to open the accountt
+		bal, err := w.RpcClient.MakeAccountBalanceRequest(sender.Address)
+		if err != nil {
+			return nil, err
+		}
+		receivable, ok := big.NewInt(0).SetString(bal.Receivable, 10)
+		if !ok {
+			return nil, errors.New("Unable to parse receivable amount")
+		}
+		if receivable.Cmp(sendAmount) < 0 {
+			return nil, ErrInsufficientBalance
+		}
+		receivedCount, err := w.receiveAll(wallet, sender, bpowKey)
+		if err != nil {
+			return nil, err
+		}
+		if receivedCount == 0 {
+			return nil, ErrInsufficientBalance
+		}
+		// Re-get accountInfo
+		accountInfo, err = w.RpcClient.MakeAccountInfoRequest(sender.Address)
+		if err != nil {
+			return nil, err
+		}
+	} else if err != nil {
 		return nil, err
 	}
 

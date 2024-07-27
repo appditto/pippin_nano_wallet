@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: receive-all-nano
+  namespace: pippin
+spec:
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: wallet-post
+            image: alpine:3.15
+            command: ["/bin/sh", "-c"]
+            args:
+            - |
+              set -e
+              apk add --no-cache curl jq
+              WALLET_IDS=$(cat /etc/wallet-ids/wallet-ids) || { echo "Failed to decode base64"; exit 1; }
+              for wallet_id in $(echo $WALLET_IDS | jq -r '.[]'); do
+                echo "Processing wallet ID: $wallet_id"
+                curl -sS -X POST -H "Content-Type: application/json" -d '{"action":"receive_all","wallet":"'$wallet_id'"}' pippin-nano.pippin:11338 || { echo "Failed to make POST request for wallet ID: $wallet_id"; exit 1; }
+              done
+            volumeMounts:
+            - name: wallet-ids
+              mountPath: /etc/wallet-ids
+              readOnly: true
+          restartPolicy: OnFailure
+          volumes:
+          - name: wallet-ids
+            secret:
+              secretName: wallet-ids-nano

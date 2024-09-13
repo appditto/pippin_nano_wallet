@@ -361,12 +361,23 @@ func (client *RPCClient) MakeReceivableRequest(account string, threshold string)
 		}
 		return nil, errors.New("Unknown error")
 	}
-	// The node is inconsistent and will give an empty string if nothing is here
+	// Handle the case where "blocks" is either an empty string, empty array, or a map
 	if val, ok := resp["blocks"]; ok {
-		if val == "" {
-			return &responses.ReceivableResponse{
-				Blocks: make(map[string]string),
-			}, nil
+		switch v := val.(type) {
+		case string:
+			// Empty string case
+			if v == "" {
+				return &responses.ReceivableResponse{
+					Blocks: make(map[string]string),
+				}, nil
+			}
+		case []interface{}:
+			// Empty array case
+			if len(v) == 0 {
+				return &responses.ReceivableResponse{
+					Blocks: make(map[string]string),
+				}, nil
+			}
 		}
 	}
 	// Decode properly

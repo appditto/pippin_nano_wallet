@@ -107,19 +107,19 @@ jobs:
 
     steps:
       - name: Download amd64 binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: pippin-nocl-amd64
           path: .
 
       - name: Download amd6 opencl binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: pippin-opencl-amd64
           path: .
 
       - name: Download arm64 binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: pippin-nocl-arm64
           path: .

@@ -99,6 +99,7 @@ func StartPippinServer() {
 	go func() {
 		for msg := range callbackChan {
 			func() {
+				log.Infof("In websocket confirmation callback")
 				// Lock each callback so we don't handle them on multiple instances
 				lock, err := database.GetRedisDB().Locker.Obtain(ctx, fmt.Sprintf("blocklock:%s", msg.Hash), time.Second*30, nil)
 				if err != nil {
@@ -106,9 +107,19 @@ func StartPippinServer() {
 				}
 				defer lock.Release(ctx)
 				// Ignore non-sends
-				if msg.Block.Subtype != "send" || msg.IsSend != "true" {
+				if msg.Block.Subtype != "send" {
 					return
 				}
+
+				// Send HTTP callback
+				if conf.Server.ConfirmationCallback != "" {
+					callbackUrl := fmt.Sprintf(conf.Server.ConfirmationCallback, msg.Hash)
+					log.Infof("Sending HTTP confirmation callback: %s", callbackUrl)
+					if _, err = http.Get(callbackUrl); err != nil {
+						log.Warn("Failed to send callback")
+					}
+				}
+
 				amount, ok := big.NewInt(0).SetString(msg.Amount, 10)
 				if !ok {
 					return

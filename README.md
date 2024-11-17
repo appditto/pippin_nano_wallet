@@ -50,6 +50,10 @@ Pippin comes as a pre-compiled binary for multiple architectures, which can be d
 
 You can start the server with `pippin --start-server`, or use `pippin --help` for a full list of available CLI options.
 
+### Docker
+
+Alternatively, you can run Pippin in a docker container with `docker run -v ~/PippinData:/root/PippinData -p 11338:11338 bananocoin/pippin`. Be sure to change the `host` option in the generated `config.yaml` to `0.0.0.0`. 
+
 ## Server Configuration
 
 Pippin is configured through a `yaml` style configuration for most things, but some things are configured via `env` variables.

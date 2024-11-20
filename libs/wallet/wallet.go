@@ -57,6 +57,27 @@ func (w *NanoWallet) GetWallets() ([]*ent.Wallet, error) {
 
 	return wallets, nil
 }
+func (w *NanoWallet) GetAllAccountAddresses() ([]string, error) {
+	// Get all wallets
+	wallets, err := w.GetWallets()
+	if err != nil {
+		return nil, err
+	}
+
+	// Initialize a slice to hold all account addresses
+	var allAddresses []string
+
+	// Iterate over each wallet to get accounts
+	for _, wallet := range wallets {
+		_, addresses, err := w.AccountsList(wallet, 0) // 0 means no limit
+		if err != nil {
+			return nil, err
+		}
+		allAddresses = append(allAddresses, addresses...)
+	}
+
+	return allAddresses, nil
+}
 
 // Creates a new wallet with provided seed
 func (w *NanoWallet) WalletCreate(seed string) (*ent.Wallet, error) {

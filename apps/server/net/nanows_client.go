@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/appditto/pippin_nano_wallet/libs/log"
-	guuid "github.com/google/uuid"
+	"github.com/appditto/pippin_nano_wallet/libs/wallet"
 	"github.com/recws-org/recws"
 )
 
@@ -50,22 +50,26 @@ type WSCallbackMsg struct {
 	Amount  string          `json:"amount"`
 }
 
-func StartNanoWSClient(wsUrl string, callbackChan *chan *WSCallbackMsg) {
+func StartNanoWSClient(wsUrl string, callbackChan *chan *WSCallbackMsg, w *wallet.NanoWallet, newAccountChan <-chan string) {
+	log.Infof("Starting StartNanoWSClient")
 	ctx, cancel := context.WithCancel(context.Background())
 	sentSubscribe := false
 	ws := recws.RecConn{}
-	// Nano subscription request
+
+	addresses, err := w.GetAllAccountAddresses()
+	if err != nil {
+		addresses = []string{}
+	}
+
+	log.Infof("Subscribed to %d accounts", len(addresses))
+
 	subRequest := wsSubscribe{
 		Action: "subscribe",
 		Topic:  "confirmation",
 		Ack:    false,
-		Id:     guuid.New().String(),
-		// ! TODO - subscribe to only connected acounts
-		// Options: map[string][]string{
-		// 	"accounts": {
-		// 		account,
-		// 	},
-		// },
+		Options: map[string][]string{
+			"accounts": addresses,
+		},
 	}
 	ws.Dial(wsUrl, nil)
 
@@ -78,6 +82,29 @@ func StartNanoWSClient(wsUrl string, callbackChan *chan *WSCallbackMsg) {
 	defer func() {
 		signal.Stop(sigc)
 		cancel()
+	}()
+
+	// Goroutine to handle new account addresses
+	go func() {
+		for newAccount := range newAccountChan {
+			log.Infof("Resubscribing with account: %s", newAccount)
+			//todo: this should use action: "update", "accounts_add" from v21 but node rpc proxies don't support :(
+			addresses = append(addresses, newAccount)
+			// Send update message to WebSocket
+			updateRequest := wsSubscribe{
+				Action: "subscribe",
+				Topic:  "confirmation",
+				Ack:    false,
+				Options: map[string][]string{
+					"accounts": addresses,
+				},
+			}
+			if err := ws.WriteJSON(updateRequest); err != nil {
+				log.Infof("Error sending update request %s", ws.GetURL())
+			} else {
+				log.Infof("Successfully sent update request for new account %s", newAccount)
+			}
+		}
 	}()
 
 	for {
@@ -118,6 +145,7 @@ func StartNanoWSClient(wsUrl string, callbackChan *chan *WSCallbackMsg) {
 
 			// Trigger callback
 			if confMessage.Topic == "confirmation" {
+				log.Infof("Received websocket confirmation")
 				var deserialized WSCallbackMsg
 				serialized, err := json.Marshal(confMessage.Message)
 				if err != nil {

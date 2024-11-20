@@ -13,10 +13,11 @@ import (
 // ! The old server also had:
 // log_file, log_to_stdout,
 type ServerConfig struct {
-	Host       string `yaml:"host" default:"127.0.0.1"`
-	Port       int    `yaml:"port" default:"11338"`
-	NodeRpcUrl string `yaml:"node_rpc_url"`
-	NodeWsUrl  string `yaml:"node_ws_url"`
+	Host                 string `yaml:"host" default:"127.0.0.1"`
+	Port                 int    `yaml:"port" default:"11338"`
+	NodeRpcUrl           string `yaml:"node_rpc_url"`
+	NodeWsUrl            string `yaml:"node_ws_url"`
+	ConfirmationCallback string `yaml:"confirmation_callback"`
 }
 
 // ! The old server also had:

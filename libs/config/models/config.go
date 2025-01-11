@@ -29,6 +29,7 @@ type WalletConfig struct {
 	NodeWorkGenerate                   bool     `yaml:"node_work_generate" default:"false"`
 	ReceiveMinimum                     string   `yaml:"receive_minimum"`
 	AutoReceiveOnSend                  *bool    `yaml:"auto_receive_on_send" default:"true"`
+	WorkTimeout                        int      `yaml:"work_timeout" default:"30"`
 }
 
 type PippinConfig struct {

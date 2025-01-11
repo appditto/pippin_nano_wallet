@@ -55,7 +55,7 @@ func StartPippinServer() {
 	rpcClient := rpc.NewRPCClient(conf.Server.NodeRpcUrl)
 
 	// Setup pow client
-	pow := pow.NewPippinPow(conf.Wallet.WorkPeers, utils.GetEnv("BPOW_KEY", ""), utils.GetEnv("BPOW_URL", ""))
+	pow := pow.NewPippinPow(conf.Wallet.WorkPeers, utils.GetEnv("BPOW_KEY", ""), utils.GetEnv("BPOW_URL", ""), conf.Wallet.WorkTimeout)
 
 	// Setup nano wallet instance with DB, options, etc.
 	nanoWallet := wallet.NanoWallet{

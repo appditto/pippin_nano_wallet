@@ -38,7 +38,7 @@ func testMainWrapper(m *testing.M) int {
 	defer os.RemoveAll(".testdata")
 	config, _ := config.ParsePippinConfig()
 	rpcclient := nanorpc.NewRPCClient("/mockrpcendpoint")
-	powClient := pow.NewPippinPow([]string{}, "", "")
+	powClient := pow.NewPippinPow([]string{}, "", "", 30)
 	MockWallet = &NanoWallet{
 		DB:         client,
 		Ctx:        context.TODO(),

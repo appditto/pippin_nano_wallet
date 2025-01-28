@@ -30,6 +30,7 @@ func testMainWrapper(m *testing.M) int {
 		},
 		utils.GetEnv("BPOW_KEY", ""),
 		utils.GetEnv("BPOW_URL", ""),
+		30,
 	)
 	return m.Run()
 }

@@ -187,6 +187,7 @@ func TestWorkGenerateMeta(t *testing.T) {
 	// Test with local pow (no peers, no boompow configured)
 	ppow := &PippinPow{
 		WorkPeers: []string{},
+		timeout:   30 * time.Second,
 	}
 
 	result, err = ppow.WorkGenerateMeta("09263b65752d05ce4df5aeed849ffc2be5bf47026abb4fa5879359ae571ba9c8", 1, true, true, "")

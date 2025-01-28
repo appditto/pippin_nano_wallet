@@ -19,6 +19,7 @@ type PippinPow struct {
 	workPeersFailing bool
 	bpowKey          string
 	bpowUrl          string
+	timeout          time.Duration
 	mutex            sync.Mutex
 }
 
@@ -36,7 +37,7 @@ func (p *PippinPow) SetWorkPeersFailing(failing bool) {
 
 // workPeers is an array of URLs to send work_generate requests to
 // bpowKey and bpowUrl are optional, bpowUrl will default to boompow.banano.cc/graphql
-func NewPippinPow(workPeers []string, bpowKey string, bpowUrl string) *PippinPow {
+func NewPippinPow(workPeers []string, bpowKey string, bpowUrl string, workTimeout int) *PippinPow {
 	if bpowUrl == "" {
 		bpowUrl = "https://boompow.banano.cc/graphql"
 	}
@@ -46,6 +47,7 @@ func NewPippinPow(workPeers []string, bpowKey string, bpowUrl string) *PippinPow
 		workPeersFailing: false,
 		bpowUrl:          bpowUrl,
 		bpowKey:          bpowKey,
+		timeout:          time.Duration(workTimeout) * time.Second,
 	}
 }
 
@@ -165,7 +167,7 @@ func (p *PippinPow) WorkGenerateMeta(hash string, difficultyMultiplier int, vali
 			go WorkCancelAPIRequest(peer, hash)
 		}
 		return *result, nil
-	case <-time.After(30 * time.Second):
+	case <-time.After(p.timeout):
 		// Send work cancel
 		for _, peer := range p.WorkPeers {
 			go WorkCancelAPIRequest(peer, hash)
@@ -179,7 +181,7 @@ func (p *PippinPow) WorkGenerateMeta(hash string, difficultyMultiplier int, vali
 				return work, nil
 			}
 		}
-		return "", errors.New("Unable to generate work")
+		return "", errors.New("Unable to generate work - timed out")
 	}
 }
 

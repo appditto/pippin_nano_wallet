@@ -200,6 +200,18 @@ func (client *RPCClient) MakeAccountsPendingRequest(accounts []string) (*respons
 		}
 		return nil, errors.New("Unknown error")
 	}
+
+	// Handle the case where blocks is an empty string, sometimes node does that
+	if blocks, ok := resp["blocks"]; ok {
+		if blocks == "" {
+			// Return response with empty map
+			emptyMap := make(map[string][]string)
+			return &responses.AccountsPendingResponse{
+				Blocks: &emptyMap,
+			}, nil
+		}
+	}
+
 	var decoded responses.AccountsPendingResponse
 	err = mapstructure.Decode(resp, &decoded)
 	if err != nil {

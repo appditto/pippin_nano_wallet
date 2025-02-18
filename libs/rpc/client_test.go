@@ -104,6 +104,25 @@ func TestGetAccountsPending(t *testing.T) {
 	assert.Equal(t, "142A538F36833D1CC78B94E11C766F75818F8B940771335C6C1B8AB880C5BB1D", blocks["nano_1111111111111111111111111111111111111111111111111117353trpda"][0])
 }
 
+func TestGetAccountsPendingEmpty(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("POST", "http://localhost:123456",
+		func(req *http.Request) (*http.Response, error) {
+			var js map[string]interface{}
+			json.Unmarshal([]byte(mocks.AccountsPendingResponseEmptyStr), &js)
+			resp, err := httpmock.NewJsonResponse(200, js)
+			return resp, err
+		},
+	)
+
+	resp, err := MockRpcClient.MakeAccountsPendingRequest([]string{"nano_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3"})
+	assert.Nil(t, err)
+	blocks := *resp.Blocks
+	assert.Empty(t, blocks)
+}
+
 func TestMakeProcessRequest(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()

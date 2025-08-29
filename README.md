@@ -52,7 +52,7 @@ You can start the server with `pippin --start-server`, or use `pippin --help` fo
 
 ### Docker
 
-Alternatively, you can run Pippin in a docker container with `docker run -v ~/PippinData:/root/PippinData -p 11338:11338 bananocoin/pippin`. Be sure to change the `host` option in the generated `config.yaml` to `0.0.0.0`. 
+Alternatively, you can run Pippin in a docker container with `docker run -v ~/PippinData:/root/PippinData -p 11338:11338 bananocoin/pippin`. Be sure to change the `host` option in the generated `config.yaml` to `0.0.0.0`. Pippin requires Redis to function correctly. See the [Configuring Redis](#configuring-redis) section for details.
 
 ## Server Configuration
 
@@ -108,7 +108,9 @@ You can also override `POSTGRES_HOST` and `POSTGRES_PORT`, which default to `loc
 
 [Redis](https://redis.io) is a non-optional requirement for Pippin. It allows Pippin to be scalable across multiple instances and handles distributed locking.
 
-By default it will use `localhost:6379` to connect and `0` as the database. These can be overriden with the environment variables:
+You should have a Redis instance running (e.g., on your host machine or in a container) before performing wallet operations. By default it will use `localhost:6379` to connect and `0` as the database. 
+
+These can be overriden with the environment variables:
 
 - `REDIS_HOST`
 - `REDIS_PORT`

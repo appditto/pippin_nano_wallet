@@ -566,6 +566,16 @@ func (w *NanoWallet) CreateAndPublishSendBlock(wallet *ent.Wallet, amount string
 		return "", err
 	}
 
+	if id != nil {
+		var asInterface map[string]interface{}
+		inrec, _ := json.Marshal(sb)
+		json.Unmarshal(inrec, &asInterface)
+		_, err := w.DB.Block.Create().SetAccount(acc).SetBlock(asInterface).SetBlockHash(sb.Hash).SetSubtype("send").SetSendID(*id).Save(w.Ctx)
+		if err != nil {
+			return "", err
+		}
+	}
+
 	// Publish block
 	subtype := "send"
 	resp, err := w.RpcClient.MakeProcessRequest(requests.ProcessRequest{
@@ -578,17 +588,6 @@ func (w *NanoWallet) CreateAndPublishSendBlock(wallet *ent.Wallet, amount string
 	})
 	if err != nil || !utils.Validate64HexHash(resp.Hash) {
 		return "", err
-	}
-
-	// If the ID is set save it in database for indempotency
-	if id != nil {
-		var asInterface map[string]interface{}
-		inrec, _ := json.Marshal(sb)
-		json.Unmarshal(inrec, &asInterface)
-		_, err := w.DB.Block.Create().SetAccount(acc).SetBlock(asInterface).SetBlockHash(resp.Hash).SetSubtype("send").SetSendID(*id).Save(w.Ctx)
-		if err != nil {
-			return "", err
-		}
 	}
 
 	return resp.Hash, nil

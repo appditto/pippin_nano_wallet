@@ -115,6 +115,7 @@ These can be overriden with the environment variables:
 - `REDIS_HOST`
 - `REDIS_PORT`
 - `REDIS_DB`
+- `REDIS_PASSWORD`
 
 ### Using BoomPoW
 

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -20,11 +21,9 @@ import (
 // WalletQuery is the builder for querying Wallet entities.
 type WalletQuery struct {
 	config
-	limit        *int
-	offset       *int
-	unique       *bool
-	order        []OrderFunc
-	fields       []string
+	ctx          *QueryContext
+	order        []wallet.OrderOption
+	inters       []Interceptor
 	predicates   []predicate.Wallet
 	withAccounts *AccountQuery
 	// intermediate query (i.e. traversal path).
@@ -33,44 +32,44 @@ type WalletQuery struct {
 }
 
 // Where adds a new predicate for the WalletQuery builder.
-func (wq *WalletQuery) Where(ps ...predicate.Wallet) *WalletQuery {
-	wq.predicates = append(wq.predicates, ps...)
-	return wq
+func (_q *WalletQuery) Where(ps ...predicate.Wallet) *WalletQuery {
+	_q.predicates = append(_q.predicates, ps...)
+	return _q
 }
 
-// Limit adds a limit step to the query.
-func (wq *WalletQuery) Limit(limit int) *WalletQuery {
-	wq.limit = &limit
-	return wq
+// Limit the number of records to be returned by this query.
+func (_q *WalletQuery) Limit(limit int) *WalletQuery {
+	_q.ctx.Limit = &limit
+	return _q
 }
 
-// Offset adds an offset step to the query.
-func (wq *WalletQuery) Offset(offset int) *WalletQuery {
-	wq.offset = &offset
-	return wq
+// Offset to start from.
+func (_q *WalletQuery) Offset(offset int) *WalletQuery {
+	_q.ctx.Offset = &offset
+	return _q
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (wq *WalletQuery) Unique(unique bool) *WalletQuery {
-	wq.unique = &unique
-	return wq
+func (_q *WalletQuery) Unique(unique bool) *WalletQuery {
+	_q.ctx.Unique = &unique
+	return _q
 }
 
-// Order adds an order step to the query.
-func (wq *WalletQuery) Order(o ...OrderFunc) *WalletQuery {
-	wq.order = append(wq.order, o...)
-	return wq
+// Order specifies how the records should be ordered.
+func (_q *WalletQuery) Order(o ...wallet.OrderOption) *WalletQuery {
+	_q.order = append(_q.order, o...)
+	return _q
 }
 
 // QueryAccounts chains the current query on the "accounts" edge.
-func (wq *WalletQuery) QueryAccounts() *AccountQuery {
-	query := &AccountQuery{config: wq.config}
+func (_q *WalletQuery) QueryAccounts() *AccountQuery {
+	query := (&AccountClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := wq.prepareQuery(ctx); err != nil {
+		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := wq.sqlQuery(ctx)
+		selector := _q.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -79,7 +78,7 @@ func (wq *WalletQuery) QueryAccounts() *AccountQuery {
 			sqlgraph.To(account.Table, account.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, wallet.AccountsTable, wallet.AccountsColumn),
 		)
-		fromU = sqlgraph.SetNeighbors(wq.driver.Dialect(), step)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
 	}
 	return query
@@ -87,8 +86,8 @@ func (wq *WalletQuery) QueryAccounts() *AccountQuery {
 
 // First returns the first Wallet entity from the query.
 // Returns a *NotFoundError when no Wallet was found.
-func (wq *WalletQuery) First(ctx context.Context) (*Wallet, error) {
-	nodes, err := wq.Limit(1).All(ctx)
+func (_q *WalletQuery) First(ctx context.Context) (*Wallet, error) {
+	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -99,8 +98,8 @@ func (wq *WalletQuery) First(ctx context.Context) (*Wallet, error) {
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (wq *WalletQuery) FirstX(ctx context.Context) *Wallet {
-	node, err := wq.First(ctx)
+func (_q *WalletQuery) FirstX(ctx context.Context) *Wallet {
+	node, err := _q.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -109,9 +108,9 @@ func (wq *WalletQuery) FirstX(ctx context.Context) *Wallet {
 
 // FirstID returns the first Wallet ID from the query.
 // Returns a *NotFoundError when no Wallet ID was found.
-func (wq *WalletQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+func (_q *WalletQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = wq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -122,8 +121,8 @@ func (wq *WalletQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (wq *WalletQuery) FirstIDX(ctx context.Context) uuid.UUID {
-	id, err := wq.FirstID(ctx)
+func (_q *WalletQuery) FirstIDX(ctx context.Context) uuid.UUID {
+	id, err := _q.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -133,8 +132,8 @@ func (wq *WalletQuery) FirstIDX(ctx context.Context) uuid.UUID {
 // Only returns a single Wallet entity found by the query, ensuring it only returns one.
 // Returns a *NotSingularError when more than one Wallet entity is found.
 // Returns a *NotFoundError when no Wallet entities are found.
-func (wq *WalletQuery) Only(ctx context.Context) (*Wallet, error) {
-	nodes, err := wq.Limit(2).All(ctx)
+func (_q *WalletQuery) Only(ctx context.Context) (*Wallet, error) {
+	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -149,8 +148,8 @@ func (wq *WalletQuery) Only(ctx context.Context) (*Wallet, error) {
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (wq *WalletQuery) OnlyX(ctx context.Context) *Wallet {
-	node, err := wq.Only(ctx)
+func (_q *WalletQuery) OnlyX(ctx context.Context) *Wallet {
+	node, err := _q.Only(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -160,9 +159,9 @@ func (wq *WalletQuery) OnlyX(ctx context.Context) *Wallet {
 // OnlyID is like Only, but returns the only Wallet ID in the query.
 // Returns a *NotSingularError when more than one Wallet ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (wq *WalletQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+func (_q *WalletQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = wq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -177,8 +176,8 @@ func (wq *WalletQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (wq *WalletQuery) OnlyIDX(ctx context.Context) uuid.UUID {
-	id, err := wq.OnlyID(ctx)
+func (_q *WalletQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+	id, err := _q.OnlyID(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -186,16 +185,18 @@ func (wq *WalletQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 }
 
 // All executes the query and returns a list of Wallets.
-func (wq *WalletQuery) All(ctx context.Context) ([]*Wallet, error) {
-	if err := wq.prepareQuery(ctx); err != nil {
+func (_q *WalletQuery) All(ctx context.Context) ([]*Wallet, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
+	if err := _q.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return wq.sqlAll(ctx)
+	qr := querierAll[[]*Wallet, *WalletQuery]()
+	return withInterceptors[[]*Wallet](ctx, _q, qr, _q.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (wq *WalletQuery) AllX(ctx context.Context) []*Wallet {
-	nodes, err := wq.All(ctx)
+func (_q *WalletQuery) AllX(ctx context.Context) []*Wallet {
+	nodes, err := _q.All(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -203,17 +204,20 @@ func (wq *WalletQuery) AllX(ctx context.Context) []*Wallet {
 }
 
 // IDs executes the query and returns a list of Wallet IDs.
-func (wq *WalletQuery) IDs(ctx context.Context) ([]uuid.UUID, error) {
-	var ids []uuid.UUID
-	if err := wq.Select(wallet.FieldID).Scan(ctx, &ids); err != nil {
+func (_q *WalletQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+	if _q.ctx.Unique == nil && _q.path != nil {
+		_q.Unique(true)
+	}
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
+	if err = _q.Select(wallet.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (wq *WalletQuery) IDsX(ctx context.Context) []uuid.UUID {
-	ids, err := wq.IDs(ctx)
+func (_q *WalletQuery) IDsX(ctx context.Context) []uuid.UUID {
+	ids, err := _q.IDs(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -221,16 +225,17 @@ func (wq *WalletQuery) IDsX(ctx context.Context) []uuid.UUID {
 }
 
 // Count returns the count of the given query.
-func (wq *WalletQuery) Count(ctx context.Context) (int, error) {
-	if err := wq.prepareQuery(ctx); err != nil {
+func (_q *WalletQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
+	if err := _q.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return wq.sqlCount(ctx)
+	return withInterceptors[int](ctx, _q, querierCount[*WalletQuery](), _q.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (wq *WalletQuery) CountX(ctx context.Context) int {
-	count, err := wq.Count(ctx)
+func (_q *WalletQuery) CountX(ctx context.Context) int {
+	count, err := _q.Count(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -238,16 +243,21 @@ func (wq *WalletQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (wq *WalletQuery) Exist(ctx context.Context) (bool, error) {
-	if err := wq.prepareQuery(ctx); err != nil {
-		return false, err
+func (_q *WalletQuery) Exist(ctx context.Context) (bool, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
+	switch _, err := _q.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return wq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (wq *WalletQuery) ExistX(ctx context.Context) bool {
-	exist, err := wq.Exist(ctx)
+func (_q *WalletQuery) ExistX(ctx context.Context) bool {
+	exist, err := _q.Exist(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -256,33 +266,32 @@ func (wq *WalletQuery) ExistX(ctx context.Context) bool {
 
 // Clone returns a duplicate of the WalletQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (wq *WalletQuery) Clone() *WalletQuery {
-	if wq == nil {
+func (_q *WalletQuery) Clone() *WalletQuery {
+	if _q == nil {
 		return nil
 	}
 	return &WalletQuery{
-		config:       wq.config,
-		limit:        wq.limit,
-		offset:       wq.offset,
-		order:        append([]OrderFunc{}, wq.order...),
-		predicates:   append([]predicate.Wallet{}, wq.predicates...),
-		withAccounts: wq.withAccounts.Clone(),
+		config:       _q.config,
+		ctx:          _q.ctx.Clone(),
+		order:        append([]wallet.OrderOption{}, _q.order...),
+		inters:       append([]Interceptor{}, _q.inters...),
+		predicates:   append([]predicate.Wallet{}, _q.predicates...),
+		withAccounts: _q.withAccounts.Clone(),
 		// clone intermediate query.
-		sql:    wq.sql.Clone(),
-		path:   wq.path,
-		unique: wq.unique,
+		sql:  _q.sql.Clone(),
+		path: _q.path,
 	}
 }
 
 // WithAccounts tells the query-builder to eager-load the nodes that are connected to
 // the "accounts" edge. The optional arguments are used to configure the query builder of the edge.
-func (wq *WalletQuery) WithAccounts(opts ...func(*AccountQuery)) *WalletQuery {
-	query := &AccountQuery{config: wq.config}
+func (_q *WalletQuery) WithAccounts(opts ...func(*AccountQuery)) *WalletQuery {
+	query := (&AccountClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	wq.withAccounts = query
-	return wq
+	_q.withAccounts = query
+	return _q
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -299,17 +308,12 @@ func (wq *WalletQuery) WithAccounts(opts ...func(*AccountQuery)) *WalletQuery {
 //		GroupBy(wallet.FieldSeed).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (wq *WalletQuery) GroupBy(field string, fields ...string) *WalletGroupBy {
-	grbuild := &WalletGroupBy{config: wq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := wq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return wq.sqlQuery(ctx), nil
-	}
+func (_q *WalletQuery) GroupBy(field string, fields ...string) *WalletGroupBy {
+	_q.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &WalletGroupBy{build: _q}
+	grbuild.flds = &_q.ctx.Fields
 	grbuild.label = wallet.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -325,43 +329,58 @@ func (wq *WalletQuery) GroupBy(field string, fields ...string) *WalletGroupBy {
 //	client.Wallet.Query().
 //		Select(wallet.FieldSeed).
 //		Scan(ctx, &v)
-func (wq *WalletQuery) Select(fields ...string) *WalletSelect {
-	wq.fields = append(wq.fields, fields...)
-	selbuild := &WalletSelect{WalletQuery: wq}
-	selbuild.label = wallet.Label
-	selbuild.flds, selbuild.scan = &wq.fields, selbuild.Scan
-	return selbuild
+func (_q *WalletQuery) Select(fields ...string) *WalletSelect {
+	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
+	sbuild := &WalletSelect{WalletQuery: _q}
+	sbuild.label = wallet.Label
+	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
+	return sbuild
 }
 
-func (wq *WalletQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range wq.fields {
+// Aggregate returns a WalletSelect configured with the given aggregations.
+func (_q *WalletQuery) Aggregate(fns ...AggregateFunc) *WalletSelect {
+	return _q.Select().Aggregate(fns...)
+}
+
+func (_q *WalletQuery) prepareQuery(ctx context.Context) error {
+	for _, inter := range _q.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, _q); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range _q.ctx.Fields {
 		if !wallet.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
-	if wq.path != nil {
-		prev, err := wq.path(ctx)
+	if _q.path != nil {
+		prev, err := _q.path(ctx)
 		if err != nil {
 			return err
 		}
-		wq.sql = prev
+		_q.sql = prev
 	}
 	return nil
 }
 
-func (wq *WalletQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wallet, error) {
+func (_q *WalletQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wallet, error) {
 	var (
 		nodes       = []*Wallet{}
-		_spec       = wq.querySpec()
+		_spec       = _q.querySpec()
 		loadedTypes = [1]bool{
-			wq.withAccounts != nil,
+			_q.withAccounts != nil,
 		}
 	)
-	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
+	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Wallet).scanValues(nil, columns)
 	}
-	_spec.Assign = func(columns []string, values []interface{}) error {
-		node := &Wallet{config: wq.config}
+	_spec.Assign = func(columns []string, values []any) error {
+		node := &Wallet{config: _q.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
@@ -369,14 +388,14 @@ func (wq *WalletQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Walle
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
-	if err := sqlgraph.QueryNodes(ctx, wq.driver, _spec); err != nil {
+	if err := sqlgraph.QueryNodes(ctx, _q.driver, _spec); err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := wq.withAccounts; query != nil {
-		if err := wq.loadAccounts(ctx, query, nodes,
+	if query := _q.withAccounts; query != nil {
+		if err := _q.loadAccounts(ctx, query, nodes,
 			func(n *Wallet) { n.Edges.Accounts = []*Account{} },
 			func(n *Wallet, e *Account) { n.Edges.Accounts = append(n.Edges.Accounts, e) }); err != nil {
 			return nil, err
@@ -385,7 +404,7 @@ func (wq *WalletQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Walle
 	return nodes, nil
 }
 
-func (wq *WalletQuery) loadAccounts(ctx context.Context, query *AccountQuery, nodes []*Wallet, init func(*Wallet), assign func(*Wallet, *Account)) error {
+func (_q *WalletQuery) loadAccounts(ctx context.Context, query *AccountQuery, nodes []*Wallet, init func(*Wallet), assign func(*Wallet, *Account)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Wallet)
 	for i := range nodes {
@@ -395,8 +414,11 @@ func (wq *WalletQuery) loadAccounts(ctx context.Context, query *AccountQuery, no
 			init(nodes[i])
 		}
 	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(account.FieldWalletID)
+	}
 	query.Where(predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.InValues(wallet.AccountsColumn, fks...))
+		s.Where(sql.InValues(s.C(wallet.AccountsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -406,47 +428,31 @@ func (wq *WalletQuery) loadAccounts(ctx context.Context, query *AccountQuery, no
 		fk := n.WalletID
 		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "wallet_id" returned %v for node %v`, fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "wallet_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}
 	return nil
 }
 
-func (wq *WalletQuery) sqlCount(ctx context.Context) (int, error) {
-	_spec := wq.querySpec()
-	_spec.Node.Columns = wq.fields
-	if len(wq.fields) > 0 {
-		_spec.Unique = wq.unique != nil && *wq.unique
+func (_q *WalletQuery) sqlCount(ctx context.Context) (int, error) {
+	_spec := _q.querySpec()
+	_spec.Node.Columns = _q.ctx.Fields
+	if len(_q.ctx.Fields) > 0 {
+		_spec.Unique = _q.ctx.Unique != nil && *_q.ctx.Unique
 	}
-	return sqlgraph.CountNodes(ctx, wq.driver, _spec)
+	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
 }
 
-func (wq *WalletQuery) sqlExist(ctx context.Context) (bool, error) {
-	n, err := wq.sqlCount(ctx)
-	if err != nil {
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	}
-	return n > 0, nil
-}
-
-func (wq *WalletQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   wallet.Table,
-			Columns: wallet.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: wallet.FieldID,
-			},
-		},
-		From:   wq.sql,
-		Unique: true,
-	}
-	if unique := wq.unique; unique != nil {
+func (_q *WalletQuery) querySpec() *sqlgraph.QuerySpec {
+	_spec := sqlgraph.NewQuerySpec(wallet.Table, wallet.Columns, sqlgraph.NewFieldSpec(wallet.FieldID, field.TypeUUID))
+	_spec.From = _q.sql
+	if unique := _q.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if _q.path != nil {
+		_spec.Unique = true
 	}
-	if fields := wq.fields; len(fields) > 0 {
+	if fields := _q.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, wallet.FieldID)
 		for i := range fields {
@@ -455,20 +461,20 @@ func (wq *WalletQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if ps := wq.predicates; len(ps) > 0 {
+	if ps := _q.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if limit := wq.limit; limit != nil {
+	if limit := _q.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := wq.offset; offset != nil {
+	if offset := _q.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
-	if ps := wq.order; len(ps) > 0 {
+	if ps := _q.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
@@ -478,33 +484,33 @@ func (wq *WalletQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (wq *WalletQuery) sqlQuery(ctx context.Context) *sql.Selector {
-	builder := sql.Dialect(wq.driver.Dialect())
+func (_q *WalletQuery) sqlQuery(ctx context.Context) *sql.Selector {
+	builder := sql.Dialect(_q.driver.Dialect())
 	t1 := builder.Table(wallet.Table)
-	columns := wq.fields
+	columns := _q.ctx.Fields
 	if len(columns) == 0 {
 		columns = wallet.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
-	if wq.sql != nil {
-		selector = wq.sql
+	if _q.sql != nil {
+		selector = _q.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if wq.unique != nil && *wq.unique {
+	if _q.ctx.Unique != nil && *_q.ctx.Unique {
 		selector.Distinct()
 	}
-	for _, p := range wq.predicates {
+	for _, p := range _q.predicates {
 		p(selector)
 	}
-	for _, p := range wq.order {
+	for _, p := range _q.order {
 		p(selector)
 	}
-	if offset := wq.offset; offset != nil {
+	if offset := _q.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := wq.limit; limit != nil {
+	if limit := _q.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -512,90 +518,88 @@ func (wq *WalletQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // WalletGroupBy is the group-by builder for Wallet entities.
 type WalletGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *WalletQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (wgb *WalletGroupBy) Aggregate(fns ...AggregateFunc) *WalletGroupBy {
-	wgb.fns = append(wgb.fns, fns...)
-	return wgb
+func (_g *WalletGroupBy) Aggregate(fns ...AggregateFunc) *WalletGroupBy {
+	_g.fns = append(_g.fns, fns...)
+	return _g
 }
 
-// Scan applies the group-by query and scans the result into the given value.
-func (wgb *WalletGroupBy) Scan(ctx context.Context, v interface{}) error {
-	query, err := wgb.path(ctx)
-	if err != nil {
+// Scan applies the selector query and scans the result into the given value.
+func (_g *WalletGroupBy) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
+	if err := _g.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	wgb.sql = query
-	return wgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*WalletQuery, *WalletGroupBy](ctx, _g.build, _g, _g.build.inters, v)
 }
 
-func (wgb *WalletGroupBy) sqlScan(ctx context.Context, v interface{}) error {
-	for _, f := range wgb.fields {
-		if !wallet.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (_g *WalletGroupBy) sqlScan(ctx context.Context, root *WalletQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(_g.fns))
+	for _, fn := range _g.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := wgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*_g.flds)+len(_g.fns))
+		for _, f := range *_g.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*_g.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := wgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := _g.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (wgb *WalletGroupBy) sqlQuery() *sql.Selector {
-	selector := wgb.sql.Select()
-	aggregation := make([]string, 0, len(wgb.fns))
-	for _, fn := range wgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(wgb.fields)+len(wgb.fns))
-		for _, f := range wgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(wgb.fields...)...)
-}
-
 // WalletSelect is the builder for selecting fields of Wallet entities.
 type WalletSelect struct {
 	*WalletQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (_s *WalletSelect) Aggregate(fns ...AggregateFunc) *WalletSelect {
+	_s.fns = append(_s.fns, fns...)
+	return _s
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (ws *WalletSelect) Scan(ctx context.Context, v interface{}) error {
-	if err := ws.prepareQuery(ctx); err != nil {
+func (_s *WalletSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
+	if err := _s.prepareQuery(ctx); err != nil {
 		return err
 	}
-	ws.sql = ws.WalletQuery.sqlQuery(ctx)
-	return ws.sqlScan(ctx, v)
+	return scanWithInterceptors[*WalletQuery, *WalletSelect](ctx, _s.WalletQuery, _s, _s.inters, v)
 }
 
-func (ws *WalletSelect) sqlScan(ctx context.Context, v interface{}) error {
+func (_s *WalletSelect) sqlScan(ctx context.Context, root *WalletQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(_s.fns))
+	for _, fn := range _s.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*_s.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := ws.sql.Query()
-	if err := ws.driver.Query(ctx, query, args, rows); err != nil {
+	query, args := selector.Query()
+	if err := _s.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()

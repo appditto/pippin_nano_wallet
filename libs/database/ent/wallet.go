@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/wallet"
 	"github.com/google/uuid"
@@ -29,7 +30,8 @@ type Wallet struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the WalletQuery when eager-loading is set.
-	Edges WalletEdges `json:"edges"`
+	Edges        WalletEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // WalletEdges holds the relations/edges for other nodes in the graph.
@@ -51,8 +53,8 @@ func (e WalletEdges) AccountsOrErr() ([]*Account, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Wallet) scanValues(columns []string) ([]interface{}, error) {
-	values := make([]interface{}, len(columns))
+func (*Wallet) scanValues(columns []string) ([]any, error) {
+	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
 		case wallet.FieldEncrypted, wallet.FieldWork:
@@ -64,7 +66,7 @@ func (*Wallet) scanValues(columns []string) ([]interface{}, error) {
 		case wallet.FieldID:
 			values[i] = new(uuid.UUID)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Wallet", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -72,7 +74,7 @@ func (*Wallet) scanValues(columns []string) ([]interface{}, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Wallet fields.
-func (w *Wallet) assignValues(columns []string, values []interface{}) error {
+func (_m *Wallet) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -82,97 +84,99 @@ func (w *Wallet) assignValues(columns []string, values []interface{}) error {
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				w.ID = *value
+				_m.ID = *value
 			}
 		case wallet.FieldSeed:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field seed", values[i])
 			} else if value.Valid {
-				w.Seed = value.String
+				_m.Seed = value.String
 			}
 		case wallet.FieldRepresentative:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field representative", values[i])
 			} else if value.Valid {
-				w.Representative = new(string)
-				*w.Representative = value.String
+				_m.Representative = new(string)
+				*_m.Representative = value.String
 			}
 		case wallet.FieldEncrypted:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field encrypted", values[i])
 			} else if value.Valid {
-				w.Encrypted = value.Bool
+				_m.Encrypted = value.Bool
 			}
 		case wallet.FieldWork:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field work", values[i])
 			} else if value.Valid {
-				w.Work = value.Bool
+				_m.Work = value.Bool
 			}
 		case wallet.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				w.CreatedAt = value.Time
+				_m.CreatedAt = value.Time
 			}
+		default:
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Wallet.
+// This includes values selected through modifiers, order, etc.
+func (_m *Wallet) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
+}
+
 // QueryAccounts queries the "accounts" edge of the Wallet entity.
-func (w *Wallet) QueryAccounts() *AccountQuery {
-	return (&WalletClient{config: w.config}).QueryAccounts(w)
+func (_m *Wallet) QueryAccounts() *AccountQuery {
+	return NewWalletClient(_m.config).QueryAccounts(_m)
 }
 
 // Update returns a builder for updating this Wallet.
 // Note that you need to call Wallet.Unwrap() before calling this method if this Wallet
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (w *Wallet) Update() *WalletUpdateOne {
-	return (&WalletClient{config: w.config}).UpdateOne(w)
+func (_m *Wallet) Update() *WalletUpdateOne {
+	return NewWalletClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the Wallet entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (w *Wallet) Unwrap() *Wallet {
-	_tx, ok := w.config.driver.(*txDriver)
+func (_m *Wallet) Unwrap() *Wallet {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: Wallet is not a transactional entity")
 	}
-	w.config.driver = _tx.drv
-	return w
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (w *Wallet) String() string {
+func (_m *Wallet) String() string {
 	var builder strings.Builder
 	builder.WriteString("Wallet(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", w.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("seed=")
-	builder.WriteString(w.Seed)
+	builder.WriteString(_m.Seed)
 	builder.WriteString(", ")
-	if v := w.Representative; v != nil {
+	if v := _m.Representative; v != nil {
 		builder.WriteString("representative=")
 		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")
 	builder.WriteString("encrypted=")
-	builder.WriteString(fmt.Sprintf("%v", w.Encrypted))
+	builder.WriteString(fmt.Sprintf("%v", _m.Encrypted))
 	builder.WriteString(", ")
 	builder.WriteString("work=")
-	builder.WriteString(fmt.Sprintf("%v", w.Work))
+	builder.WriteString(fmt.Sprintf("%v", _m.Work))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
-	builder.WriteString(w.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // Wallets is a parsable slice of Wallet.
 type Wallets []*Wallet
-
-func (w Wallets) config(cfg config) {
-	for _i := range w {
-		w[_i].config = cfg
-	}
-}

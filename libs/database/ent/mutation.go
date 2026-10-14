@@ -9,13 +9,13 @@ import (
 	"sync"
 	"time"
 
+	"entgo.io/ent"
+	"entgo.io/ent/dialect/sql"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/block"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/predicate"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/wallet"
 	"github.com/google/uuid"
-
-	"entgo.io/ent"
 )
 
 const (
@@ -425,6 +425,7 @@ func (m *AccountMutation) ResetCreatedAt() {
 // ClearWallet clears the "wallet" edge to the Wallet entity.
 func (m *AccountMutation) ClearWallet() {
 	m.clearedwallet = true
+	m.clearedFields[account.FieldWalletID] = struct{}{}
 }
 
 // WalletCleared reports if the "wallet" edge to the Wallet entity was cleared.
@@ -507,9 +508,24 @@ func (m *AccountMutation) Where(ps ...predicate.Account) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the AccountMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *AccountMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Account, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *AccountMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *AccountMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (Account).
@@ -1203,6 +1219,7 @@ func (m *BlockMutation) ResetCreatedAt() {
 // ClearAccount clears the "account" edge to the Account entity.
 func (m *BlockMutation) ClearAccount() {
 	m.clearedaccount = true
+	m.clearedFields[block.FieldAccountID] = struct{}{}
 }
 
 // AccountCleared reports if the "account" edge to the Account entity was cleared.
@@ -1231,9 +1248,24 @@ func (m *BlockMutation) Where(ps ...predicate.Block) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the BlockMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *BlockMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Block, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *BlockMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *BlockMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (Block).
@@ -1472,8 +1504,6 @@ func (m *BlockMutation) RemovedEdges() []string {
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *BlockMutation) RemovedIDs(name string) []ent.Value {
-	switch name {
-	}
 	return nil
 }
 
@@ -1894,9 +1924,24 @@ func (m *WalletMutation) Where(ps ...predicate.Wallet) {
 	m.predicates = append(m.predicates, ps...)
 }
 
+// WhereP appends storage-level predicates to the WalletMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *WalletMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Wallet, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
 // Op returns the operation name.
 func (m *WalletMutation) Op() Op {
 	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *WalletMutation) SetOp(op Op) {
+	m.op = op
 }
 
 // Type returns the node type of this mutation (Wallet).

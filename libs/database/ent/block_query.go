@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -19,11 +20,9 @@ import (
 // BlockQuery is the builder for querying Block entities.
 type BlockQuery struct {
 	config
-	limit       *int
-	offset      *int
-	unique      *bool
-	order       []OrderFunc
-	fields      []string
+	ctx         *QueryContext
+	order       []block.OrderOption
+	inters      []Interceptor
 	predicates  []predicate.Block
 	withAccount *AccountQuery
 	// intermediate query (i.e. traversal path).
@@ -32,44 +31,44 @@ type BlockQuery struct {
 }
 
 // Where adds a new predicate for the BlockQuery builder.
-func (bq *BlockQuery) Where(ps ...predicate.Block) *BlockQuery {
-	bq.predicates = append(bq.predicates, ps...)
-	return bq
+func (_q *BlockQuery) Where(ps ...predicate.Block) *BlockQuery {
+	_q.predicates = append(_q.predicates, ps...)
+	return _q
 }
 
-// Limit adds a limit step to the query.
-func (bq *BlockQuery) Limit(limit int) *BlockQuery {
-	bq.limit = &limit
-	return bq
+// Limit the number of records to be returned by this query.
+func (_q *BlockQuery) Limit(limit int) *BlockQuery {
+	_q.ctx.Limit = &limit
+	return _q
 }
 
-// Offset adds an offset step to the query.
-func (bq *BlockQuery) Offset(offset int) *BlockQuery {
-	bq.offset = &offset
-	return bq
+// Offset to start from.
+func (_q *BlockQuery) Offset(offset int) *BlockQuery {
+	_q.ctx.Offset = &offset
+	return _q
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (bq *BlockQuery) Unique(unique bool) *BlockQuery {
-	bq.unique = &unique
-	return bq
+func (_q *BlockQuery) Unique(unique bool) *BlockQuery {
+	_q.ctx.Unique = &unique
+	return _q
 }
 
-// Order adds an order step to the query.
-func (bq *BlockQuery) Order(o ...OrderFunc) *BlockQuery {
-	bq.order = append(bq.order, o...)
-	return bq
+// Order specifies how the records should be ordered.
+func (_q *BlockQuery) Order(o ...block.OrderOption) *BlockQuery {
+	_q.order = append(_q.order, o...)
+	return _q
 }
 
 // QueryAccount chains the current query on the "account" edge.
-func (bq *BlockQuery) QueryAccount() *AccountQuery {
-	query := &AccountQuery{config: bq.config}
+func (_q *BlockQuery) QueryAccount() *AccountQuery {
+	query := (&AccountClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := bq.prepareQuery(ctx); err != nil {
+		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := bq.sqlQuery(ctx)
+		selector := _q.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -78,7 +77,7 @@ func (bq *BlockQuery) QueryAccount() *AccountQuery {
 			sqlgraph.To(account.Table, account.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, block.AccountTable, block.AccountColumn),
 		)
-		fromU = sqlgraph.SetNeighbors(bq.driver.Dialect(), step)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
 	}
 	return query
@@ -86,8 +85,8 @@ func (bq *BlockQuery) QueryAccount() *AccountQuery {
 
 // First returns the first Block entity from the query.
 // Returns a *NotFoundError when no Block was found.
-func (bq *BlockQuery) First(ctx context.Context) (*Block, error) {
-	nodes, err := bq.Limit(1).All(ctx)
+func (_q *BlockQuery) First(ctx context.Context) (*Block, error) {
+	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -98,8 +97,8 @@ func (bq *BlockQuery) First(ctx context.Context) (*Block, error) {
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (bq *BlockQuery) FirstX(ctx context.Context) *Block {
-	node, err := bq.First(ctx)
+func (_q *BlockQuery) FirstX(ctx context.Context) *Block {
+	node, err := _q.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -108,9 +107,9 @@ func (bq *BlockQuery) FirstX(ctx context.Context) *Block {
 
 // FirstID returns the first Block ID from the query.
 // Returns a *NotFoundError when no Block ID was found.
-func (bq *BlockQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+func (_q *BlockQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = bq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -121,8 +120,8 @@ func (bq *BlockQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (bq *BlockQuery) FirstIDX(ctx context.Context) uuid.UUID {
-	id, err := bq.FirstID(ctx)
+func (_q *BlockQuery) FirstIDX(ctx context.Context) uuid.UUID {
+	id, err := _q.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -132,8 +131,8 @@ func (bq *BlockQuery) FirstIDX(ctx context.Context) uuid.UUID {
 // Only returns a single Block entity found by the query, ensuring it only returns one.
 // Returns a *NotSingularError when more than one Block entity is found.
 // Returns a *NotFoundError when no Block entities are found.
-func (bq *BlockQuery) Only(ctx context.Context) (*Block, error) {
-	nodes, err := bq.Limit(2).All(ctx)
+func (_q *BlockQuery) Only(ctx context.Context) (*Block, error) {
+	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -148,8 +147,8 @@ func (bq *BlockQuery) Only(ctx context.Context) (*Block, error) {
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (bq *BlockQuery) OnlyX(ctx context.Context) *Block {
-	node, err := bq.Only(ctx)
+func (_q *BlockQuery) OnlyX(ctx context.Context) *Block {
+	node, err := _q.Only(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -159,9 +158,9 @@ func (bq *BlockQuery) OnlyX(ctx context.Context) *Block {
 // OnlyID is like Only, but returns the only Block ID in the query.
 // Returns a *NotSingularError when more than one Block ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (bq *BlockQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+func (_q *BlockQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = bq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -176,8 +175,8 @@ func (bq *BlockQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (bq *BlockQuery) OnlyIDX(ctx context.Context) uuid.UUID {
-	id, err := bq.OnlyID(ctx)
+func (_q *BlockQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+	id, err := _q.OnlyID(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -185,16 +184,18 @@ func (bq *BlockQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 }
 
 // All executes the query and returns a list of Blocks.
-func (bq *BlockQuery) All(ctx context.Context) ([]*Block, error) {
-	if err := bq.prepareQuery(ctx); err != nil {
+func (_q *BlockQuery) All(ctx context.Context) ([]*Block, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
+	if err := _q.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return bq.sqlAll(ctx)
+	qr := querierAll[[]*Block, *BlockQuery]()
+	return withInterceptors[[]*Block](ctx, _q, qr, _q.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (bq *BlockQuery) AllX(ctx context.Context) []*Block {
-	nodes, err := bq.All(ctx)
+func (_q *BlockQuery) AllX(ctx context.Context) []*Block {
+	nodes, err := _q.All(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -202,17 +203,20 @@ func (bq *BlockQuery) AllX(ctx context.Context) []*Block {
 }
 
 // IDs executes the query and returns a list of Block IDs.
-func (bq *BlockQuery) IDs(ctx context.Context) ([]uuid.UUID, error) {
-	var ids []uuid.UUID
-	if err := bq.Select(block.FieldID).Scan(ctx, &ids); err != nil {
+func (_q *BlockQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+	if _q.ctx.Unique == nil && _q.path != nil {
+		_q.Unique(true)
+	}
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
+	if err = _q.Select(block.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (bq *BlockQuery) IDsX(ctx context.Context) []uuid.UUID {
-	ids, err := bq.IDs(ctx)
+func (_q *BlockQuery) IDsX(ctx context.Context) []uuid.UUID {
+	ids, err := _q.IDs(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -220,16 +224,17 @@ func (bq *BlockQuery) IDsX(ctx context.Context) []uuid.UUID {
 }
 
 // Count returns the count of the given query.
-func (bq *BlockQuery) Count(ctx context.Context) (int, error) {
-	if err := bq.prepareQuery(ctx); err != nil {
+func (_q *BlockQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
+	if err := _q.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return bq.sqlCount(ctx)
+	return withInterceptors[int](ctx, _q, querierCount[*BlockQuery](), _q.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (bq *BlockQuery) CountX(ctx context.Context) int {
-	count, err := bq.Count(ctx)
+func (_q *BlockQuery) CountX(ctx context.Context) int {
+	count, err := _q.Count(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -237,16 +242,21 @@ func (bq *BlockQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (bq *BlockQuery) Exist(ctx context.Context) (bool, error) {
-	if err := bq.prepareQuery(ctx); err != nil {
-		return false, err
+func (_q *BlockQuery) Exist(ctx context.Context) (bool, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
+	switch _, err := _q.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return bq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (bq *BlockQuery) ExistX(ctx context.Context) bool {
-	exist, err := bq.Exist(ctx)
+func (_q *BlockQuery) ExistX(ctx context.Context) bool {
+	exist, err := _q.Exist(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -255,33 +265,32 @@ func (bq *BlockQuery) ExistX(ctx context.Context) bool {
 
 // Clone returns a duplicate of the BlockQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (bq *BlockQuery) Clone() *BlockQuery {
-	if bq == nil {
+func (_q *BlockQuery) Clone() *BlockQuery {
+	if _q == nil {
 		return nil
 	}
 	return &BlockQuery{
-		config:      bq.config,
-		limit:       bq.limit,
-		offset:      bq.offset,
-		order:       append([]OrderFunc{}, bq.order...),
-		predicates:  append([]predicate.Block{}, bq.predicates...),
-		withAccount: bq.withAccount.Clone(),
+		config:      _q.config,
+		ctx:         _q.ctx.Clone(),
+		order:       append([]block.OrderOption{}, _q.order...),
+		inters:      append([]Interceptor{}, _q.inters...),
+		predicates:  append([]predicate.Block{}, _q.predicates...),
+		withAccount: _q.withAccount.Clone(),
 		// clone intermediate query.
-		sql:    bq.sql.Clone(),
-		path:   bq.path,
-		unique: bq.unique,
+		sql:  _q.sql.Clone(),
+		path: _q.path,
 	}
 }
 
 // WithAccount tells the query-builder to eager-load the nodes that are connected to
 // the "account" edge. The optional arguments are used to configure the query builder of the edge.
-func (bq *BlockQuery) WithAccount(opts ...func(*AccountQuery)) *BlockQuery {
-	query := &AccountQuery{config: bq.config}
+func (_q *BlockQuery) WithAccount(opts ...func(*AccountQuery)) *BlockQuery {
+	query := (&AccountClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	bq.withAccount = query
-	return bq
+	_q.withAccount = query
+	return _q
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -298,17 +307,12 @@ func (bq *BlockQuery) WithAccount(opts ...func(*AccountQuery)) *BlockQuery {
 //		GroupBy(block.FieldAccountID).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (bq *BlockQuery) GroupBy(field string, fields ...string) *BlockGroupBy {
-	grbuild := &BlockGroupBy{config: bq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := bq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return bq.sqlQuery(ctx), nil
-	}
+func (_q *BlockQuery) GroupBy(field string, fields ...string) *BlockGroupBy {
+	_q.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &BlockGroupBy{build: _q}
+	grbuild.flds = &_q.ctx.Fields
 	grbuild.label = block.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -324,43 +328,58 @@ func (bq *BlockQuery) GroupBy(field string, fields ...string) *BlockGroupBy {
 //	client.Block.Query().
 //		Select(block.FieldAccountID).
 //		Scan(ctx, &v)
-func (bq *BlockQuery) Select(fields ...string) *BlockSelect {
-	bq.fields = append(bq.fields, fields...)
-	selbuild := &BlockSelect{BlockQuery: bq}
-	selbuild.label = block.Label
-	selbuild.flds, selbuild.scan = &bq.fields, selbuild.Scan
-	return selbuild
+func (_q *BlockQuery) Select(fields ...string) *BlockSelect {
+	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
+	sbuild := &BlockSelect{BlockQuery: _q}
+	sbuild.label = block.Label
+	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
+	return sbuild
 }
 
-func (bq *BlockQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range bq.fields {
+// Aggregate returns a BlockSelect configured with the given aggregations.
+func (_q *BlockQuery) Aggregate(fns ...AggregateFunc) *BlockSelect {
+	return _q.Select().Aggregate(fns...)
+}
+
+func (_q *BlockQuery) prepareQuery(ctx context.Context) error {
+	for _, inter := range _q.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, _q); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range _q.ctx.Fields {
 		if !block.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
-	if bq.path != nil {
-		prev, err := bq.path(ctx)
+	if _q.path != nil {
+		prev, err := _q.path(ctx)
 		if err != nil {
 			return err
 		}
-		bq.sql = prev
+		_q.sql = prev
 	}
 	return nil
 }
 
-func (bq *BlockQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Block, error) {
+func (_q *BlockQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Block, error) {
 	var (
 		nodes       = []*Block{}
-		_spec       = bq.querySpec()
+		_spec       = _q.querySpec()
 		loadedTypes = [1]bool{
-			bq.withAccount != nil,
+			_q.withAccount != nil,
 		}
 	)
-	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
+	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Block).scanValues(nil, columns)
 	}
-	_spec.Assign = func(columns []string, values []interface{}) error {
-		node := &Block{config: bq.config}
+	_spec.Assign = func(columns []string, values []any) error {
+		node := &Block{config: _q.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
@@ -368,14 +387,14 @@ func (bq *BlockQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Block,
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
-	if err := sqlgraph.QueryNodes(ctx, bq.driver, _spec); err != nil {
+	if err := sqlgraph.QueryNodes(ctx, _q.driver, _spec); err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := bq.withAccount; query != nil {
-		if err := bq.loadAccount(ctx, query, nodes, nil,
+	if query := _q.withAccount; query != nil {
+		if err := _q.loadAccount(ctx, query, nodes, nil,
 			func(n *Block, e *Account) { n.Edges.Account = e }); err != nil {
 			return nil, err
 		}
@@ -383,7 +402,7 @@ func (bq *BlockQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Block,
 	return nodes, nil
 }
 
-func (bq *BlockQuery) loadAccount(ctx context.Context, query *AccountQuery, nodes []*Block, init func(*Block), assign func(*Block, *Account)) error {
+func (_q *BlockQuery) loadAccount(ctx context.Context, query *AccountQuery, nodes []*Block, init func(*Block), assign func(*Block, *Account)) error {
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*Block)
 	for i := range nodes {
@@ -395,6 +414,9 @@ func (bq *BlockQuery) loadAccount(ctx context.Context, query *AccountQuery, node
 			ids = append(ids, fk)
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
 	}
 	query.Where(account.IDIn(ids...))
 	neighbors, err := query.All(ctx)
@@ -413,40 +435,24 @@ func (bq *BlockQuery) loadAccount(ctx context.Context, query *AccountQuery, node
 	return nil
 }
 
-func (bq *BlockQuery) sqlCount(ctx context.Context) (int, error) {
-	_spec := bq.querySpec()
-	_spec.Node.Columns = bq.fields
-	if len(bq.fields) > 0 {
-		_spec.Unique = bq.unique != nil && *bq.unique
+func (_q *BlockQuery) sqlCount(ctx context.Context) (int, error) {
+	_spec := _q.querySpec()
+	_spec.Node.Columns = _q.ctx.Fields
+	if len(_q.ctx.Fields) > 0 {
+		_spec.Unique = _q.ctx.Unique != nil && *_q.ctx.Unique
 	}
-	return sqlgraph.CountNodes(ctx, bq.driver, _spec)
+	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
 }
 
-func (bq *BlockQuery) sqlExist(ctx context.Context) (bool, error) {
-	n, err := bq.sqlCount(ctx)
-	if err != nil {
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	}
-	return n > 0, nil
-}
-
-func (bq *BlockQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   block.Table,
-			Columns: block.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: block.FieldID,
-			},
-		},
-		From:   bq.sql,
-		Unique: true,
-	}
-	if unique := bq.unique; unique != nil {
+func (_q *BlockQuery) querySpec() *sqlgraph.QuerySpec {
+	_spec := sqlgraph.NewQuerySpec(block.Table, block.Columns, sqlgraph.NewFieldSpec(block.FieldID, field.TypeUUID))
+	_spec.From = _q.sql
+	if unique := _q.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if _q.path != nil {
+		_spec.Unique = true
 	}
-	if fields := bq.fields; len(fields) > 0 {
+	if fields := _q.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, block.FieldID)
 		for i := range fields {
@@ -454,21 +460,24 @@ func (bq *BlockQuery) querySpec() *sqlgraph.QuerySpec {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
 		}
+		if _q.withAccount != nil {
+			_spec.Node.AddColumnOnce(block.FieldAccountID)
+		}
 	}
-	if ps := bq.predicates; len(ps) > 0 {
+	if ps := _q.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if limit := bq.limit; limit != nil {
+	if limit := _q.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := bq.offset; offset != nil {
+	if offset := _q.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
-	if ps := bq.order; len(ps) > 0 {
+	if ps := _q.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
@@ -478,33 +487,33 @@ func (bq *BlockQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (bq *BlockQuery) sqlQuery(ctx context.Context) *sql.Selector {
-	builder := sql.Dialect(bq.driver.Dialect())
+func (_q *BlockQuery) sqlQuery(ctx context.Context) *sql.Selector {
+	builder := sql.Dialect(_q.driver.Dialect())
 	t1 := builder.Table(block.Table)
-	columns := bq.fields
+	columns := _q.ctx.Fields
 	if len(columns) == 0 {
 		columns = block.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
-	if bq.sql != nil {
-		selector = bq.sql
+	if _q.sql != nil {
+		selector = _q.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if bq.unique != nil && *bq.unique {
+	if _q.ctx.Unique != nil && *_q.ctx.Unique {
 		selector.Distinct()
 	}
-	for _, p := range bq.predicates {
+	for _, p := range _q.predicates {
 		p(selector)
 	}
-	for _, p := range bq.order {
+	for _, p := range _q.order {
 		p(selector)
 	}
-	if offset := bq.offset; offset != nil {
+	if offset := _q.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := bq.limit; limit != nil {
+	if limit := _q.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -512,90 +521,88 @@ func (bq *BlockQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // BlockGroupBy is the group-by builder for Block entities.
 type BlockGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *BlockQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (bgb *BlockGroupBy) Aggregate(fns ...AggregateFunc) *BlockGroupBy {
-	bgb.fns = append(bgb.fns, fns...)
-	return bgb
+func (_g *BlockGroupBy) Aggregate(fns ...AggregateFunc) *BlockGroupBy {
+	_g.fns = append(_g.fns, fns...)
+	return _g
 }
 
-// Scan applies the group-by query and scans the result into the given value.
-func (bgb *BlockGroupBy) Scan(ctx context.Context, v interface{}) error {
-	query, err := bgb.path(ctx)
-	if err != nil {
+// Scan applies the selector query and scans the result into the given value.
+func (_g *BlockGroupBy) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
+	if err := _g.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	bgb.sql = query
-	return bgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*BlockQuery, *BlockGroupBy](ctx, _g.build, _g, _g.build.inters, v)
 }
 
-func (bgb *BlockGroupBy) sqlScan(ctx context.Context, v interface{}) error {
-	for _, f := range bgb.fields {
-		if !block.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (_g *BlockGroupBy) sqlScan(ctx context.Context, root *BlockQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(_g.fns))
+	for _, fn := range _g.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := bgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*_g.flds)+len(_g.fns))
+		for _, f := range *_g.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*_g.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := bgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := _g.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (bgb *BlockGroupBy) sqlQuery() *sql.Selector {
-	selector := bgb.sql.Select()
-	aggregation := make([]string, 0, len(bgb.fns))
-	for _, fn := range bgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(bgb.fields)+len(bgb.fns))
-		for _, f := range bgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(bgb.fields...)...)
-}
-
 // BlockSelect is the builder for selecting fields of Block entities.
 type BlockSelect struct {
 	*BlockQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (_s *BlockSelect) Aggregate(fns ...AggregateFunc) *BlockSelect {
+	_s.fns = append(_s.fns, fns...)
+	return _s
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (bs *BlockSelect) Scan(ctx context.Context, v interface{}) error {
-	if err := bs.prepareQuery(ctx); err != nil {
+func (_s *BlockSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
+	if err := _s.prepareQuery(ctx); err != nil {
 		return err
 	}
-	bs.sql = bs.BlockQuery.sqlQuery(ctx)
-	return bs.sqlScan(ctx, v)
+	return scanWithInterceptors[*BlockQuery, *BlockSelect](ctx, _s.BlockQuery, _s, _s.inters, v)
 }
 
-func (bs *BlockSelect) sqlScan(ctx context.Context, v interface{}) error {
+func (_s *BlockSelect) sqlScan(ctx context.Context, root *BlockQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(_s.fns))
+	for _, fn := range _s.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*_s.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := bs.sql.Query()
-	if err := bs.driver.Query(ctx, query, args, rows); err != nil {
+	query, args := selector.Query()
+	if err := _s.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()

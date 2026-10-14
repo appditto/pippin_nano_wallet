@@ -15,11 +15,10 @@ type AccountFunc func(context.Context, *ent.AccountMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
 func (f AccountFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.AccountMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AccountMutation", m)
+	if mv, ok := m.(*ent.AccountMutation); ok {
+		return f(ctx, mv)
 	}
-	return f(ctx, mv)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AccountMutation", m)
 }
 
 // The BlockFunc type is an adapter to allow the use of ordinary
@@ -28,11 +27,10 @@ type BlockFunc func(context.Context, *ent.BlockMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
 func (f BlockFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.BlockMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BlockMutation", m)
+	if mv, ok := m.(*ent.BlockMutation); ok {
+		return f(ctx, mv)
 	}
-	return f(ctx, mv)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BlockMutation", m)
 }
 
 // The WalletFunc type is an adapter to allow the use of ordinary
@@ -41,11 +39,10 @@ type WalletFunc func(context.Context, *ent.WalletMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
 func (f WalletFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.WalletMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.WalletMutation", m)
+	if mv, ok := m.(*ent.WalletMutation); ok {
+		return f(ctx, mv)
 	}
-	return f(ctx, mv)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.WalletMutation", m)
 }
 
 // Condition is a hook condition function.

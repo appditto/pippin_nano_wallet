@@ -24,94 +24,69 @@ type BlockUpdate struct {
 }
 
 // Where appends a list predicates to the BlockUpdate builder.
-func (bu *BlockUpdate) Where(ps ...predicate.Block) *BlockUpdate {
-	bu.mutation.Where(ps...)
-	return bu
+func (_u *BlockUpdate) Where(ps ...predicate.Block) *BlockUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // SetAccountID sets the "account_id" field.
-func (bu *BlockUpdate) SetAccountID(u uuid.UUID) *BlockUpdate {
-	bu.mutation.SetAccountID(u)
-	return bu
+func (_u *BlockUpdate) SetAccountID(v uuid.UUID) *BlockUpdate {
+	_u.mutation.SetAccountID(v)
+	return _u
 }
 
 // SetNillableAccountID sets the "account_id" field if the given value is not nil.
-func (bu *BlockUpdate) SetNillableAccountID(u *uuid.UUID) *BlockUpdate {
-	if u != nil {
-		bu.SetAccountID(*u)
+func (_u *BlockUpdate) SetNillableAccountID(v *uuid.UUID) *BlockUpdate {
+	if v != nil {
+		_u.SetAccountID(*v)
 	}
-	return bu
+	return _u
 }
 
 // ClearAccountID clears the value of the "account_id" field.
-func (bu *BlockUpdate) ClearAccountID() *BlockUpdate {
-	bu.mutation.ClearAccountID()
-	return bu
+func (_u *BlockUpdate) ClearAccountID() *BlockUpdate {
+	_u.mutation.ClearAccountID()
+	return _u
 }
 
 // SetSubtype sets the "subtype" field.
-func (bu *BlockUpdate) SetSubtype(s string) *BlockUpdate {
-	bu.mutation.SetSubtype(s)
-	return bu
+func (_u *BlockUpdate) SetSubtype(v string) *BlockUpdate {
+	_u.mutation.SetSubtype(v)
+	return _u
+}
+
+// SetNillableSubtype sets the "subtype" field if the given value is not nil.
+func (_u *BlockUpdate) SetNillableSubtype(v *string) *BlockUpdate {
+	if v != nil {
+		_u.SetSubtype(*v)
+	}
+	return _u
 }
 
 // SetAccount sets the "account" edge to the Account entity.
-func (bu *BlockUpdate) SetAccount(a *Account) *BlockUpdate {
-	return bu.SetAccountID(a.ID)
+func (_u *BlockUpdate) SetAccount(v *Account) *BlockUpdate {
+	return _u.SetAccountID(v.ID)
 }
 
 // Mutation returns the BlockMutation object of the builder.
-func (bu *BlockUpdate) Mutation() *BlockMutation {
-	return bu.mutation
+func (_u *BlockUpdate) Mutation() *BlockMutation {
+	return _u.mutation
 }
 
 // ClearAccount clears the "account" edge to the Account entity.
-func (bu *BlockUpdate) ClearAccount() *BlockUpdate {
-	bu.mutation.ClearAccount()
-	return bu
+func (_u *BlockUpdate) ClearAccount() *BlockUpdate {
+	_u.mutation.ClearAccount()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (bu *BlockUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(bu.hooks) == 0 {
-		if err = bu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = bu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*BlockMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = bu.check(); err != nil {
-				return 0, err
-			}
-			bu.mutation = mutation
-			affected, err = bu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(bu.hooks) - 1; i >= 0; i-- {
-			if bu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = bu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, bu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+func (_u *BlockUpdate) Save(ctx context.Context) (int, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (bu *BlockUpdate) SaveX(ctx context.Context) int {
-	affected, err := bu.Save(ctx)
+func (_u *BlockUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -119,21 +94,21 @@ func (bu *BlockUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (bu *BlockUpdate) Exec(ctx context.Context) error {
-	_, err := bu.Save(ctx)
+func (_u *BlockUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (bu *BlockUpdate) ExecX(ctx context.Context) {
-	if err := bu.Exec(ctx); err != nil {
+func (_u *BlockUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (bu *BlockUpdate) check() error {
-	if v, ok := bu.mutation.Subtype(); ok {
+func (_u *BlockUpdate) check() error {
+	if v, ok := _u.mutation.Subtype(); ok {
 		if err := block.SubtypeValidator(v); err != nil {
 			return &ValidationError{Name: "subtype", err: fmt.Errorf(`ent: validator failed for field "Block.subtype": %w`, err)}
 		}
@@ -141,38 +116,25 @@ func (bu *BlockUpdate) check() error {
 	return nil
 }
 
-func (bu *BlockUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   block.Table,
-			Columns: block.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: block.FieldID,
-			},
-		},
+func (_u *BlockUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
-	if ps := bu.mutation.predicates; len(ps) > 0 {
+	_spec := sqlgraph.NewUpdateSpec(block.Table, block.Columns, sqlgraph.NewFieldSpec(block.FieldID, field.TypeUUID))
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if bu.mutation.SendIDCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: block.FieldSendID,
-		})
+	if _u.mutation.SendIDCleared() {
+		_spec.ClearField(block.FieldSendID, field.TypeString)
 	}
-	if value, ok := bu.mutation.Subtype(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: block.FieldSubtype,
-		})
+	if value, ok := _u.mutation.Subtype(); ok {
+		_spec.SetField(block.FieldSubtype, field.TypeString, value)
 	}
-	if bu.mutation.AccountCleared() {
+	if _u.mutation.AccountCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -180,15 +142,12 @@ func (bu *BlockUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{block.AccountColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: account.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := bu.mutation.AccountIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.AccountIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -196,10 +155,7 @@ func (bu *BlockUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{block.AccountColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: account.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -207,7 +163,7 @@ func (bu *BlockUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, bu.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{block.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -215,7 +171,8 @@ func (bu *BlockUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // BlockUpdateOne is the builder for updating a single Block entity.
@@ -227,101 +184,76 @@ type BlockUpdateOne struct {
 }
 
 // SetAccountID sets the "account_id" field.
-func (buo *BlockUpdateOne) SetAccountID(u uuid.UUID) *BlockUpdateOne {
-	buo.mutation.SetAccountID(u)
-	return buo
+func (_u *BlockUpdateOne) SetAccountID(v uuid.UUID) *BlockUpdateOne {
+	_u.mutation.SetAccountID(v)
+	return _u
 }
 
 // SetNillableAccountID sets the "account_id" field if the given value is not nil.
-func (buo *BlockUpdateOne) SetNillableAccountID(u *uuid.UUID) *BlockUpdateOne {
-	if u != nil {
-		buo.SetAccountID(*u)
+func (_u *BlockUpdateOne) SetNillableAccountID(v *uuid.UUID) *BlockUpdateOne {
+	if v != nil {
+		_u.SetAccountID(*v)
 	}
-	return buo
+	return _u
 }
 
 // ClearAccountID clears the value of the "account_id" field.
-func (buo *BlockUpdateOne) ClearAccountID() *BlockUpdateOne {
-	buo.mutation.ClearAccountID()
-	return buo
+func (_u *BlockUpdateOne) ClearAccountID() *BlockUpdateOne {
+	_u.mutation.ClearAccountID()
+	return _u
 }
 
 // SetSubtype sets the "subtype" field.
-func (buo *BlockUpdateOne) SetSubtype(s string) *BlockUpdateOne {
-	buo.mutation.SetSubtype(s)
-	return buo
+func (_u *BlockUpdateOne) SetSubtype(v string) *BlockUpdateOne {
+	_u.mutation.SetSubtype(v)
+	return _u
+}
+
+// SetNillableSubtype sets the "subtype" field if the given value is not nil.
+func (_u *BlockUpdateOne) SetNillableSubtype(v *string) *BlockUpdateOne {
+	if v != nil {
+		_u.SetSubtype(*v)
+	}
+	return _u
 }
 
 // SetAccount sets the "account" edge to the Account entity.
-func (buo *BlockUpdateOne) SetAccount(a *Account) *BlockUpdateOne {
-	return buo.SetAccountID(a.ID)
+func (_u *BlockUpdateOne) SetAccount(v *Account) *BlockUpdateOne {
+	return _u.SetAccountID(v.ID)
 }
 
 // Mutation returns the BlockMutation object of the builder.
-func (buo *BlockUpdateOne) Mutation() *BlockMutation {
-	return buo.mutation
+func (_u *BlockUpdateOne) Mutation() *BlockMutation {
+	return _u.mutation
 }
 
 // ClearAccount clears the "account" edge to the Account entity.
-func (buo *BlockUpdateOne) ClearAccount() *BlockUpdateOne {
-	buo.mutation.ClearAccount()
-	return buo
+func (_u *BlockUpdateOne) ClearAccount() *BlockUpdateOne {
+	_u.mutation.ClearAccount()
+	return _u
+}
+
+// Where appends a list predicates to the BlockUpdate builder.
+func (_u *BlockUpdateOne) Where(ps ...predicate.Block) *BlockUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (buo *BlockUpdateOne) Select(field string, fields ...string) *BlockUpdateOne {
-	buo.fields = append([]string{field}, fields...)
-	return buo
+func (_u *BlockUpdateOne) Select(field string, fields ...string) *BlockUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated Block entity.
-func (buo *BlockUpdateOne) Save(ctx context.Context) (*Block, error) {
-	var (
-		err  error
-		node *Block
-	)
-	if len(buo.hooks) == 0 {
-		if err = buo.check(); err != nil {
-			return nil, err
-		}
-		node, err = buo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*BlockMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = buo.check(); err != nil {
-				return nil, err
-			}
-			buo.mutation = mutation
-			node, err = buo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(buo.hooks) - 1; i >= 0; i-- {
-			if buo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = buo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, buo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Block)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from BlockMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+func (_u *BlockUpdateOne) Save(ctx context.Context) (*Block, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (buo *BlockUpdateOne) SaveX(ctx context.Context) *Block {
-	node, err := buo.Save(ctx)
+func (_u *BlockUpdateOne) SaveX(ctx context.Context) *Block {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -329,21 +261,21 @@ func (buo *BlockUpdateOne) SaveX(ctx context.Context) *Block {
 }
 
 // Exec executes the query on the entity.
-func (buo *BlockUpdateOne) Exec(ctx context.Context) error {
-	_, err := buo.Save(ctx)
+func (_u *BlockUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (buo *BlockUpdateOne) ExecX(ctx context.Context) {
-	if err := buo.Exec(ctx); err != nil {
+func (_u *BlockUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (buo *BlockUpdateOne) check() error {
-	if v, ok := buo.mutation.Subtype(); ok {
+func (_u *BlockUpdateOne) check() error {
+	if v, ok := _u.mutation.Subtype(); ok {
 		if err := block.SubtypeValidator(v); err != nil {
 			return &ValidationError{Name: "subtype", err: fmt.Errorf(`ent: validator failed for field "Block.subtype": %w`, err)}
 		}
@@ -351,23 +283,17 @@ func (buo *BlockUpdateOne) check() error {
 	return nil
 }
 
-func (buo *BlockUpdateOne) sqlSave(ctx context.Context) (_node *Block, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   block.Table,
-			Columns: block.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: block.FieldID,
-			},
-		},
+func (_u *BlockUpdateOne) sqlSave(ctx context.Context) (_node *Block, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
-	id, ok := buo.mutation.ID()
+	_spec := sqlgraph.NewUpdateSpec(block.Table, block.Columns, sqlgraph.NewFieldSpec(block.FieldID, field.TypeUUID))
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Block.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := buo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, block.FieldID)
 		for _, f := range fields {
@@ -379,27 +305,20 @@ func (buo *BlockUpdateOne) sqlSave(ctx context.Context) (_node *Block, err error
 			}
 		}
 	}
-	if ps := buo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if buo.mutation.SendIDCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: block.FieldSendID,
-		})
+	if _u.mutation.SendIDCleared() {
+		_spec.ClearField(block.FieldSendID, field.TypeString)
 	}
-	if value, ok := buo.mutation.Subtype(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: block.FieldSubtype,
-		})
+	if value, ok := _u.mutation.Subtype(); ok {
+		_spec.SetField(block.FieldSubtype, field.TypeString, value)
 	}
-	if buo.mutation.AccountCleared() {
+	if _u.mutation.AccountCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -407,15 +326,12 @@ func (buo *BlockUpdateOne) sqlSave(ctx context.Context) (_node *Block, err error
 			Columns: []string{block.AccountColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: account.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := buo.mutation.AccountIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.AccountIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -423,10 +339,7 @@ func (buo *BlockUpdateOne) sqlSave(ctx context.Context) (_node *Block, err error
 			Columns: []string{block.AccountColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: account.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -434,10 +347,10 @@ func (buo *BlockUpdateOne) sqlSave(ctx context.Context) (_node *Block, err error
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &Block{config: buo.config}
+	_node = &Block{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, buo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{block.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -445,5 +358,6 @@ func (buo *BlockUpdateOne) sqlSave(ctx context.Context) (_node *Block, err error
 		}
 		return nil, err
 	}
+	_u.mutation.done = true
 	return _node, nil
 }

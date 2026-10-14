@@ -13,519 +13,337 @@ import (
 
 // ID filters vertices based on their ID field.
 func ID(id uuid.UUID) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.Account(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
 func IDEQ(id uuid.UUID) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.Account(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
 func IDNEQ(id uuid.UUID) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldID), id))
-	})
+	return predicate.Account(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
 func IDIn(ids ...uuid.UUID) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		v := make([]interface{}, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.In(s.C(FieldID), v...))
-	})
+	return predicate.Account(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
 func IDNotIn(ids ...uuid.UUID) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		v := make([]interface{}, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.NotIn(s.C(FieldID), v...))
-	})
+	return predicate.Account(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
 func IDGT(id uuid.UUID) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldID), id))
-	})
+	return predicate.Account(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
 func IDGTE(id uuid.UUID) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldID), id))
-	})
+	return predicate.Account(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
 func IDLT(id uuid.UUID) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldID), id))
-	})
+	return predicate.Account(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
 func IDLTE(id uuid.UUID) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldID), id))
-	})
+	return predicate.Account(sql.FieldLTE(FieldID, id))
 }
 
 // WalletID applies equality check predicate on the "wallet_id" field. It's identical to WalletIDEQ.
 func WalletID(v uuid.UUID) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldWalletID), v))
-	})
+	return predicate.Account(sql.FieldEQ(FieldWalletID, v))
 }
 
 // Address applies equality check predicate on the "address" field. It's identical to AddressEQ.
 func Address(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldAddress), v))
-	})
+	return predicate.Account(sql.FieldEQ(FieldAddress, v))
 }
 
 // AccountIndex applies equality check predicate on the "account_index" field. It's identical to AccountIndexEQ.
 func AccountIndex(v int) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldAccountIndex), v))
-	})
+	return predicate.Account(sql.FieldEQ(FieldAccountIndex, v))
 }
 
 // PrivateKey applies equality check predicate on the "private_key" field. It's identical to PrivateKeyEQ.
 func PrivateKey(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldPrivateKey), v))
-	})
+	return predicate.Account(sql.FieldEQ(FieldPrivateKey, v))
 }
 
 // Work applies equality check predicate on the "work" field. It's identical to WorkEQ.
 func Work(v bool) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldWork), v))
-	})
+	return predicate.Account(sql.FieldEQ(FieldWork, v))
 }
 
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Account(sql.FieldEQ(FieldCreatedAt, v))
 }
 
 // WalletIDEQ applies the EQ predicate on the "wallet_id" field.
 func WalletIDEQ(v uuid.UUID) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldWalletID), v))
-	})
+	return predicate.Account(sql.FieldEQ(FieldWalletID, v))
 }
 
 // WalletIDNEQ applies the NEQ predicate on the "wallet_id" field.
 func WalletIDNEQ(v uuid.UUID) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldWalletID), v))
-	})
+	return predicate.Account(sql.FieldNEQ(FieldWalletID, v))
 }
 
 // WalletIDIn applies the In predicate on the "wallet_id" field.
 func WalletIDIn(vs ...uuid.UUID) predicate.Account {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldWalletID), v...))
-	})
+	return predicate.Account(sql.FieldIn(FieldWalletID, vs...))
 }
 
 // WalletIDNotIn applies the NotIn predicate on the "wallet_id" field.
 func WalletIDNotIn(vs ...uuid.UUID) predicate.Account {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldWalletID), v...))
-	})
+	return predicate.Account(sql.FieldNotIn(FieldWalletID, vs...))
 }
 
 // AddressEQ applies the EQ predicate on the "address" field.
 func AddressEQ(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldAddress), v))
-	})
+	return predicate.Account(sql.FieldEQ(FieldAddress, v))
 }
 
 // AddressNEQ applies the NEQ predicate on the "address" field.
 func AddressNEQ(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldAddress), v))
-	})
+	return predicate.Account(sql.FieldNEQ(FieldAddress, v))
 }
 
 // AddressIn applies the In predicate on the "address" field.
 func AddressIn(vs ...string) predicate.Account {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldAddress), v...))
-	})
+	return predicate.Account(sql.FieldIn(FieldAddress, vs...))
 }
 
 // AddressNotIn applies the NotIn predicate on the "address" field.
 func AddressNotIn(vs ...string) predicate.Account {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldAddress), v...))
-	})
+	return predicate.Account(sql.FieldNotIn(FieldAddress, vs...))
 }
 
 // AddressGT applies the GT predicate on the "address" field.
 func AddressGT(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldAddress), v))
-	})
+	return predicate.Account(sql.FieldGT(FieldAddress, v))
 }
 
 // AddressGTE applies the GTE predicate on the "address" field.
 func AddressGTE(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldAddress), v))
-	})
+	return predicate.Account(sql.FieldGTE(FieldAddress, v))
 }
 
 // AddressLT applies the LT predicate on the "address" field.
 func AddressLT(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldAddress), v))
-	})
+	return predicate.Account(sql.FieldLT(FieldAddress, v))
 }
 
 // AddressLTE applies the LTE predicate on the "address" field.
 func AddressLTE(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldAddress), v))
-	})
+	return predicate.Account(sql.FieldLTE(FieldAddress, v))
 }
 
 // AddressContains applies the Contains predicate on the "address" field.
 func AddressContains(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldAddress), v))
-	})
+	return predicate.Account(sql.FieldContains(FieldAddress, v))
 }
 
 // AddressHasPrefix applies the HasPrefix predicate on the "address" field.
 func AddressHasPrefix(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldAddress), v))
-	})
+	return predicate.Account(sql.FieldHasPrefix(FieldAddress, v))
 }
 
 // AddressHasSuffix applies the HasSuffix predicate on the "address" field.
 func AddressHasSuffix(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldAddress), v))
-	})
+	return predicate.Account(sql.FieldHasSuffix(FieldAddress, v))
 }
 
 // AddressEqualFold applies the EqualFold predicate on the "address" field.
 func AddressEqualFold(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldAddress), v))
-	})
+	return predicate.Account(sql.FieldEqualFold(FieldAddress, v))
 }
 
 // AddressContainsFold applies the ContainsFold predicate on the "address" field.
 func AddressContainsFold(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldAddress), v))
-	})
+	return predicate.Account(sql.FieldContainsFold(FieldAddress, v))
 }
 
 // AccountIndexEQ applies the EQ predicate on the "account_index" field.
 func AccountIndexEQ(v int) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldAccountIndex), v))
-	})
+	return predicate.Account(sql.FieldEQ(FieldAccountIndex, v))
 }
 
 // AccountIndexNEQ applies the NEQ predicate on the "account_index" field.
 func AccountIndexNEQ(v int) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldAccountIndex), v))
-	})
+	return predicate.Account(sql.FieldNEQ(FieldAccountIndex, v))
 }
 
 // AccountIndexIn applies the In predicate on the "account_index" field.
 func AccountIndexIn(vs ...int) predicate.Account {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldAccountIndex), v...))
-	})
+	return predicate.Account(sql.FieldIn(FieldAccountIndex, vs...))
 }
 
 // AccountIndexNotIn applies the NotIn predicate on the "account_index" field.
 func AccountIndexNotIn(vs ...int) predicate.Account {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldAccountIndex), v...))
-	})
+	return predicate.Account(sql.FieldNotIn(FieldAccountIndex, vs...))
 }
 
 // AccountIndexGT applies the GT predicate on the "account_index" field.
 func AccountIndexGT(v int) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldAccountIndex), v))
-	})
+	return predicate.Account(sql.FieldGT(FieldAccountIndex, v))
 }
 
 // AccountIndexGTE applies the GTE predicate on the "account_index" field.
 func AccountIndexGTE(v int) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldAccountIndex), v))
-	})
+	return predicate.Account(sql.FieldGTE(FieldAccountIndex, v))
 }
 
 // AccountIndexLT applies the LT predicate on the "account_index" field.
 func AccountIndexLT(v int) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldAccountIndex), v))
-	})
+	return predicate.Account(sql.FieldLT(FieldAccountIndex, v))
 }
 
 // AccountIndexLTE applies the LTE predicate on the "account_index" field.
 func AccountIndexLTE(v int) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldAccountIndex), v))
-	})
+	return predicate.Account(sql.FieldLTE(FieldAccountIndex, v))
 }
 
 // AccountIndexIsNil applies the IsNil predicate on the "account_index" field.
 func AccountIndexIsNil() predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldAccountIndex)))
-	})
+	return predicate.Account(sql.FieldIsNull(FieldAccountIndex))
 }
 
 // AccountIndexNotNil applies the NotNil predicate on the "account_index" field.
 func AccountIndexNotNil() predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldAccountIndex)))
-	})
+	return predicate.Account(sql.FieldNotNull(FieldAccountIndex))
 }
 
 // PrivateKeyEQ applies the EQ predicate on the "private_key" field.
 func PrivateKeyEQ(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldPrivateKey), v))
-	})
+	return predicate.Account(sql.FieldEQ(FieldPrivateKey, v))
 }
 
 // PrivateKeyNEQ applies the NEQ predicate on the "private_key" field.
 func PrivateKeyNEQ(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldPrivateKey), v))
-	})
+	return predicate.Account(sql.FieldNEQ(FieldPrivateKey, v))
 }
 
 // PrivateKeyIn applies the In predicate on the "private_key" field.
 func PrivateKeyIn(vs ...string) predicate.Account {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldPrivateKey), v...))
-	})
+	return predicate.Account(sql.FieldIn(FieldPrivateKey, vs...))
 }
 
 // PrivateKeyNotIn applies the NotIn predicate on the "private_key" field.
 func PrivateKeyNotIn(vs ...string) predicate.Account {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldPrivateKey), v...))
-	})
+	return predicate.Account(sql.FieldNotIn(FieldPrivateKey, vs...))
 }
 
 // PrivateKeyGT applies the GT predicate on the "private_key" field.
 func PrivateKeyGT(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldPrivateKey), v))
-	})
+	return predicate.Account(sql.FieldGT(FieldPrivateKey, v))
 }
 
 // PrivateKeyGTE applies the GTE predicate on the "private_key" field.
 func PrivateKeyGTE(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldPrivateKey), v))
-	})
+	return predicate.Account(sql.FieldGTE(FieldPrivateKey, v))
 }
 
 // PrivateKeyLT applies the LT predicate on the "private_key" field.
 func PrivateKeyLT(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldPrivateKey), v))
-	})
+	return predicate.Account(sql.FieldLT(FieldPrivateKey, v))
 }
 
 // PrivateKeyLTE applies the LTE predicate on the "private_key" field.
 func PrivateKeyLTE(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldPrivateKey), v))
-	})
+	return predicate.Account(sql.FieldLTE(FieldPrivateKey, v))
 }
 
 // PrivateKeyContains applies the Contains predicate on the "private_key" field.
 func PrivateKeyContains(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldPrivateKey), v))
-	})
+	return predicate.Account(sql.FieldContains(FieldPrivateKey, v))
 }
 
 // PrivateKeyHasPrefix applies the HasPrefix predicate on the "private_key" field.
 func PrivateKeyHasPrefix(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldPrivateKey), v))
-	})
+	return predicate.Account(sql.FieldHasPrefix(FieldPrivateKey, v))
 }
 
 // PrivateKeyHasSuffix applies the HasSuffix predicate on the "private_key" field.
 func PrivateKeyHasSuffix(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldPrivateKey), v))
-	})
+	return predicate.Account(sql.FieldHasSuffix(FieldPrivateKey, v))
 }
 
 // PrivateKeyIsNil applies the IsNil predicate on the "private_key" field.
 func PrivateKeyIsNil() predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldPrivateKey)))
-	})
+	return predicate.Account(sql.FieldIsNull(FieldPrivateKey))
 }
 
 // PrivateKeyNotNil applies the NotNil predicate on the "private_key" field.
 func PrivateKeyNotNil() predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldPrivateKey)))
-	})
+	return predicate.Account(sql.FieldNotNull(FieldPrivateKey))
 }
 
 // PrivateKeyEqualFold applies the EqualFold predicate on the "private_key" field.
 func PrivateKeyEqualFold(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldPrivateKey), v))
-	})
+	return predicate.Account(sql.FieldEqualFold(FieldPrivateKey, v))
 }
 
 // PrivateKeyContainsFold applies the ContainsFold predicate on the "private_key" field.
 func PrivateKeyContainsFold(v string) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldPrivateKey), v))
-	})
+	return predicate.Account(sql.FieldContainsFold(FieldPrivateKey, v))
 }
 
 // WorkEQ applies the EQ predicate on the "work" field.
 func WorkEQ(v bool) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldWork), v))
-	})
+	return predicate.Account(sql.FieldEQ(FieldWork, v))
 }
 
 // WorkNEQ applies the NEQ predicate on the "work" field.
 func WorkNEQ(v bool) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldWork), v))
-	})
+	return predicate.Account(sql.FieldNEQ(FieldWork, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Account(sql.FieldEQ(FieldCreatedAt, v))
 }
 
 // CreatedAtNEQ applies the NEQ predicate on the "created_at" field.
 func CreatedAtNEQ(v time.Time) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Account(sql.FieldNEQ(FieldCreatedAt, v))
 }
 
 // CreatedAtIn applies the In predicate on the "created_at" field.
 func CreatedAtIn(vs ...time.Time) predicate.Account {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldCreatedAt), v...))
-	})
+	return predicate.Account(sql.FieldIn(FieldCreatedAt, vs...))
 }
 
 // CreatedAtNotIn applies the NotIn predicate on the "created_at" field.
 func CreatedAtNotIn(vs ...time.Time) predicate.Account {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldCreatedAt), v...))
-	})
+	return predicate.Account(sql.FieldNotIn(FieldCreatedAt, vs...))
 }
 
 // CreatedAtGT applies the GT predicate on the "created_at" field.
 func CreatedAtGT(v time.Time) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Account(sql.FieldGT(FieldCreatedAt, v))
 }
 
 // CreatedAtGTE applies the GTE predicate on the "created_at" field.
 func CreatedAtGTE(v time.Time) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Account(sql.FieldGTE(FieldCreatedAt, v))
 }
 
 // CreatedAtLT applies the LT predicate on the "created_at" field.
 func CreatedAtLT(v time.Time) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Account(sql.FieldLT(FieldCreatedAt, v))
 }
 
 // CreatedAtLTE applies the LTE predicate on the "created_at" field.
 func CreatedAtLTE(v time.Time) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Account(sql.FieldLTE(FieldCreatedAt, v))
 }
 
 // HasWallet applies the HasEdge predicate on the "wallet" edge.
@@ -533,7 +351,6 @@ func HasWallet() predicate.Account {
 	return predicate.Account(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(WalletTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, WalletTable, WalletColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -543,11 +360,7 @@ func HasWallet() predicate.Account {
 // HasWalletWith applies the HasEdge predicate on the "wallet" edge with a given conditions (other predicates).
 func HasWalletWith(preds ...predicate.Wallet) predicate.Account {
 	return predicate.Account(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(WalletInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, WalletTable, WalletColumn),
-		)
+		step := newWalletStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -561,7 +374,6 @@ func HasBlocks() predicate.Account {
 	return predicate.Account(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(BlocksTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, BlocksTable, BlocksColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -571,11 +383,7 @@ func HasBlocks() predicate.Account {
 // HasBlocksWith applies the HasEdge predicate on the "blocks" edge with a given conditions (other predicates).
 func HasBlocksWith(preds ...predicate.Block) predicate.Account {
 	return predicate.Account(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(BlocksInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, BlocksTable, BlocksColumn),
-		)
+		step := newBlocksStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -586,32 +394,15 @@ func HasBlocksWith(preds ...predicate.Block) predicate.Account {
 
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Account) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s1 := s.Clone().SetP(nil)
-		for _, p := range predicates {
-			p(s1)
-		}
-		s.Where(s1.P())
-	})
+	return predicate.Account(sql.AndPredicates(predicates...))
 }
 
 // Or groups predicates with the OR operator between them.
 func Or(predicates ...predicate.Account) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		s1 := s.Clone().SetP(nil)
-		for i, p := range predicates {
-			if i > 0 {
-				s1.Or()
-			}
-			p(s1)
-		}
-		s.Where(s1.P())
-	})
+	return predicate.Account(sql.OrPredicates(predicates...))
 }
 
 // Not applies the not operator on the given predicate.
 func Not(p predicate.Account) predicate.Account {
-	return predicate.Account(func(s *sql.Selector) {
-		p(s.Not())
-	})
+	return predicate.Account(sql.NotPredicates(p))
 }

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/wallet"
@@ -32,7 +33,8 @@ type Account struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AccountQuery when eager-loading is set.
-	Edges AccountEdges `json:"edges"`
+	Edges        AccountEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // AccountEdges holds the relations/edges for other nodes in the graph.
@@ -49,12 +51,10 @@ type AccountEdges struct {
 // WalletOrErr returns the Wallet value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e AccountEdges) WalletOrErr() (*Wallet, error) {
-	if e.loadedTypes[0] {
-		if e.Wallet == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: wallet.Label}
-		}
+	if e.Wallet != nil {
 		return e.Wallet, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: wallet.Label}
 	}
 	return nil, &NotLoadedError{edge: "wallet"}
 }
@@ -69,8 +69,8 @@ func (e AccountEdges) BlocksOrErr() ([]*Block, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Account) scanValues(columns []string) ([]interface{}, error) {
-	values := make([]interface{}, len(columns))
+func (*Account) scanValues(columns []string) ([]any, error) {
+	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
 		case account.FieldWork:
@@ -84,7 +84,7 @@ func (*Account) scanValues(columns []string) ([]interface{}, error) {
 		case account.FieldID, account.FieldWalletID:
 			values[i] = new(uuid.UUID)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Account", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -92,7 +92,7 @@ func (*Account) scanValues(columns []string) ([]interface{}, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Account fields.
-func (a *Account) assignValues(columns []string, values []interface{}) error {
+func (_m *Account) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -102,114 +102,116 @@ func (a *Account) assignValues(columns []string, values []interface{}) error {
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				a.ID = *value
+				_m.ID = *value
 			}
 		case account.FieldWalletID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field wallet_id", values[i])
 			} else if value != nil {
-				a.WalletID = *value
+				_m.WalletID = *value
 			}
 		case account.FieldAddress:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field address", values[i])
 			} else if value.Valid {
-				a.Address = value.String
+				_m.Address = value.String
 			}
 		case account.FieldAccountIndex:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field account_index", values[i])
 			} else if value.Valid {
-				a.AccountIndex = new(int)
-				*a.AccountIndex = int(value.Int64)
+				_m.AccountIndex = new(int)
+				*_m.AccountIndex = int(value.Int64)
 			}
 		case account.FieldPrivateKey:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field private_key", values[i])
 			} else if value.Valid {
-				a.PrivateKey = new(string)
-				*a.PrivateKey = value.String
+				_m.PrivateKey = new(string)
+				*_m.PrivateKey = value.String
 			}
 		case account.FieldWork:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field work", values[i])
 			} else if value.Valid {
-				a.Work = value.Bool
+				_m.Work = value.Bool
 			}
 		case account.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				a.CreatedAt = value.Time
+				_m.CreatedAt = value.Time
 			}
+		default:
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Account.
+// This includes values selected through modifiers, order, etc.
+func (_m *Account) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
+}
+
 // QueryWallet queries the "wallet" edge of the Account entity.
-func (a *Account) QueryWallet() *WalletQuery {
-	return (&AccountClient{config: a.config}).QueryWallet(a)
+func (_m *Account) QueryWallet() *WalletQuery {
+	return NewAccountClient(_m.config).QueryWallet(_m)
 }
 
 // QueryBlocks queries the "blocks" edge of the Account entity.
-func (a *Account) QueryBlocks() *BlockQuery {
-	return (&AccountClient{config: a.config}).QueryBlocks(a)
+func (_m *Account) QueryBlocks() *BlockQuery {
+	return NewAccountClient(_m.config).QueryBlocks(_m)
 }
 
 // Update returns a builder for updating this Account.
 // Note that you need to call Account.Unwrap() before calling this method if this Account
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (a *Account) Update() *AccountUpdateOne {
-	return (&AccountClient{config: a.config}).UpdateOne(a)
+func (_m *Account) Update() *AccountUpdateOne {
+	return NewAccountClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the Account entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (a *Account) Unwrap() *Account {
-	_tx, ok := a.config.driver.(*txDriver)
+func (_m *Account) Unwrap() *Account {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: Account is not a transactional entity")
 	}
-	a.config.driver = _tx.drv
-	return a
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (a *Account) String() string {
+func (_m *Account) String() string {
 	var builder strings.Builder
 	builder.WriteString("Account(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", a.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("wallet_id=")
-	builder.WriteString(fmt.Sprintf("%v", a.WalletID))
+	builder.WriteString(fmt.Sprintf("%v", _m.WalletID))
 	builder.WriteString(", ")
 	builder.WriteString("address=")
-	builder.WriteString(a.Address)
+	builder.WriteString(_m.Address)
 	builder.WriteString(", ")
-	if v := a.AccountIndex; v != nil {
+	if v := _m.AccountIndex; v != nil {
 		builder.WriteString("account_index=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
-	if v := a.PrivateKey; v != nil {
+	if v := _m.PrivateKey; v != nil {
 		builder.WriteString("private_key=")
 		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")
 	builder.WriteString("work=")
-	builder.WriteString(fmt.Sprintf("%v", a.Work))
+	builder.WriteString(fmt.Sprintf("%v", _m.Work))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
-	builder.WriteString(a.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // Accounts is a parsable slice of Account.
 type Accounts []*Account
-
-func (a Accounts) config(cfg config) {
-	for _i := range a {
-		a[_i].config = cfg
-	}
-}

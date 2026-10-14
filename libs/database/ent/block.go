@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/block"
@@ -33,7 +34,8 @@ type Block struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the BlockQuery when eager-loading is set.
-	Edges BlockEdges `json:"edges"`
+	Edges        BlockEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // BlockEdges holds the relations/edges for other nodes in the graph.
@@ -48,19 +50,17 @@ type BlockEdges struct {
 // AccountOrErr returns the Account value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e BlockEdges) AccountOrErr() (*Account, error) {
-	if e.loadedTypes[0] {
-		if e.Account == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: account.Label}
-		}
+	if e.Account != nil {
 		return e.Account, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: account.Label}
 	}
 	return nil, &NotLoadedError{edge: "account"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Block) scanValues(columns []string) ([]interface{}, error) {
-	values := make([]interface{}, len(columns))
+func (*Block) scanValues(columns []string) ([]any, error) {
+	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
 		case block.FieldAccountID:
@@ -74,7 +74,7 @@ func (*Block) scanValues(columns []string) ([]interface{}, error) {
 		case block.FieldID:
 			values[i] = new(uuid.UUID)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Block", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -82,7 +82,7 @@ func (*Block) scanValues(columns []string) ([]interface{}, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Block fields.
-func (b *Block) assignValues(columns []string, values []interface{}) error {
+func (_m *Block) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -92,26 +92,26 @@ func (b *Block) assignValues(columns []string, values []interface{}) error {
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				b.ID = *value
+				_m.ID = *value
 			}
 		case block.FieldAccountID:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field account_id", values[i])
 			} else if value.Valid {
-				b.AccountID = new(uuid.UUID)
-				*b.AccountID = *value.S.(*uuid.UUID)
+				_m.AccountID = new(uuid.UUID)
+				*_m.AccountID = *value.S.(*uuid.UUID)
 			}
 		case block.FieldBlockHash:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field block_hash", values[i])
 			} else if value.Valid {
-				b.BlockHash = value.String
+				_m.BlockHash = value.String
 			}
 		case block.FieldBlock:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field block", values[i])
 			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &b.Block); err != nil {
+				if err := json.Unmarshal(*value, &_m.Block); err != nil {
 					return fmt.Errorf("unmarshal field block: %w", err)
 				}
 			}
@@ -119,84 +119,86 @@ func (b *Block) assignValues(columns []string, values []interface{}) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field send_id", values[i])
 			} else if value.Valid {
-				b.SendID = new(string)
-				*b.SendID = value.String
+				_m.SendID = new(string)
+				*_m.SendID = value.String
 			}
 		case block.FieldSubtype:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field subtype", values[i])
 			} else if value.Valid {
-				b.Subtype = value.String
+				_m.Subtype = value.String
 			}
 		case block.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				b.CreatedAt = value.Time
+				_m.CreatedAt = value.Time
 			}
+		default:
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Block.
+// This includes values selected through modifiers, order, etc.
+func (_m *Block) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
+}
+
 // QueryAccount queries the "account" edge of the Block entity.
-func (b *Block) QueryAccount() *AccountQuery {
-	return (&BlockClient{config: b.config}).QueryAccount(b)
+func (_m *Block) QueryAccount() *AccountQuery {
+	return NewBlockClient(_m.config).QueryAccount(_m)
 }
 
 // Update returns a builder for updating this Block.
 // Note that you need to call Block.Unwrap() before calling this method if this Block
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (b *Block) Update() *BlockUpdateOne {
-	return (&BlockClient{config: b.config}).UpdateOne(b)
+func (_m *Block) Update() *BlockUpdateOne {
+	return NewBlockClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the Block entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (b *Block) Unwrap() *Block {
-	_tx, ok := b.config.driver.(*txDriver)
+func (_m *Block) Unwrap() *Block {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: Block is not a transactional entity")
 	}
-	b.config.driver = _tx.drv
-	return b
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (b *Block) String() string {
+func (_m *Block) String() string {
 	var builder strings.Builder
 	builder.WriteString("Block(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", b.ID))
-	if v := b.AccountID; v != nil {
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	if v := _m.AccountID; v != nil {
 		builder.WriteString("account_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
 	builder.WriteString("block_hash=")
-	builder.WriteString(b.BlockHash)
+	builder.WriteString(_m.BlockHash)
 	builder.WriteString(", ")
 	builder.WriteString("block=")
-	builder.WriteString(fmt.Sprintf("%v", b.Block))
+	builder.WriteString(fmt.Sprintf("%v", _m.Block))
 	builder.WriteString(", ")
-	if v := b.SendID; v != nil {
+	if v := _m.SendID; v != nil {
 		builder.WriteString("send_id=")
 		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")
 	builder.WriteString("subtype=")
-	builder.WriteString(b.Subtype)
+	builder.WriteString(_m.Subtype)
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
-	builder.WriteString(b.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // Blocks is a parsable slice of Block.
 type Blocks []*Block
-
-func (b Blocks) config(cfg config) {
-	for _i := range b {
-		b[_i].config = cfg
-	}
-}

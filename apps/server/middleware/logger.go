@@ -158,7 +158,7 @@ func (l *defaultLogEntry) Write(status, bytes int, header http.Header, elapsed t
 		cW(l.buf, l.useColor, nRed, "%s", elapsed)
 	}
 
-	log.Infof(l.buf.String())
+	log.Infof("%s", l.buf.String())
 }
 
 func init() {

@@ -5,6 +5,8 @@ package account
 import (
 	"time"
 
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
 )
 
@@ -80,3 +82,76 @@ var (
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
+
+// OrderOption defines the ordering options for the Account queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByWalletID orders the results by the wallet_id field.
+func ByWalletID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWalletID, opts...).ToFunc()
+}
+
+// ByAddress orders the results by the address field.
+func ByAddress(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAddress, opts...).ToFunc()
+}
+
+// ByAccountIndex orders the results by the account_index field.
+func ByAccountIndex(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAccountIndex, opts...).ToFunc()
+}
+
+// ByPrivateKey orders the results by the private_key field.
+func ByPrivateKey(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPrivateKey, opts...).ToFunc()
+}
+
+// ByWork orders the results by the work field.
+func ByWork(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWork, opts...).ToFunc()
+}
+
+// ByCreatedAt orders the results by the created_at field.
+func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
+}
+
+// ByWalletField orders the results by wallet field.
+func ByWalletField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newWalletStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByBlocksCount orders the results by blocks count.
+func ByBlocksCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newBlocksStep(), opts...)
+	}
+}
+
+// ByBlocks orders the results by blocks terms.
+func ByBlocks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBlocksStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newWalletStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(WalletInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, WalletTable, WalletColumn),
+	)
+}
+func newBlocksStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(BlocksInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, BlocksTable, BlocksColumn),
+	)
+}

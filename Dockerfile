@@ -1,5 +1,5 @@
 # Stage 1: Build the binary with OpenCL dependencies
-FROM golang:1.22-bullseye as builder
+FROM golang:1.24-bookworm AS builder
 
 ARG VERSION
 
@@ -16,7 +16,7 @@ RUN go work sync
 RUN CGO_ENABLED=0 go build -a -ldflags "-s -w -X main.Version=${VERSION}" -o pippin ./apps/cli
 
 # Stage 2: Use a smaller base image
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
 # Set the working directory inside the container
 WORKDIR /root/

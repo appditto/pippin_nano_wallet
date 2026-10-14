@@ -7,17 +7,18 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"reflect"
 
 	"github.com/appditto/pippin_nano_wallet/libs/database/ent/migrate"
 	"github.com/google/uuid"
 
-	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
-	"github.com/appditto/pippin_nano_wallet/libs/database/ent/block"
-	"github.com/appditto/pippin_nano_wallet/libs/database/ent/wallet"
-
+	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/appditto/pippin_nano_wallet/libs/database/ent/account"
+	"github.com/appditto/pippin_nano_wallet/libs/database/ent/block"
+	"github.com/appditto/pippin_nano_wallet/libs/database/ent/wallet"
 )
 
 // Client is the client that holds all ent builders.
@@ -35,9 +36,7 @@ type Client struct {
 
 // NewClient creates a new client configured with the given options.
 func NewClient(opts ...Option) *Client {
-	cfg := config{log: log.Println, hooks: &hooks{}}
-	cfg.options(opts...)
-	client := &Client{config: cfg}
+	client := &Client{config: newConfig(opts...)}
 	client.init()
 	return client
 }
@@ -47,6 +46,62 @@ func (c *Client) init() {
 	c.Account = NewAccountClient(c.config)
 	c.Block = NewBlockClient(c.config)
 	c.Wallet = NewWalletClient(c.config)
+}
+
+type (
+	// config is the configuration for the client and its builder.
+	config struct {
+		// driver used for executing database requests.
+		driver dialect.Driver
+		// debug enable a debug logging.
+		debug bool
+		// log used for logging on debug mode.
+		log func(...any)
+		// hooks to execute on mutations.
+		hooks *hooks
+		// interceptors to execute on queries.
+		inters *inters
+	}
+	// Option function to configure the client.
+	Option func(*config)
+)
+
+// newConfig creates a new config for the client.
+func newConfig(opts ...Option) config {
+	cfg := config{log: log.Println, hooks: &hooks{}, inters: &inters{}}
+	cfg.options(opts...)
+	return cfg
+}
+
+// options applies the options on the config object.
+func (c *config) options(opts ...Option) {
+	for _, opt := range opts {
+		opt(c)
+	}
+	if c.debug {
+		c.driver = dialect.Debug(c.driver, c.log)
+	}
+}
+
+// Debug enables debug logging on the ent.Driver.
+func Debug() Option {
+	return func(c *config) {
+		c.debug = true
+	}
+}
+
+// Log sets the logging function for debug mode.
+func Log(fn func(...any)) Option {
+	return func(c *config) {
+		c.log = fn
+	}
+}
+
+// Driver configures the client driver.
+func Driver(driver dialect.Driver) Option {
+	return func(c *config) {
+		c.driver = driver
+	}
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -65,11 +120,14 @@ func Open(driverName, dataSourceName string, options ...Option) (*Client, error)
 	}
 }
 
+// ErrTxStarted is returned when trying to start a new transaction from a transactional client.
+var ErrTxStarted = errors.New("ent: cannot start a transaction within a transaction")
+
 // Tx returns a new transactional client. The provided context
 // is used until the transaction is committed or rolled back.
 func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	if _, ok := c.driver.(*txDriver); ok {
-		return nil, errors.New("ent: cannot start a transaction within a transaction")
+		return nil, ErrTxStarted
 	}
 	tx, err := newTx(ctx, c.driver)
 	if err != nil {
@@ -138,6 +196,28 @@ func (c *Client) Use(hooks ...Hook) {
 	c.Wallet.Use(hooks...)
 }
 
+// Intercept adds the query interceptors to all the entity clients.
+// In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
+func (c *Client) Intercept(interceptors ...Interceptor) {
+	c.Account.Intercept(interceptors...)
+	c.Block.Intercept(interceptors...)
+	c.Wallet.Intercept(interceptors...)
+}
+
+// Mutate implements the ent.Mutator interface.
+func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
+	switch m := m.(type) {
+	case *AccountMutation:
+		return c.Account.mutate(ctx, m)
+	case *BlockMutation:
+		return c.Block.mutate(ctx, m)
+	case *WalletMutation:
+		return c.Wallet.mutate(ctx, m)
+	default:
+		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
+}
+
 // AccountClient is a client for the Account schema.
 type AccountClient struct {
 	config
@@ -154,6 +234,12 @@ func (c *AccountClient) Use(hooks ...Hook) {
 	c.hooks.Account = append(c.hooks.Account, hooks...)
 }
 
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `account.Intercept(f(g(h())))`.
+func (c *AccountClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Account = append(c.inters.Account, interceptors...)
+}
+
 // Create returns a builder for creating a Account entity.
 func (c *AccountClient) Create() *AccountCreate {
 	mutation := newAccountMutation(c.config, OpCreate)
@@ -165,6 +251,21 @@ func (c *AccountClient) CreateBulk(builders ...*AccountCreate) *AccountCreateBul
 	return &AccountCreateBulk{config: c.config, builders: builders}
 }
 
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AccountClient) MapCreateBulk(slice any, setFunc func(*AccountCreate, int)) *AccountCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AccountCreateBulk{err: fmt.Errorf("calling to AccountClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AccountCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AccountCreateBulk{config: c.config, builders: builders}
+}
+
 // Update returns an update builder for Account.
 func (c *AccountClient) Update() *AccountUpdate {
 	mutation := newAccountMutation(c.config, OpUpdate)
@@ -172,8 +273,8 @@ func (c *AccountClient) Update() *AccountUpdate {
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *AccountClient) UpdateOne(a *Account) *AccountUpdateOne {
-	mutation := newAccountMutation(c.config, OpUpdateOne, withAccount(a))
+func (c *AccountClient) UpdateOne(_m *Account) *AccountUpdateOne {
+	mutation := newAccountMutation(c.config, OpUpdateOne, withAccount(_m))
 	return &AccountUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
@@ -190,11 +291,11 @@ func (c *AccountClient) Delete() *AccountDelete {
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *AccountClient) DeleteOne(a *Account) *AccountDeleteOne {
-	return c.DeleteOneID(a.ID)
+func (c *AccountClient) DeleteOne(_m *Account) *AccountDeleteOne {
+	return c.DeleteOneID(_m.ID)
 }
 
-// DeleteOne returns a builder for deleting the given entity by its id.
+// DeleteOneID returns a builder for deleting the given entity by its id.
 func (c *AccountClient) DeleteOneID(id uuid.UUID) *AccountDeleteOne {
 	builder := c.Delete().Where(account.ID(id))
 	builder.mutation.id = &id
@@ -206,6 +307,8 @@ func (c *AccountClient) DeleteOneID(id uuid.UUID) *AccountDeleteOne {
 func (c *AccountClient) Query() *AccountQuery {
 	return &AccountQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeAccount},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -224,32 +327,32 @@ func (c *AccountClient) GetX(ctx context.Context, id uuid.UUID) *Account {
 }
 
 // QueryWallet queries the wallet edge of a Account.
-func (c *AccountClient) QueryWallet(a *Account) *WalletQuery {
-	query := &WalletQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := a.ID
+func (c *AccountClient) QueryWallet(_m *Account) *WalletQuery {
+	query := (&WalletClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(account.Table, account.FieldID, id),
 			sqlgraph.To(wallet.Table, wallet.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, account.WalletTable, account.WalletColumn),
 		)
-		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
 }
 
 // QueryBlocks queries the blocks edge of a Account.
-func (c *AccountClient) QueryBlocks(a *Account) *BlockQuery {
-	query := &BlockQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := a.ID
+func (c *AccountClient) QueryBlocks(_m *Account) *BlockQuery {
+	query := (&BlockClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(account.Table, account.FieldID, id),
 			sqlgraph.To(block.Table, block.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, account.BlocksTable, account.BlocksColumn),
 		)
-		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
@@ -258,6 +361,26 @@ func (c *AccountClient) QueryBlocks(a *Account) *BlockQuery {
 // Hooks returns the client hooks.
 func (c *AccountClient) Hooks() []Hook {
 	return c.hooks.Account
+}
+
+// Interceptors returns the client interceptors.
+func (c *AccountClient) Interceptors() []Interceptor {
+	return c.inters.Account
+}
+
+func (c *AccountClient) mutate(ctx context.Context, m *AccountMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AccountCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AccountUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AccountUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AccountDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Account mutation op: %q", m.Op())
+	}
 }
 
 // BlockClient is a client for the Block schema.
@@ -276,6 +399,12 @@ func (c *BlockClient) Use(hooks ...Hook) {
 	c.hooks.Block = append(c.hooks.Block, hooks...)
 }
 
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `block.Intercept(f(g(h())))`.
+func (c *BlockClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Block = append(c.inters.Block, interceptors...)
+}
+
 // Create returns a builder for creating a Block entity.
 func (c *BlockClient) Create() *BlockCreate {
 	mutation := newBlockMutation(c.config, OpCreate)
@@ -287,6 +416,21 @@ func (c *BlockClient) CreateBulk(builders ...*BlockCreate) *BlockCreateBulk {
 	return &BlockCreateBulk{config: c.config, builders: builders}
 }
 
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *BlockClient) MapCreateBulk(slice any, setFunc func(*BlockCreate, int)) *BlockCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &BlockCreateBulk{err: fmt.Errorf("calling to BlockClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*BlockCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &BlockCreateBulk{config: c.config, builders: builders}
+}
+
 // Update returns an update builder for Block.
 func (c *BlockClient) Update() *BlockUpdate {
 	mutation := newBlockMutation(c.config, OpUpdate)
@@ -294,8 +438,8 @@ func (c *BlockClient) Update() *BlockUpdate {
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *BlockClient) UpdateOne(b *Block) *BlockUpdateOne {
-	mutation := newBlockMutation(c.config, OpUpdateOne, withBlock(b))
+func (c *BlockClient) UpdateOne(_m *Block) *BlockUpdateOne {
+	mutation := newBlockMutation(c.config, OpUpdateOne, withBlock(_m))
 	return &BlockUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
@@ -312,11 +456,11 @@ func (c *BlockClient) Delete() *BlockDelete {
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *BlockClient) DeleteOne(b *Block) *BlockDeleteOne {
-	return c.DeleteOneID(b.ID)
+func (c *BlockClient) DeleteOne(_m *Block) *BlockDeleteOne {
+	return c.DeleteOneID(_m.ID)
 }
 
-// DeleteOne returns a builder for deleting the given entity by its id.
+// DeleteOneID returns a builder for deleting the given entity by its id.
 func (c *BlockClient) DeleteOneID(id uuid.UUID) *BlockDeleteOne {
 	builder := c.Delete().Where(block.ID(id))
 	builder.mutation.id = &id
@@ -328,6 +472,8 @@ func (c *BlockClient) DeleteOneID(id uuid.UUID) *BlockDeleteOne {
 func (c *BlockClient) Query() *BlockQuery {
 	return &BlockQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeBlock},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -346,16 +492,16 @@ func (c *BlockClient) GetX(ctx context.Context, id uuid.UUID) *Block {
 }
 
 // QueryAccount queries the account edge of a Block.
-func (c *BlockClient) QueryAccount(b *Block) *AccountQuery {
-	query := &AccountQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := b.ID
+func (c *BlockClient) QueryAccount(_m *Block) *AccountQuery {
+	query := (&AccountClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(block.Table, block.FieldID, id),
 			sqlgraph.To(account.Table, account.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, block.AccountTable, block.AccountColumn),
 		)
-		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
@@ -364,6 +510,26 @@ func (c *BlockClient) QueryAccount(b *Block) *AccountQuery {
 // Hooks returns the client hooks.
 func (c *BlockClient) Hooks() []Hook {
 	return c.hooks.Block
+}
+
+// Interceptors returns the client interceptors.
+func (c *BlockClient) Interceptors() []Interceptor {
+	return c.inters.Block
+}
+
+func (c *BlockClient) mutate(ctx context.Context, m *BlockMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&BlockCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&BlockUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&BlockUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&BlockDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Block mutation op: %q", m.Op())
+	}
 }
 
 // WalletClient is a client for the Wallet schema.
@@ -382,6 +548,12 @@ func (c *WalletClient) Use(hooks ...Hook) {
 	c.hooks.Wallet = append(c.hooks.Wallet, hooks...)
 }
 
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `wallet.Intercept(f(g(h())))`.
+func (c *WalletClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Wallet = append(c.inters.Wallet, interceptors...)
+}
+
 // Create returns a builder for creating a Wallet entity.
 func (c *WalletClient) Create() *WalletCreate {
 	mutation := newWalletMutation(c.config, OpCreate)
@@ -393,6 +565,21 @@ func (c *WalletClient) CreateBulk(builders ...*WalletCreate) *WalletCreateBulk {
 	return &WalletCreateBulk{config: c.config, builders: builders}
 }
 
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *WalletClient) MapCreateBulk(slice any, setFunc func(*WalletCreate, int)) *WalletCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &WalletCreateBulk{err: fmt.Errorf("calling to WalletClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*WalletCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &WalletCreateBulk{config: c.config, builders: builders}
+}
+
 // Update returns an update builder for Wallet.
 func (c *WalletClient) Update() *WalletUpdate {
 	mutation := newWalletMutation(c.config, OpUpdate)
@@ -400,8 +587,8 @@ func (c *WalletClient) Update() *WalletUpdate {
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *WalletClient) UpdateOne(w *Wallet) *WalletUpdateOne {
-	mutation := newWalletMutation(c.config, OpUpdateOne, withWallet(w))
+func (c *WalletClient) UpdateOne(_m *Wallet) *WalletUpdateOne {
+	mutation := newWalletMutation(c.config, OpUpdateOne, withWallet(_m))
 	return &WalletUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
@@ -418,11 +605,11 @@ func (c *WalletClient) Delete() *WalletDelete {
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *WalletClient) DeleteOne(w *Wallet) *WalletDeleteOne {
-	return c.DeleteOneID(w.ID)
+func (c *WalletClient) DeleteOne(_m *Wallet) *WalletDeleteOne {
+	return c.DeleteOneID(_m.ID)
 }
 
-// DeleteOne returns a builder for deleting the given entity by its id.
+// DeleteOneID returns a builder for deleting the given entity by its id.
 func (c *WalletClient) DeleteOneID(id uuid.UUID) *WalletDeleteOne {
 	builder := c.Delete().Where(wallet.ID(id))
 	builder.mutation.id = &id
@@ -434,6 +621,8 @@ func (c *WalletClient) DeleteOneID(id uuid.UUID) *WalletDeleteOne {
 func (c *WalletClient) Query() *WalletQuery {
 	return &WalletQuery{
 		config: c.config,
+		ctx:    &QueryContext{Type: TypeWallet},
+		inters: c.Interceptors(),
 	}
 }
 
@@ -452,16 +641,16 @@ func (c *WalletClient) GetX(ctx context.Context, id uuid.UUID) *Wallet {
 }
 
 // QueryAccounts queries the accounts edge of a Wallet.
-func (c *WalletClient) QueryAccounts(w *Wallet) *AccountQuery {
-	query := &AccountQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := w.ID
+func (c *WalletClient) QueryAccounts(_m *Wallet) *AccountQuery {
+	query := (&AccountClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(wallet.Table, wallet.FieldID, id),
 			sqlgraph.To(account.Table, account.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, wallet.AccountsTable, wallet.AccountsColumn),
 		)
-		fromV = sqlgraph.Neighbors(w.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
@@ -471,3 +660,33 @@ func (c *WalletClient) QueryAccounts(w *Wallet) *AccountQuery {
 func (c *WalletClient) Hooks() []Hook {
 	return c.hooks.Wallet
 }
+
+// Interceptors returns the client interceptors.
+func (c *WalletClient) Interceptors() []Interceptor {
+	return c.inters.Wallet
+}
+
+func (c *WalletClient) mutate(ctx context.Context, m *WalletMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&WalletCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&WalletUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&WalletUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&WalletDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Wallet mutation op: %q", m.Op())
+	}
+}
+
+// hooks and interceptors per client, for fast access.
+type (
+	hooks struct {
+		Account, Block, Wallet []ent.Hook
+	}
+	inters struct {
+		Account, Block, Wallet []ent.Interceptor
+	}
+)

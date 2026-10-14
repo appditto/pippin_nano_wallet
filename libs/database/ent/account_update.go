@@ -25,177 +25,160 @@ type AccountUpdate struct {
 }
 
 // Where appends a list predicates to the AccountUpdate builder.
-func (au *AccountUpdate) Where(ps ...predicate.Account) *AccountUpdate {
-	au.mutation.Where(ps...)
-	return au
+func (_u *AccountUpdate) Where(ps ...predicate.Account) *AccountUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // SetWalletID sets the "wallet_id" field.
-func (au *AccountUpdate) SetWalletID(u uuid.UUID) *AccountUpdate {
-	au.mutation.SetWalletID(u)
-	return au
+func (_u *AccountUpdate) SetWalletID(v uuid.UUID) *AccountUpdate {
+	_u.mutation.SetWalletID(v)
+	return _u
+}
+
+// SetNillableWalletID sets the "wallet_id" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableWalletID(v *uuid.UUID) *AccountUpdate {
+	if v != nil {
+		_u.SetWalletID(*v)
+	}
+	return _u
 }
 
 // SetAddress sets the "address" field.
-func (au *AccountUpdate) SetAddress(s string) *AccountUpdate {
-	au.mutation.SetAddress(s)
-	return au
+func (_u *AccountUpdate) SetAddress(v string) *AccountUpdate {
+	_u.mutation.SetAddress(v)
+	return _u
+}
+
+// SetNillableAddress sets the "address" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableAddress(v *string) *AccountUpdate {
+	if v != nil {
+		_u.SetAddress(*v)
+	}
+	return _u
 }
 
 // SetAccountIndex sets the "account_index" field.
-func (au *AccountUpdate) SetAccountIndex(i int) *AccountUpdate {
-	au.mutation.ResetAccountIndex()
-	au.mutation.SetAccountIndex(i)
-	return au
+func (_u *AccountUpdate) SetAccountIndex(v int) *AccountUpdate {
+	_u.mutation.ResetAccountIndex()
+	_u.mutation.SetAccountIndex(v)
+	return _u
 }
 
 // SetNillableAccountIndex sets the "account_index" field if the given value is not nil.
-func (au *AccountUpdate) SetNillableAccountIndex(i *int) *AccountUpdate {
-	if i != nil {
-		au.SetAccountIndex(*i)
+func (_u *AccountUpdate) SetNillableAccountIndex(v *int) *AccountUpdate {
+	if v != nil {
+		_u.SetAccountIndex(*v)
 	}
-	return au
+	return _u
 }
 
-// AddAccountIndex adds i to the "account_index" field.
-func (au *AccountUpdate) AddAccountIndex(i int) *AccountUpdate {
-	au.mutation.AddAccountIndex(i)
-	return au
+// AddAccountIndex adds value to the "account_index" field.
+func (_u *AccountUpdate) AddAccountIndex(v int) *AccountUpdate {
+	_u.mutation.AddAccountIndex(v)
+	return _u
 }
 
 // ClearAccountIndex clears the value of the "account_index" field.
-func (au *AccountUpdate) ClearAccountIndex() *AccountUpdate {
-	au.mutation.ClearAccountIndex()
-	return au
+func (_u *AccountUpdate) ClearAccountIndex() *AccountUpdate {
+	_u.mutation.ClearAccountIndex()
+	return _u
 }
 
 // SetPrivateKey sets the "private_key" field.
-func (au *AccountUpdate) SetPrivateKey(s string) *AccountUpdate {
-	au.mutation.SetPrivateKey(s)
-	return au
+func (_u *AccountUpdate) SetPrivateKey(v string) *AccountUpdate {
+	_u.mutation.SetPrivateKey(v)
+	return _u
 }
 
 // SetNillablePrivateKey sets the "private_key" field if the given value is not nil.
-func (au *AccountUpdate) SetNillablePrivateKey(s *string) *AccountUpdate {
-	if s != nil {
-		au.SetPrivateKey(*s)
+func (_u *AccountUpdate) SetNillablePrivateKey(v *string) *AccountUpdate {
+	if v != nil {
+		_u.SetPrivateKey(*v)
 	}
-	return au
+	return _u
 }
 
 // ClearPrivateKey clears the value of the "private_key" field.
-func (au *AccountUpdate) ClearPrivateKey() *AccountUpdate {
-	au.mutation.ClearPrivateKey()
-	return au
+func (_u *AccountUpdate) ClearPrivateKey() *AccountUpdate {
+	_u.mutation.ClearPrivateKey()
+	return _u
 }
 
 // SetWork sets the "work" field.
-func (au *AccountUpdate) SetWork(b bool) *AccountUpdate {
-	au.mutation.SetWork(b)
-	return au
+func (_u *AccountUpdate) SetWork(v bool) *AccountUpdate {
+	_u.mutation.SetWork(v)
+	return _u
 }
 
 // SetNillableWork sets the "work" field if the given value is not nil.
-func (au *AccountUpdate) SetNillableWork(b *bool) *AccountUpdate {
-	if b != nil {
-		au.SetWork(*b)
+func (_u *AccountUpdate) SetNillableWork(v *bool) *AccountUpdate {
+	if v != nil {
+		_u.SetWork(*v)
 	}
-	return au
+	return _u
 }
 
 // SetWallet sets the "wallet" edge to the Wallet entity.
-func (au *AccountUpdate) SetWallet(w *Wallet) *AccountUpdate {
-	return au.SetWalletID(w.ID)
+func (_u *AccountUpdate) SetWallet(v *Wallet) *AccountUpdate {
+	return _u.SetWalletID(v.ID)
 }
 
 // AddBlockIDs adds the "blocks" edge to the Block entity by IDs.
-func (au *AccountUpdate) AddBlockIDs(ids ...uuid.UUID) *AccountUpdate {
-	au.mutation.AddBlockIDs(ids...)
-	return au
+func (_u *AccountUpdate) AddBlockIDs(ids ...uuid.UUID) *AccountUpdate {
+	_u.mutation.AddBlockIDs(ids...)
+	return _u
 }
 
 // AddBlocks adds the "blocks" edges to the Block entity.
-func (au *AccountUpdate) AddBlocks(b ...*Block) *AccountUpdate {
-	ids := make([]uuid.UUID, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
+func (_u *AccountUpdate) AddBlocks(v ...*Block) *AccountUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return au.AddBlockIDs(ids...)
+	return _u.AddBlockIDs(ids...)
 }
 
 // Mutation returns the AccountMutation object of the builder.
-func (au *AccountUpdate) Mutation() *AccountMutation {
-	return au.mutation
+func (_u *AccountUpdate) Mutation() *AccountMutation {
+	return _u.mutation
 }
 
 // ClearWallet clears the "wallet" edge to the Wallet entity.
-func (au *AccountUpdate) ClearWallet() *AccountUpdate {
-	au.mutation.ClearWallet()
-	return au
+func (_u *AccountUpdate) ClearWallet() *AccountUpdate {
+	_u.mutation.ClearWallet()
+	return _u
 }
 
 // ClearBlocks clears all "blocks" edges to the Block entity.
-func (au *AccountUpdate) ClearBlocks() *AccountUpdate {
-	au.mutation.ClearBlocks()
-	return au
+func (_u *AccountUpdate) ClearBlocks() *AccountUpdate {
+	_u.mutation.ClearBlocks()
+	return _u
 }
 
 // RemoveBlockIDs removes the "blocks" edge to Block entities by IDs.
-func (au *AccountUpdate) RemoveBlockIDs(ids ...uuid.UUID) *AccountUpdate {
-	au.mutation.RemoveBlockIDs(ids...)
-	return au
+func (_u *AccountUpdate) RemoveBlockIDs(ids ...uuid.UUID) *AccountUpdate {
+	_u.mutation.RemoveBlockIDs(ids...)
+	return _u
 }
 
 // RemoveBlocks removes "blocks" edges to Block entities.
-func (au *AccountUpdate) RemoveBlocks(b ...*Block) *AccountUpdate {
-	ids := make([]uuid.UUID, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
+func (_u *AccountUpdate) RemoveBlocks(v ...*Block) *AccountUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return au.RemoveBlockIDs(ids...)
+	return _u.RemoveBlockIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (au *AccountUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(au.hooks) == 0 {
-		if err = au.check(); err != nil {
-			return 0, err
-		}
-		affected, err = au.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AccountMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = au.check(); err != nil {
-				return 0, err
-			}
-			au.mutation = mutation
-			affected, err = au.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(au.hooks) - 1; i >= 0; i-- {
-			if au.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = au.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, au.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+func (_u *AccountUpdate) Save(ctx context.Context) (int, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (au *AccountUpdate) SaveX(ctx context.Context) int {
-	affected, err := au.Save(ctx)
+func (_u *AccountUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -203,102 +186,70 @@ func (au *AccountUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (au *AccountUpdate) Exec(ctx context.Context) error {
-	_, err := au.Save(ctx)
+func (_u *AccountUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (au *AccountUpdate) ExecX(ctx context.Context) {
-	if err := au.Exec(ctx); err != nil {
+func (_u *AccountUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (au *AccountUpdate) check() error {
-	if v, ok := au.mutation.Address(); ok {
+func (_u *AccountUpdate) check() error {
+	if v, ok := _u.mutation.Address(); ok {
 		if err := account.AddressValidator(v); err != nil {
 			return &ValidationError{Name: "address", err: fmt.Errorf(`ent: validator failed for field "Account.address": %w`, err)}
 		}
 	}
-	if v, ok := au.mutation.PrivateKey(); ok {
+	if v, ok := _u.mutation.PrivateKey(); ok {
 		if err := account.PrivateKeyValidator(v); err != nil {
 			return &ValidationError{Name: "private_key", err: fmt.Errorf(`ent: validator failed for field "Account.private_key": %w`, err)}
 		}
 	}
-	if _, ok := au.mutation.WalletID(); au.mutation.WalletCleared() && !ok {
+	if _u.mutation.WalletCleared() && len(_u.mutation.WalletIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Account.wallet"`)
 	}
 	return nil
 }
 
-func (au *AccountUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   account.Table,
-			Columns: account.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: account.FieldID,
-			},
-		},
+func (_u *AccountUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
-	if ps := au.mutation.predicates; len(ps) > 0 {
+	_spec := sqlgraph.NewUpdateSpec(account.Table, account.Columns, sqlgraph.NewFieldSpec(account.FieldID, field.TypeUUID))
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := au.mutation.Address(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: account.FieldAddress,
-		})
+	if value, ok := _u.mutation.Address(); ok {
+		_spec.SetField(account.FieldAddress, field.TypeString, value)
 	}
-	if value, ok := au.mutation.AccountIndex(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: account.FieldAccountIndex,
-		})
+	if value, ok := _u.mutation.AccountIndex(); ok {
+		_spec.SetField(account.FieldAccountIndex, field.TypeInt, value)
 	}
-	if value, ok := au.mutation.AddedAccountIndex(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: account.FieldAccountIndex,
-		})
+	if value, ok := _u.mutation.AddedAccountIndex(); ok {
+		_spec.AddField(account.FieldAccountIndex, field.TypeInt, value)
 	}
-	if au.mutation.AccountIndexCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Column: account.FieldAccountIndex,
-		})
+	if _u.mutation.AccountIndexCleared() {
+		_spec.ClearField(account.FieldAccountIndex, field.TypeInt)
 	}
-	if value, ok := au.mutation.PrivateKey(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: account.FieldPrivateKey,
-		})
+	if value, ok := _u.mutation.PrivateKey(); ok {
+		_spec.SetField(account.FieldPrivateKey, field.TypeString, value)
 	}
-	if au.mutation.PrivateKeyCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: account.FieldPrivateKey,
-		})
+	if _u.mutation.PrivateKeyCleared() {
+		_spec.ClearField(account.FieldPrivateKey, field.TypeString)
 	}
-	if value, ok := au.mutation.Work(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: account.FieldWork,
-		})
+	if value, ok := _u.mutation.Work(); ok {
+		_spec.SetField(account.FieldWork, field.TypeBool, value)
 	}
-	if au.mutation.WalletCleared() {
+	if _u.mutation.WalletCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -306,15 +257,12 @@ func (au *AccountUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{account.WalletColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: wallet.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(wallet.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := au.mutation.WalletIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.WalletIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -322,10 +270,7 @@ func (au *AccountUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{account.WalletColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: wallet.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(wallet.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -333,7 +278,7 @@ func (au *AccountUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if au.mutation.BlocksCleared() {
+	if _u.mutation.BlocksCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -341,15 +286,12 @@ func (au *AccountUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{account.BlocksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: block.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(block.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := au.mutation.RemovedBlocksIDs(); len(nodes) > 0 && !au.mutation.BlocksCleared() {
+	if nodes := _u.mutation.RemovedBlocksIDs(); len(nodes) > 0 && !_u.mutation.BlocksCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -357,10 +299,7 @@ func (au *AccountUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{account.BlocksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: block.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(block.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -368,7 +307,7 @@ func (au *AccountUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := au.mutation.BlocksIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.BlocksIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -376,10 +315,7 @@ func (au *AccountUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{account.BlocksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: block.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(block.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -387,7 +323,7 @@ func (au *AccountUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, au.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{account.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -395,7 +331,8 @@ func (au *AccountUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // AccountUpdateOne is the builder for updating a single Account entity.
@@ -407,184 +344,167 @@ type AccountUpdateOne struct {
 }
 
 // SetWalletID sets the "wallet_id" field.
-func (auo *AccountUpdateOne) SetWalletID(u uuid.UUID) *AccountUpdateOne {
-	auo.mutation.SetWalletID(u)
-	return auo
+func (_u *AccountUpdateOne) SetWalletID(v uuid.UUID) *AccountUpdateOne {
+	_u.mutation.SetWalletID(v)
+	return _u
+}
+
+// SetNillableWalletID sets the "wallet_id" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableWalletID(v *uuid.UUID) *AccountUpdateOne {
+	if v != nil {
+		_u.SetWalletID(*v)
+	}
+	return _u
 }
 
 // SetAddress sets the "address" field.
-func (auo *AccountUpdateOne) SetAddress(s string) *AccountUpdateOne {
-	auo.mutation.SetAddress(s)
-	return auo
+func (_u *AccountUpdateOne) SetAddress(v string) *AccountUpdateOne {
+	_u.mutation.SetAddress(v)
+	return _u
+}
+
+// SetNillableAddress sets the "address" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableAddress(v *string) *AccountUpdateOne {
+	if v != nil {
+		_u.SetAddress(*v)
+	}
+	return _u
 }
 
 // SetAccountIndex sets the "account_index" field.
-func (auo *AccountUpdateOne) SetAccountIndex(i int) *AccountUpdateOne {
-	auo.mutation.ResetAccountIndex()
-	auo.mutation.SetAccountIndex(i)
-	return auo
+func (_u *AccountUpdateOne) SetAccountIndex(v int) *AccountUpdateOne {
+	_u.mutation.ResetAccountIndex()
+	_u.mutation.SetAccountIndex(v)
+	return _u
 }
 
 // SetNillableAccountIndex sets the "account_index" field if the given value is not nil.
-func (auo *AccountUpdateOne) SetNillableAccountIndex(i *int) *AccountUpdateOne {
-	if i != nil {
-		auo.SetAccountIndex(*i)
+func (_u *AccountUpdateOne) SetNillableAccountIndex(v *int) *AccountUpdateOne {
+	if v != nil {
+		_u.SetAccountIndex(*v)
 	}
-	return auo
+	return _u
 }
 
-// AddAccountIndex adds i to the "account_index" field.
-func (auo *AccountUpdateOne) AddAccountIndex(i int) *AccountUpdateOne {
-	auo.mutation.AddAccountIndex(i)
-	return auo
+// AddAccountIndex adds value to the "account_index" field.
+func (_u *AccountUpdateOne) AddAccountIndex(v int) *AccountUpdateOne {
+	_u.mutation.AddAccountIndex(v)
+	return _u
 }
 
 // ClearAccountIndex clears the value of the "account_index" field.
-func (auo *AccountUpdateOne) ClearAccountIndex() *AccountUpdateOne {
-	auo.mutation.ClearAccountIndex()
-	return auo
+func (_u *AccountUpdateOne) ClearAccountIndex() *AccountUpdateOne {
+	_u.mutation.ClearAccountIndex()
+	return _u
 }
 
 // SetPrivateKey sets the "private_key" field.
-func (auo *AccountUpdateOne) SetPrivateKey(s string) *AccountUpdateOne {
-	auo.mutation.SetPrivateKey(s)
-	return auo
+func (_u *AccountUpdateOne) SetPrivateKey(v string) *AccountUpdateOne {
+	_u.mutation.SetPrivateKey(v)
+	return _u
 }
 
 // SetNillablePrivateKey sets the "private_key" field if the given value is not nil.
-func (auo *AccountUpdateOne) SetNillablePrivateKey(s *string) *AccountUpdateOne {
-	if s != nil {
-		auo.SetPrivateKey(*s)
+func (_u *AccountUpdateOne) SetNillablePrivateKey(v *string) *AccountUpdateOne {
+	if v != nil {
+		_u.SetPrivateKey(*v)
 	}
-	return auo
+	return _u
 }
 
 // ClearPrivateKey clears the value of the "private_key" field.
-func (auo *AccountUpdateOne) ClearPrivateKey() *AccountUpdateOne {
-	auo.mutation.ClearPrivateKey()
-	return auo
+func (_u *AccountUpdateOne) ClearPrivateKey() *AccountUpdateOne {
+	_u.mutation.ClearPrivateKey()
+	return _u
 }
 
 // SetWork sets the "work" field.
-func (auo *AccountUpdateOne) SetWork(b bool) *AccountUpdateOne {
-	auo.mutation.SetWork(b)
-	return auo
+func (_u *AccountUpdateOne) SetWork(v bool) *AccountUpdateOne {
+	_u.mutation.SetWork(v)
+	return _u
 }
 
 // SetNillableWork sets the "work" field if the given value is not nil.
-func (auo *AccountUpdateOne) SetNillableWork(b *bool) *AccountUpdateOne {
-	if b != nil {
-		auo.SetWork(*b)
+func (_u *AccountUpdateOne) SetNillableWork(v *bool) *AccountUpdateOne {
+	if v != nil {
+		_u.SetWork(*v)
 	}
-	return auo
+	return _u
 }
 
 // SetWallet sets the "wallet" edge to the Wallet entity.
-func (auo *AccountUpdateOne) SetWallet(w *Wallet) *AccountUpdateOne {
-	return auo.SetWalletID(w.ID)
+func (_u *AccountUpdateOne) SetWallet(v *Wallet) *AccountUpdateOne {
+	return _u.SetWalletID(v.ID)
 }
 
 // AddBlockIDs adds the "blocks" edge to the Block entity by IDs.
-func (auo *AccountUpdateOne) AddBlockIDs(ids ...uuid.UUID) *AccountUpdateOne {
-	auo.mutation.AddBlockIDs(ids...)
-	return auo
+func (_u *AccountUpdateOne) AddBlockIDs(ids ...uuid.UUID) *AccountUpdateOne {
+	_u.mutation.AddBlockIDs(ids...)
+	return _u
 }
 
 // AddBlocks adds the "blocks" edges to the Block entity.
-func (auo *AccountUpdateOne) AddBlocks(b ...*Block) *AccountUpdateOne {
-	ids := make([]uuid.UUID, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
+func (_u *AccountUpdateOne) AddBlocks(v ...*Block) *AccountUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return auo.AddBlockIDs(ids...)
+	return _u.AddBlockIDs(ids...)
 }
 
 // Mutation returns the AccountMutation object of the builder.
-func (auo *AccountUpdateOne) Mutation() *AccountMutation {
-	return auo.mutation
+func (_u *AccountUpdateOne) Mutation() *AccountMutation {
+	return _u.mutation
 }
 
 // ClearWallet clears the "wallet" edge to the Wallet entity.
-func (auo *AccountUpdateOne) ClearWallet() *AccountUpdateOne {
-	auo.mutation.ClearWallet()
-	return auo
+func (_u *AccountUpdateOne) ClearWallet() *AccountUpdateOne {
+	_u.mutation.ClearWallet()
+	return _u
 }
 
 // ClearBlocks clears all "blocks" edges to the Block entity.
-func (auo *AccountUpdateOne) ClearBlocks() *AccountUpdateOne {
-	auo.mutation.ClearBlocks()
-	return auo
+func (_u *AccountUpdateOne) ClearBlocks() *AccountUpdateOne {
+	_u.mutation.ClearBlocks()
+	return _u
 }
 
 // RemoveBlockIDs removes the "blocks" edge to Block entities by IDs.
-func (auo *AccountUpdateOne) RemoveBlockIDs(ids ...uuid.UUID) *AccountUpdateOne {
-	auo.mutation.RemoveBlockIDs(ids...)
-	return auo
+func (_u *AccountUpdateOne) RemoveBlockIDs(ids ...uuid.UUID) *AccountUpdateOne {
+	_u.mutation.RemoveBlockIDs(ids...)
+	return _u
 }
 
 // RemoveBlocks removes "blocks" edges to Block entities.
-func (auo *AccountUpdateOne) RemoveBlocks(b ...*Block) *AccountUpdateOne {
-	ids := make([]uuid.UUID, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
+func (_u *AccountUpdateOne) RemoveBlocks(v ...*Block) *AccountUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return auo.RemoveBlockIDs(ids...)
+	return _u.RemoveBlockIDs(ids...)
+}
+
+// Where appends a list predicates to the AccountUpdate builder.
+func (_u *AccountUpdateOne) Where(ps ...predicate.Account) *AccountUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (auo *AccountUpdateOne) Select(field string, fields ...string) *AccountUpdateOne {
-	auo.fields = append([]string{field}, fields...)
-	return auo
+func (_u *AccountUpdateOne) Select(field string, fields ...string) *AccountUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated Account entity.
-func (auo *AccountUpdateOne) Save(ctx context.Context) (*Account, error) {
-	var (
-		err  error
-		node *Account
-	)
-	if len(auo.hooks) == 0 {
-		if err = auo.check(); err != nil {
-			return nil, err
-		}
-		node, err = auo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AccountMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = auo.check(); err != nil {
-				return nil, err
-			}
-			auo.mutation = mutation
-			node, err = auo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(auo.hooks) - 1; i >= 0; i-- {
-			if auo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = auo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, auo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Account)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from AccountMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+func (_u *AccountUpdateOne) Save(ctx context.Context) (*Account, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (auo *AccountUpdateOne) SaveX(ctx context.Context) *Account {
-	node, err := auo.Save(ctx)
+func (_u *AccountUpdateOne) SaveX(ctx context.Context) *Account {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -592,53 +512,47 @@ func (auo *AccountUpdateOne) SaveX(ctx context.Context) *Account {
 }
 
 // Exec executes the query on the entity.
-func (auo *AccountUpdateOne) Exec(ctx context.Context) error {
-	_, err := auo.Save(ctx)
+func (_u *AccountUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (auo *AccountUpdateOne) ExecX(ctx context.Context) {
-	if err := auo.Exec(ctx); err != nil {
+func (_u *AccountUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (auo *AccountUpdateOne) check() error {
-	if v, ok := auo.mutation.Address(); ok {
+func (_u *AccountUpdateOne) check() error {
+	if v, ok := _u.mutation.Address(); ok {
 		if err := account.AddressValidator(v); err != nil {
 			return &ValidationError{Name: "address", err: fmt.Errorf(`ent: validator failed for field "Account.address": %w`, err)}
 		}
 	}
-	if v, ok := auo.mutation.PrivateKey(); ok {
+	if v, ok := _u.mutation.PrivateKey(); ok {
 		if err := account.PrivateKeyValidator(v); err != nil {
 			return &ValidationError{Name: "private_key", err: fmt.Errorf(`ent: validator failed for field "Account.private_key": %w`, err)}
 		}
 	}
-	if _, ok := auo.mutation.WalletID(); auo.mutation.WalletCleared() && !ok {
+	if _u.mutation.WalletCleared() && len(_u.mutation.WalletIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Account.wallet"`)
 	}
 	return nil
 }
 
-func (auo *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   account.Table,
-			Columns: account.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: account.FieldID,
-			},
-		},
+func (_u *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
-	id, ok := auo.mutation.ID()
+	_spec := sqlgraph.NewUpdateSpec(account.Table, account.Columns, sqlgraph.NewFieldSpec(account.FieldID, field.TypeUUID))
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Account.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := auo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, account.FieldID)
 		for _, f := range fields {
@@ -650,61 +564,35 @@ func (auo *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err e
 			}
 		}
 	}
-	if ps := auo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := auo.mutation.Address(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: account.FieldAddress,
-		})
+	if value, ok := _u.mutation.Address(); ok {
+		_spec.SetField(account.FieldAddress, field.TypeString, value)
 	}
-	if value, ok := auo.mutation.AccountIndex(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: account.FieldAccountIndex,
-		})
+	if value, ok := _u.mutation.AccountIndex(); ok {
+		_spec.SetField(account.FieldAccountIndex, field.TypeInt, value)
 	}
-	if value, ok := auo.mutation.AddedAccountIndex(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: account.FieldAccountIndex,
-		})
+	if value, ok := _u.mutation.AddedAccountIndex(); ok {
+		_spec.AddField(account.FieldAccountIndex, field.TypeInt, value)
 	}
-	if auo.mutation.AccountIndexCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Column: account.FieldAccountIndex,
-		})
+	if _u.mutation.AccountIndexCleared() {
+		_spec.ClearField(account.FieldAccountIndex, field.TypeInt)
 	}
-	if value, ok := auo.mutation.PrivateKey(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: account.FieldPrivateKey,
-		})
+	if value, ok := _u.mutation.PrivateKey(); ok {
+		_spec.SetField(account.FieldPrivateKey, field.TypeString, value)
 	}
-	if auo.mutation.PrivateKeyCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: account.FieldPrivateKey,
-		})
+	if _u.mutation.PrivateKeyCleared() {
+		_spec.ClearField(account.FieldPrivateKey, field.TypeString)
 	}
-	if value, ok := auo.mutation.Work(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: account.FieldWork,
-		})
+	if value, ok := _u.mutation.Work(); ok {
+		_spec.SetField(account.FieldWork, field.TypeBool, value)
 	}
-	if auo.mutation.WalletCleared() {
+	if _u.mutation.WalletCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -712,15 +600,12 @@ func (auo *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err e
 			Columns: []string{account.WalletColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: wallet.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(wallet.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := auo.mutation.WalletIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.WalletIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -728,10 +613,7 @@ func (auo *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err e
 			Columns: []string{account.WalletColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: wallet.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(wallet.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -739,7 +621,7 @@ func (auo *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err e
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if auo.mutation.BlocksCleared() {
+	if _u.mutation.BlocksCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -747,15 +629,12 @@ func (auo *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err e
 			Columns: []string{account.BlocksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: block.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(block.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := auo.mutation.RemovedBlocksIDs(); len(nodes) > 0 && !auo.mutation.BlocksCleared() {
+	if nodes := _u.mutation.RemovedBlocksIDs(); len(nodes) > 0 && !_u.mutation.BlocksCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -763,10 +642,7 @@ func (auo *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err e
 			Columns: []string{account.BlocksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: block.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(block.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -774,7 +650,7 @@ func (auo *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err e
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := auo.mutation.BlocksIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.BlocksIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -782,10 +658,7 @@ func (auo *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err e
 			Columns: []string{account.BlocksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: block.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(block.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -793,10 +666,10 @@ func (auo *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err e
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &Account{config: auo.config}
+	_node = &Account{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, auo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{account.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -804,5 +677,6 @@ func (auo *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err e
 		}
 		return nil, err
 	}
+	_u.mutation.done = true
 	return _node, nil
 }

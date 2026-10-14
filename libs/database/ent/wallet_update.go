@@ -24,147 +24,122 @@ type WalletUpdate struct {
 }
 
 // Where appends a list predicates to the WalletUpdate builder.
-func (wu *WalletUpdate) Where(ps ...predicate.Wallet) *WalletUpdate {
-	wu.mutation.Where(ps...)
-	return wu
+func (_u *WalletUpdate) Where(ps ...predicate.Wallet) *WalletUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // SetSeed sets the "seed" field.
-func (wu *WalletUpdate) SetSeed(s string) *WalletUpdate {
-	wu.mutation.SetSeed(s)
-	return wu
+func (_u *WalletUpdate) SetSeed(v string) *WalletUpdate {
+	_u.mutation.SetSeed(v)
+	return _u
+}
+
+// SetNillableSeed sets the "seed" field if the given value is not nil.
+func (_u *WalletUpdate) SetNillableSeed(v *string) *WalletUpdate {
+	if v != nil {
+		_u.SetSeed(*v)
+	}
+	return _u
 }
 
 // SetRepresentative sets the "representative" field.
-func (wu *WalletUpdate) SetRepresentative(s string) *WalletUpdate {
-	wu.mutation.SetRepresentative(s)
-	return wu
+func (_u *WalletUpdate) SetRepresentative(v string) *WalletUpdate {
+	_u.mutation.SetRepresentative(v)
+	return _u
 }
 
 // SetNillableRepresentative sets the "representative" field if the given value is not nil.
-func (wu *WalletUpdate) SetNillableRepresentative(s *string) *WalletUpdate {
-	if s != nil {
-		wu.SetRepresentative(*s)
+func (_u *WalletUpdate) SetNillableRepresentative(v *string) *WalletUpdate {
+	if v != nil {
+		_u.SetRepresentative(*v)
 	}
-	return wu
+	return _u
 }
 
 // ClearRepresentative clears the value of the "representative" field.
-func (wu *WalletUpdate) ClearRepresentative() *WalletUpdate {
-	wu.mutation.ClearRepresentative()
-	return wu
+func (_u *WalletUpdate) ClearRepresentative() *WalletUpdate {
+	_u.mutation.ClearRepresentative()
+	return _u
 }
 
 // SetEncrypted sets the "encrypted" field.
-func (wu *WalletUpdate) SetEncrypted(b bool) *WalletUpdate {
-	wu.mutation.SetEncrypted(b)
-	return wu
+func (_u *WalletUpdate) SetEncrypted(v bool) *WalletUpdate {
+	_u.mutation.SetEncrypted(v)
+	return _u
 }
 
 // SetNillableEncrypted sets the "encrypted" field if the given value is not nil.
-func (wu *WalletUpdate) SetNillableEncrypted(b *bool) *WalletUpdate {
-	if b != nil {
-		wu.SetEncrypted(*b)
+func (_u *WalletUpdate) SetNillableEncrypted(v *bool) *WalletUpdate {
+	if v != nil {
+		_u.SetEncrypted(*v)
 	}
-	return wu
+	return _u
 }
 
 // SetWork sets the "work" field.
-func (wu *WalletUpdate) SetWork(b bool) *WalletUpdate {
-	wu.mutation.SetWork(b)
-	return wu
+func (_u *WalletUpdate) SetWork(v bool) *WalletUpdate {
+	_u.mutation.SetWork(v)
+	return _u
 }
 
 // SetNillableWork sets the "work" field if the given value is not nil.
-func (wu *WalletUpdate) SetNillableWork(b *bool) *WalletUpdate {
-	if b != nil {
-		wu.SetWork(*b)
+func (_u *WalletUpdate) SetNillableWork(v *bool) *WalletUpdate {
+	if v != nil {
+		_u.SetWork(*v)
 	}
-	return wu
+	return _u
 }
 
 // AddAccountIDs adds the "accounts" edge to the Account entity by IDs.
-func (wu *WalletUpdate) AddAccountIDs(ids ...uuid.UUID) *WalletUpdate {
-	wu.mutation.AddAccountIDs(ids...)
-	return wu
+func (_u *WalletUpdate) AddAccountIDs(ids ...uuid.UUID) *WalletUpdate {
+	_u.mutation.AddAccountIDs(ids...)
+	return _u
 }
 
 // AddAccounts adds the "accounts" edges to the Account entity.
-func (wu *WalletUpdate) AddAccounts(a ...*Account) *WalletUpdate {
-	ids := make([]uuid.UUID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+func (_u *WalletUpdate) AddAccounts(v ...*Account) *WalletUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return wu.AddAccountIDs(ids...)
+	return _u.AddAccountIDs(ids...)
 }
 
 // Mutation returns the WalletMutation object of the builder.
-func (wu *WalletUpdate) Mutation() *WalletMutation {
-	return wu.mutation
+func (_u *WalletUpdate) Mutation() *WalletMutation {
+	return _u.mutation
 }
 
 // ClearAccounts clears all "accounts" edges to the Account entity.
-func (wu *WalletUpdate) ClearAccounts() *WalletUpdate {
-	wu.mutation.ClearAccounts()
-	return wu
+func (_u *WalletUpdate) ClearAccounts() *WalletUpdate {
+	_u.mutation.ClearAccounts()
+	return _u
 }
 
 // RemoveAccountIDs removes the "accounts" edge to Account entities by IDs.
-func (wu *WalletUpdate) RemoveAccountIDs(ids ...uuid.UUID) *WalletUpdate {
-	wu.mutation.RemoveAccountIDs(ids...)
-	return wu
+func (_u *WalletUpdate) RemoveAccountIDs(ids ...uuid.UUID) *WalletUpdate {
+	_u.mutation.RemoveAccountIDs(ids...)
+	return _u
 }
 
 // RemoveAccounts removes "accounts" edges to Account entities.
-func (wu *WalletUpdate) RemoveAccounts(a ...*Account) *WalletUpdate {
-	ids := make([]uuid.UUID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+func (_u *WalletUpdate) RemoveAccounts(v ...*Account) *WalletUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return wu.RemoveAccountIDs(ids...)
+	return _u.RemoveAccountIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (wu *WalletUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(wu.hooks) == 0 {
-		if err = wu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = wu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*WalletMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = wu.check(); err != nil {
-				return 0, err
-			}
-			wu.mutation = mutation
-			affected, err = wu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(wu.hooks) - 1; i >= 0; i-- {
-			if wu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = wu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, wu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+func (_u *WalletUpdate) Save(ctx context.Context) (int, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (wu *WalletUpdate) SaveX(ctx context.Context) int {
-	affected, err := wu.Save(ctx)
+func (_u *WalletUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -172,26 +147,26 @@ func (wu *WalletUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (wu *WalletUpdate) Exec(ctx context.Context) error {
-	_, err := wu.Save(ctx)
+func (_u *WalletUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (wu *WalletUpdate) ExecX(ctx context.Context) {
-	if err := wu.Exec(ctx); err != nil {
+func (_u *WalletUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (wu *WalletUpdate) check() error {
-	if v, ok := wu.mutation.Seed(); ok {
+func (_u *WalletUpdate) check() error {
+	if v, ok := _u.mutation.Seed(); ok {
 		if err := wallet.SeedValidator(v); err != nil {
 			return &ValidationError{Name: "seed", err: fmt.Errorf(`ent: validator failed for field "Wallet.seed": %w`, err)}
 		}
 	}
-	if v, ok := wu.mutation.Representative(); ok {
+	if v, ok := _u.mutation.Representative(); ok {
 		if err := wallet.RepresentativeValidator(v); err != nil {
 			return &ValidationError{Name: "representative", err: fmt.Errorf(`ent: validator failed for field "Wallet.representative": %w`, err)}
 		}
@@ -199,59 +174,34 @@ func (wu *WalletUpdate) check() error {
 	return nil
 }
 
-func (wu *WalletUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   wallet.Table,
-			Columns: wallet.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: wallet.FieldID,
-			},
-		},
+func (_u *WalletUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
-	if ps := wu.mutation.predicates; len(ps) > 0 {
+	_spec := sqlgraph.NewUpdateSpec(wallet.Table, wallet.Columns, sqlgraph.NewFieldSpec(wallet.FieldID, field.TypeUUID))
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := wu.mutation.Seed(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: wallet.FieldSeed,
-		})
+	if value, ok := _u.mutation.Seed(); ok {
+		_spec.SetField(wallet.FieldSeed, field.TypeString, value)
 	}
-	if value, ok := wu.mutation.Representative(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: wallet.FieldRepresentative,
-		})
+	if value, ok := _u.mutation.Representative(); ok {
+		_spec.SetField(wallet.FieldRepresentative, field.TypeString, value)
 	}
-	if wu.mutation.RepresentativeCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: wallet.FieldRepresentative,
-		})
+	if _u.mutation.RepresentativeCleared() {
+		_spec.ClearField(wallet.FieldRepresentative, field.TypeString)
 	}
-	if value, ok := wu.mutation.Encrypted(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: wallet.FieldEncrypted,
-		})
+	if value, ok := _u.mutation.Encrypted(); ok {
+		_spec.SetField(wallet.FieldEncrypted, field.TypeBool, value)
 	}
-	if value, ok := wu.mutation.Work(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: wallet.FieldWork,
-		})
+	if value, ok := _u.mutation.Work(); ok {
+		_spec.SetField(wallet.FieldWork, field.TypeBool, value)
 	}
-	if wu.mutation.AccountsCleared() {
+	if _u.mutation.AccountsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -259,15 +209,12 @@ func (wu *WalletUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{wallet.AccountsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: account.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := wu.mutation.RemovedAccountsIDs(); len(nodes) > 0 && !wu.mutation.AccountsCleared() {
+	if nodes := _u.mutation.RemovedAccountsIDs(); len(nodes) > 0 && !_u.mutation.AccountsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -275,10 +222,7 @@ func (wu *WalletUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{wallet.AccountsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: account.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -286,7 +230,7 @@ func (wu *WalletUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := wu.mutation.AccountsIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.AccountsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -294,10 +238,7 @@ func (wu *WalletUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{wallet.AccountsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: account.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -305,7 +246,7 @@ func (wu *WalletUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, wu.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{wallet.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -313,7 +254,8 @@ func (wu *WalletUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // WalletUpdateOne is the builder for updating a single Wallet entity.
@@ -325,154 +267,129 @@ type WalletUpdateOne struct {
 }
 
 // SetSeed sets the "seed" field.
-func (wuo *WalletUpdateOne) SetSeed(s string) *WalletUpdateOne {
-	wuo.mutation.SetSeed(s)
-	return wuo
+func (_u *WalletUpdateOne) SetSeed(v string) *WalletUpdateOne {
+	_u.mutation.SetSeed(v)
+	return _u
+}
+
+// SetNillableSeed sets the "seed" field if the given value is not nil.
+func (_u *WalletUpdateOne) SetNillableSeed(v *string) *WalletUpdateOne {
+	if v != nil {
+		_u.SetSeed(*v)
+	}
+	return _u
 }
 
 // SetRepresentative sets the "representative" field.
-func (wuo *WalletUpdateOne) SetRepresentative(s string) *WalletUpdateOne {
-	wuo.mutation.SetRepresentative(s)
-	return wuo
+func (_u *WalletUpdateOne) SetRepresentative(v string) *WalletUpdateOne {
+	_u.mutation.SetRepresentative(v)
+	return _u
 }
 
 // SetNillableRepresentative sets the "representative" field if the given value is not nil.
-func (wuo *WalletUpdateOne) SetNillableRepresentative(s *string) *WalletUpdateOne {
-	if s != nil {
-		wuo.SetRepresentative(*s)
+func (_u *WalletUpdateOne) SetNillableRepresentative(v *string) *WalletUpdateOne {
+	if v != nil {
+		_u.SetRepresentative(*v)
 	}
-	return wuo
+	return _u
 }
 
 // ClearRepresentative clears the value of the "representative" field.
-func (wuo *WalletUpdateOne) ClearRepresentative() *WalletUpdateOne {
-	wuo.mutation.ClearRepresentative()
-	return wuo
+func (_u *WalletUpdateOne) ClearRepresentative() *WalletUpdateOne {
+	_u.mutation.ClearRepresentative()
+	return _u
 }
 
 // SetEncrypted sets the "encrypted" field.
-func (wuo *WalletUpdateOne) SetEncrypted(b bool) *WalletUpdateOne {
-	wuo.mutation.SetEncrypted(b)
-	return wuo
+func (_u *WalletUpdateOne) SetEncrypted(v bool) *WalletUpdateOne {
+	_u.mutation.SetEncrypted(v)
+	return _u
 }
 
 // SetNillableEncrypted sets the "encrypted" field if the given value is not nil.
-func (wuo *WalletUpdateOne) SetNillableEncrypted(b *bool) *WalletUpdateOne {
-	if b != nil {
-		wuo.SetEncrypted(*b)
+func (_u *WalletUpdateOne) SetNillableEncrypted(v *bool) *WalletUpdateOne {
+	if v != nil {
+		_u.SetEncrypted(*v)
 	}
-	return wuo
+	return _u
 }
 
 // SetWork sets the "work" field.
-func (wuo *WalletUpdateOne) SetWork(b bool) *WalletUpdateOne {
-	wuo.mutation.SetWork(b)
-	return wuo
+func (_u *WalletUpdateOne) SetWork(v bool) *WalletUpdateOne {
+	_u.mutation.SetWork(v)
+	return _u
 }
 
 // SetNillableWork sets the "work" field if the given value is not nil.
-func (wuo *WalletUpdateOne) SetNillableWork(b *bool) *WalletUpdateOne {
-	if b != nil {
-		wuo.SetWork(*b)
+func (_u *WalletUpdateOne) SetNillableWork(v *bool) *WalletUpdateOne {
+	if v != nil {
+		_u.SetWork(*v)
 	}
-	return wuo
+	return _u
 }
 
 // AddAccountIDs adds the "accounts" edge to the Account entity by IDs.
-func (wuo *WalletUpdateOne) AddAccountIDs(ids ...uuid.UUID) *WalletUpdateOne {
-	wuo.mutation.AddAccountIDs(ids...)
-	return wuo
+func (_u *WalletUpdateOne) AddAccountIDs(ids ...uuid.UUID) *WalletUpdateOne {
+	_u.mutation.AddAccountIDs(ids...)
+	return _u
 }
 
 // AddAccounts adds the "accounts" edges to the Account entity.
-func (wuo *WalletUpdateOne) AddAccounts(a ...*Account) *WalletUpdateOne {
-	ids := make([]uuid.UUID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+func (_u *WalletUpdateOne) AddAccounts(v ...*Account) *WalletUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return wuo.AddAccountIDs(ids...)
+	return _u.AddAccountIDs(ids...)
 }
 
 // Mutation returns the WalletMutation object of the builder.
-func (wuo *WalletUpdateOne) Mutation() *WalletMutation {
-	return wuo.mutation
+func (_u *WalletUpdateOne) Mutation() *WalletMutation {
+	return _u.mutation
 }
 
 // ClearAccounts clears all "accounts" edges to the Account entity.
-func (wuo *WalletUpdateOne) ClearAccounts() *WalletUpdateOne {
-	wuo.mutation.ClearAccounts()
-	return wuo
+func (_u *WalletUpdateOne) ClearAccounts() *WalletUpdateOne {
+	_u.mutation.ClearAccounts()
+	return _u
 }
 
 // RemoveAccountIDs removes the "accounts" edge to Account entities by IDs.
-func (wuo *WalletUpdateOne) RemoveAccountIDs(ids ...uuid.UUID) *WalletUpdateOne {
-	wuo.mutation.RemoveAccountIDs(ids...)
-	return wuo
+func (_u *WalletUpdateOne) RemoveAccountIDs(ids ...uuid.UUID) *WalletUpdateOne {
+	_u.mutation.RemoveAccountIDs(ids...)
+	return _u
 }
 
 // RemoveAccounts removes "accounts" edges to Account entities.
-func (wuo *WalletUpdateOne) RemoveAccounts(a ...*Account) *WalletUpdateOne {
-	ids := make([]uuid.UUID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+func (_u *WalletUpdateOne) RemoveAccounts(v ...*Account) *WalletUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return wuo.RemoveAccountIDs(ids...)
+	return _u.RemoveAccountIDs(ids...)
+}
+
+// Where appends a list predicates to the WalletUpdate builder.
+func (_u *WalletUpdateOne) Where(ps ...predicate.Wallet) *WalletUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (wuo *WalletUpdateOne) Select(field string, fields ...string) *WalletUpdateOne {
-	wuo.fields = append([]string{field}, fields...)
-	return wuo
+func (_u *WalletUpdateOne) Select(field string, fields ...string) *WalletUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated Wallet entity.
-func (wuo *WalletUpdateOne) Save(ctx context.Context) (*Wallet, error) {
-	var (
-		err  error
-		node *Wallet
-	)
-	if len(wuo.hooks) == 0 {
-		if err = wuo.check(); err != nil {
-			return nil, err
-		}
-		node, err = wuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*WalletMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = wuo.check(); err != nil {
-				return nil, err
-			}
-			wuo.mutation = mutation
-			node, err = wuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(wuo.hooks) - 1; i >= 0; i-- {
-			if wuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = wuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, wuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Wallet)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from WalletMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+func (_u *WalletUpdateOne) Save(ctx context.Context) (*Wallet, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (wuo *WalletUpdateOne) SaveX(ctx context.Context) *Wallet {
-	node, err := wuo.Save(ctx)
+func (_u *WalletUpdateOne) SaveX(ctx context.Context) *Wallet {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -480,26 +397,26 @@ func (wuo *WalletUpdateOne) SaveX(ctx context.Context) *Wallet {
 }
 
 // Exec executes the query on the entity.
-func (wuo *WalletUpdateOne) Exec(ctx context.Context) error {
-	_, err := wuo.Save(ctx)
+func (_u *WalletUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (wuo *WalletUpdateOne) ExecX(ctx context.Context) {
-	if err := wuo.Exec(ctx); err != nil {
+func (_u *WalletUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (wuo *WalletUpdateOne) check() error {
-	if v, ok := wuo.mutation.Seed(); ok {
+func (_u *WalletUpdateOne) check() error {
+	if v, ok := _u.mutation.Seed(); ok {
 		if err := wallet.SeedValidator(v); err != nil {
 			return &ValidationError{Name: "seed", err: fmt.Errorf(`ent: validator failed for field "Wallet.seed": %w`, err)}
 		}
 	}
-	if v, ok := wuo.mutation.Representative(); ok {
+	if v, ok := _u.mutation.Representative(); ok {
 		if err := wallet.RepresentativeValidator(v); err != nil {
 			return &ValidationError{Name: "representative", err: fmt.Errorf(`ent: validator failed for field "Wallet.representative": %w`, err)}
 		}
@@ -507,23 +424,17 @@ func (wuo *WalletUpdateOne) check() error {
 	return nil
 }
 
-func (wuo *WalletUpdateOne) sqlSave(ctx context.Context) (_node *Wallet, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   wallet.Table,
-			Columns: wallet.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: wallet.FieldID,
-			},
-		},
+func (_u *WalletUpdateOne) sqlSave(ctx context.Context) (_node *Wallet, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
-	id, ok := wuo.mutation.ID()
+	_spec := sqlgraph.NewUpdateSpec(wallet.Table, wallet.Columns, sqlgraph.NewFieldSpec(wallet.FieldID, field.TypeUUID))
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Wallet.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := wuo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, wallet.FieldID)
 		for _, f := range fields {
@@ -535,48 +446,29 @@ func (wuo *WalletUpdateOne) sqlSave(ctx context.Context) (_node *Wallet, err err
 			}
 		}
 	}
-	if ps := wuo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := wuo.mutation.Seed(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: wallet.FieldSeed,
-		})
+	if value, ok := _u.mutation.Seed(); ok {
+		_spec.SetField(wallet.FieldSeed, field.TypeString, value)
 	}
-	if value, ok := wuo.mutation.Representative(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: wallet.FieldRepresentative,
-		})
+	if value, ok := _u.mutation.Representative(); ok {
+		_spec.SetField(wallet.FieldRepresentative, field.TypeString, value)
 	}
-	if wuo.mutation.RepresentativeCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: wallet.FieldRepresentative,
-		})
+	if _u.mutation.RepresentativeCleared() {
+		_spec.ClearField(wallet.FieldRepresentative, field.TypeString)
 	}
-	if value, ok := wuo.mutation.Encrypted(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: wallet.FieldEncrypted,
-		})
+	if value, ok := _u.mutation.Encrypted(); ok {
+		_spec.SetField(wallet.FieldEncrypted, field.TypeBool, value)
 	}
-	if value, ok := wuo.mutation.Work(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: wallet.FieldWork,
-		})
+	if value, ok := _u.mutation.Work(); ok {
+		_spec.SetField(wallet.FieldWork, field.TypeBool, value)
 	}
-	if wuo.mutation.AccountsCleared() {
+	if _u.mutation.AccountsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -584,15 +476,12 @@ func (wuo *WalletUpdateOne) sqlSave(ctx context.Context) (_node *Wallet, err err
 			Columns: []string{wallet.AccountsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: account.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := wuo.mutation.RemovedAccountsIDs(); len(nodes) > 0 && !wuo.mutation.AccountsCleared() {
+	if nodes := _u.mutation.RemovedAccountsIDs(); len(nodes) > 0 && !_u.mutation.AccountsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -600,10 +489,7 @@ func (wuo *WalletUpdateOne) sqlSave(ctx context.Context) (_node *Wallet, err err
 			Columns: []string{wallet.AccountsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: account.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -611,7 +497,7 @@ func (wuo *WalletUpdateOne) sqlSave(ctx context.Context) (_node *Wallet, err err
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := wuo.mutation.AccountsIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.AccountsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -619,10 +505,7 @@ func (wuo *WalletUpdateOne) sqlSave(ctx context.Context) (_node *Wallet, err err
 			Columns: []string{wallet.AccountsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: account.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -630,10 +513,10 @@ func (wuo *WalletUpdateOne) sqlSave(ctx context.Context) (_node *Wallet, err err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &Wallet{config: wuo.config}
+	_node = &Wallet{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, wuo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{wallet.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -641,5 +524,6 @@ func (wuo *WalletUpdateOne) sqlSave(ctx context.Context) (_node *Wallet, err err
 		}
 		return nil, err
 	}
+	_u.mutation.done = true
 	return _node, nil
 }

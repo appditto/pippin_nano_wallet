@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -21,84 +20,56 @@ type WalletDelete struct {
 }
 
 // Where appends a list predicates to the WalletDelete builder.
-func (wd *WalletDelete) Where(ps ...predicate.Wallet) *WalletDelete {
-	wd.mutation.Where(ps...)
-	return wd
+func (_d *WalletDelete) Where(ps ...predicate.Wallet) *WalletDelete {
+	_d.mutation.Where(ps...)
+	return _d
 }
 
 // Exec executes the deletion query and returns how many vertices were deleted.
-func (wd *WalletDelete) Exec(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(wd.hooks) == 0 {
-		affected, err = wd.sqlExec(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*WalletMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			wd.mutation = mutation
-			affected, err = wd.sqlExec(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(wd.hooks) - 1; i >= 0; i-- {
-			if wd.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = wd.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, wd.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+func (_d *WalletDelete) Exec(ctx context.Context) (int, error) {
+	return withHooks(ctx, _d.sqlExec, _d.mutation, _d.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (wd *WalletDelete) ExecX(ctx context.Context) int {
-	n, err := wd.Exec(ctx)
+func (_d *WalletDelete) ExecX(ctx context.Context) int {
+	n, err := _d.Exec(ctx)
 	if err != nil {
 		panic(err)
 	}
 	return n
 }
 
-func (wd *WalletDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: wallet.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: wallet.FieldID,
-			},
-		},
-	}
-	if ps := wd.mutation.predicates; len(ps) > 0 {
+func (_d *WalletDelete) sqlExec(ctx context.Context) (int, error) {
+	_spec := sqlgraph.NewDeleteSpec(wallet.Table, sqlgraph.NewFieldSpec(wallet.FieldID, field.TypeUUID))
+	if ps := _d.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	affected, err := sqlgraph.DeleteNodes(ctx, wd.driver, _spec)
+	affected, err := sqlgraph.DeleteNodes(ctx, _d.driver, _spec)
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
+	_d.mutation.done = true
 	return affected, err
 }
 
 // WalletDeleteOne is the builder for deleting a single Wallet entity.
 type WalletDeleteOne struct {
-	wd *WalletDelete
+	_d *WalletDelete
+}
+
+// Where appends a list predicates to the WalletDelete builder.
+func (_d *WalletDeleteOne) Where(ps ...predicate.Wallet) *WalletDeleteOne {
+	_d._d.mutation.Where(ps...)
+	return _d
 }
 
 // Exec executes the deletion query.
-func (wdo *WalletDeleteOne) Exec(ctx context.Context) error {
-	n, err := wdo.wd.Exec(ctx)
+func (_d *WalletDeleteOne) Exec(ctx context.Context) error {
+	n, err := _d._d.Exec(ctx)
 	switch {
 	case err != nil:
 		return err
@@ -110,6 +81,8 @@ func (wdo *WalletDeleteOne) Exec(ctx context.Context) error {
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (wdo *WalletDeleteOne) ExecX(ctx context.Context) {
-	wdo.wd.ExecX(ctx)
+func (_d *WalletDeleteOne) ExecX(ctx context.Context) {
+	if err := _d.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

@@ -5,6 +5,8 @@ package wallet
 import (
 	"time"
 
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
 )
 
@@ -70,3 +72,57 @@ var (
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
+
+// OrderOption defines the ordering options for the Wallet queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// BySeed orders the results by the seed field.
+func BySeed(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSeed, opts...).ToFunc()
+}
+
+// ByRepresentative orders the results by the representative field.
+func ByRepresentative(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRepresentative, opts...).ToFunc()
+}
+
+// ByEncrypted orders the results by the encrypted field.
+func ByEncrypted(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEncrypted, opts...).ToFunc()
+}
+
+// ByWork orders the results by the work field.
+func ByWork(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWork, opts...).ToFunc()
+}
+
+// ByCreatedAt orders the results by the created_at field.
+func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
+}
+
+// ByAccountsCount orders the results by accounts count.
+func ByAccountsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newAccountsStep(), opts...)
+	}
+}
+
+// ByAccounts orders the results by accounts terms.
+func ByAccounts(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAccountsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newAccountsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AccountsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, AccountsTable, AccountsColumn),
+	)
+}

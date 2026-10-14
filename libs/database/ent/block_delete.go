@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -21,84 +20,56 @@ type BlockDelete struct {
 }
 
 // Where appends a list predicates to the BlockDelete builder.
-func (bd *BlockDelete) Where(ps ...predicate.Block) *BlockDelete {
-	bd.mutation.Where(ps...)
-	return bd
+func (_d *BlockDelete) Where(ps ...predicate.Block) *BlockDelete {
+	_d.mutation.Where(ps...)
+	return _d
 }
 
 // Exec executes the deletion query and returns how many vertices were deleted.
-func (bd *BlockDelete) Exec(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(bd.hooks) == 0 {
-		affected, err = bd.sqlExec(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*BlockMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			bd.mutation = mutation
-			affected, err = bd.sqlExec(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(bd.hooks) - 1; i >= 0; i-- {
-			if bd.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = bd.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, bd.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+func (_d *BlockDelete) Exec(ctx context.Context) (int, error) {
+	return withHooks(ctx, _d.sqlExec, _d.mutation, _d.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (bd *BlockDelete) ExecX(ctx context.Context) int {
-	n, err := bd.Exec(ctx)
+func (_d *BlockDelete) ExecX(ctx context.Context) int {
+	n, err := _d.Exec(ctx)
 	if err != nil {
 		panic(err)
 	}
 	return n
 }
 
-func (bd *BlockDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: block.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: block.FieldID,
-			},
-		},
-	}
-	if ps := bd.mutation.predicates; len(ps) > 0 {
+func (_d *BlockDelete) sqlExec(ctx context.Context) (int, error) {
+	_spec := sqlgraph.NewDeleteSpec(block.Table, sqlgraph.NewFieldSpec(block.FieldID, field.TypeUUID))
+	if ps := _d.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	affected, err := sqlgraph.DeleteNodes(ctx, bd.driver, _spec)
+	affected, err := sqlgraph.DeleteNodes(ctx, _d.driver, _spec)
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
+	_d.mutation.done = true
 	return affected, err
 }
 
 // BlockDeleteOne is the builder for deleting a single Block entity.
 type BlockDeleteOne struct {
-	bd *BlockDelete
+	_d *BlockDelete
+}
+
+// Where appends a list predicates to the BlockDelete builder.
+func (_d *BlockDeleteOne) Where(ps ...predicate.Block) *BlockDeleteOne {
+	_d._d.mutation.Where(ps...)
+	return _d
 }
 
 // Exec executes the deletion query.
-func (bdo *BlockDeleteOne) Exec(ctx context.Context) error {
-	n, err := bdo.bd.Exec(ctx)
+func (_d *BlockDeleteOne) Exec(ctx context.Context) error {
+	n, err := _d._d.Exec(ctx)
 	switch {
 	case err != nil:
 		return err
@@ -110,6 +81,8 @@ func (bdo *BlockDeleteOne) Exec(ctx context.Context) error {
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (bdo *BlockDeleteOne) ExecX(ctx context.Context) {
-	bdo.bd.ExecX(ctx)
+func (_d *BlockDeleteOne) ExecX(ctx context.Context) {
+	if err := _d.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

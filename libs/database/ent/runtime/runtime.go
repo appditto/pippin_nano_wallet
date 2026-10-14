@@ -5,6 +5,6 @@ package runtime
 // The schema-stitching logic is generated in github.com/appditto/pippin_nano_wallet/libs/database/ent/runtime.go
 
 const (
-	Version = "v0.11.2"                                         // Version of ent codegen.
-	Sum     = "h1:UM2/BUhF2FfsxPHRxLjQbhqJNaDdVlOwNIAMLs2jyto=" // Sum of ent codegen.
+	Version = "v0.14.6"                                         // Version of ent codegen.
+	Sum     = "h1:/f2696BpwuWAEEG6PVGWflg6+Inrpq4pRWuNlWz/Skk=" // Sum of ent codegen.
 )
